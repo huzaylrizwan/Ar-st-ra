@@ -1,0 +1,15 @@
+We are building a furniture website, a luxury furniture website with a View in Reality button instead of Buy Now or Add to Cart. Our website will be a high-end luxury furniture website. After the main hero image, there comes a category showcase section, similar to the layout shown in the attached image, where categories like sofas, cabinets, beds, and lamps are displayed as clean visual blocks with icons or images. This section is dynamic—when the admin adds more categories, they automatically appear on the homepage, and when categories are removed, they disappear from this section as well. This ensures the homepage always reflects the current product structure without manual redesign.
+
+Then comes a second hidden powerful admin panel accessible only to administrators. The admin has access to edit the UI by changing themes, either by adding colors manually or by selecting from beautiful luxury already created themes. The admin can change fonts, the logo, and the name of the brand.
+
+The second thing in the admin panel is the option to add categories, select and reselect images to use for them, and other related edit options, such as the admin being able to hide a category for a while.
+
+Then third comes adding products. This is an important part, so you need to ask the admin everything: the name of the product, category, price, description. The admin must be able to set different color options if they want to and add size options as well.
+
+Then comes the main part: the admin can upload as many images of each product as they want. Each image can be cropped, adjusted, and previewed before uploading.
+
+Then comes the AR link. You must always take this link and check if it is working two times.
+
+Now let’s discuss the AR link, why we need that, and the product page. The product page should be elegant and luxury with details. One important thing is that our website does not have a Buy Now or Add to Cart button and no cart at all. There should only be a View in Reality button. This button must be there on every product page and should be connected to the AR link uploaded while editing the product, and it should just open that link.
+
+Moreover, existing product details can be edited.
