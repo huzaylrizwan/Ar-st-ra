@@ -104,7 +104,12 @@ export default function AdminProducts() {
 
   const handleImageUpload = (result: any) => {
     if (result.successful && result.successful.length > 0) {
-      const newImages = result.successful.map((f: any) => f.uploadURL);
+      const newImages = result.successful.map((f: any) => {
+        // Construct the permanent public URL
+        const bucketId = import.meta.env.VITE_REPL_ID;
+        const objectPath = f.response.body.objectPath;
+        return `https://storage.googleapis.com/replit-objstore-${bucketId}${objectPath}`;
+      });
       const currentImages = form.getValues("images") || [];
       form.setValue("images", [...currentImages, ...newImages]);
       toast({ title: "Images Uploaded", description: `${newImages.length} images added.` });
@@ -157,8 +162,8 @@ export default function AdminProducts() {
                 <div className="space-y-2">
                   <Label htmlFor="categoryId">Category</Label>
                   <Select 
-                    value={String(form.watch("categoryId"))} 
-                    onValueChange={(val) => form.setValue("categoryId", Number(val))}
+                    value={form.watch("categoryId") ? String(form.watch("categoryId")) : undefined} 
+                    onValueChange={(val) => form.setValue("categoryId", Number(val), { shouldValidate: true })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select Category" />

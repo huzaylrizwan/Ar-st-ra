@@ -77,12 +77,11 @@ export default function AdminCategories() {
 
   const handleImageUpload = (result: any) => {
     if (result.successful && result.successful.length > 0) {
-      // Assuming server returns the upload URL or path in result
-      // But Uppy result usually has the uploadURL directly
-      // Or we need to construct it based on object path logic
-      // The implementation details of ObjectUploader suggest we get metadata back.
-      // For simplicity here, let's assume we get a valid URL.
-      const url = result.successful[0].uploadURL;
+      const file = result.successful[0];
+      const bucketId = import.meta.env.VITE_REPL_ID;
+      const objectPath = file.response.body.objectPath;
+      const url = `https://storage.googleapis.com/replit-objstore-${bucketId}${objectPath}`;
+      
       form.setValue("imageUrl", url);
       toast({ title: "Image Uploaded", description: "Image successfully attached." });
     }

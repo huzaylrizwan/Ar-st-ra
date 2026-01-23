@@ -152,7 +152,11 @@ export async function registerRoutes(
   app.post(api.products.create.path, async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     const input = api.products.create.input.parse(req.body);
-    const product = await storage.createProduct(input);
+    const product = await storage.createProduct({
+      ...input,
+      categoryId: input.categoryId || 0,
+      images: input.images || []
+    });
     res.status(201).json(product);
   });
 
