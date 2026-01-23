@@ -34,17 +34,7 @@ export default function Home() {
             </div>
             <div className="space-y-1">
               <p className="font-medium">Discover Your Piece</p>
-              <p className="text-sm text-muted-foreground">Browse our curated collections and click on a piece that resonates with you.</p>
-            </div>
-          </div>
-          
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-              <span className="font-bold text-primary italic">02</span>
-            </div>
-            <div className="space-y-1">
-              <p className="font-medium">Enter Product Details</p>
-              <p className="text-sm text-muted-foreground">On the product page, scroll to the details section where the AR controls are located.</p>
+              <p className="text-sm text-muted-foreground">Select any piece from our curated collection to view its details.</p>
             </div>
           </div>
 
@@ -53,9 +43,8 @@ export default function Home() {
               <Box className="w-5 h-5 text-primary" />
             </div>
             <div className="space-y-1">
-              <p className="font-medium text-primary uppercase tracking-widest text-xs">Final Step</p>
-              <p className="font-medium">Tap "View in Reality"</p>
-              <p className="text-sm text-muted-foreground">Press the gold button to launch the AR experience directly on your smartphone.</p>
+              <p className="font-medium">View in Reality</p>
+              <p className="text-sm text-muted-foreground">On the product page, simply tap the gold <strong className="text-foreground">View in Reality</strong> button to see it in your space.</p>
             </div>
           </div>
           

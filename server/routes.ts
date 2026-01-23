@@ -34,6 +34,13 @@ async function seedDatabase() {
       isHidden: false
     });
 
+    const bedroom = await storage.createCategory({
+      name: "Bedroom",
+      slug: "bedroom",
+      imageUrl: "https://images.unsplash.com/photo-1505693415957-43599999940b?auto=format&fit=crop&q=80",
+      isHidden: false
+    });
+
     // Sample Products
     await storage.createProduct({
       categoryId: sofa.id,
@@ -56,6 +63,18 @@ async function seedDatabase() {
       colors: ["#ffffff", "#000000"],
       sizes: ["Standard"],
       images: ["https://images.unsplash.com/photo-1513506003013-d803a1d6e241?auto=format&fit=crop&q=80"],
+      isHidden: false
+    });
+
+    await storage.createProduct({
+      categoryId: bedroom.id,
+      name: "Royal Velvet Bed",
+      description: "A bed fit for royalty, featuring deep-tufted velvet upholstery and a majestic headboard.",
+      price: 389900,
+      arLink: "https://modelviewer.dev/shared-assets/models/Astronaut.glb",
+      colors: ["#000080", "#4b0082", "#000000"],
+      sizes: ["King", "Queen"],
+      images: ["https://images.unsplash.com/photo-1505693415957-43599999940b?auto=format&fit=crop&q=80"],
       isHidden: false
     });
   }
