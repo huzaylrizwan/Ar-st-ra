@@ -5,15 +5,75 @@ import { CategoryCard } from "@/components/CategoryCard";
 import { ProductCard } from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowRight, Box, Smartphone, Pointer, MousePointer2, CheckCircle2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { useState } from "react";
 
 export default function Home() {
   const { data: categories, isLoading: isCategoriesLoading } = useCategories();
   const { data: featuredProducts, isLoading: isProductsLoading } = useProducts();
+  const [showARTutorial, setShowARTutorial] = useState(false);
+
+  const ARTutorial = () => (
+    <Dialog open={showARTutorial} onOpenChange={setShowARTutorial}>
+      <DialogContent className="sm:max-w-md border-none bg-background/95 backdrop-blur-lg shadow-2xl">
+        <DialogHeader>
+          <DialogTitle className="font-serif text-2xl text-center">Experience Luxury in AR</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-8 py-6">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <span className="font-bold text-primary italic">01</span>
+            </div>
+            <div className="space-y-1">
+              <p className="font-medium">Discover Your Piece</p>
+              <p className="text-sm text-muted-foreground">Browse our curated collections and click on a piece that resonates with you.</p>
+            </div>
+          </div>
+          
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <span className="font-bold text-primary italic">02</span>
+            </div>
+            <div className="space-y-1">
+              <p className="font-medium">Enter Product Details</p>
+              <p className="text-sm text-muted-foreground">On the product page, scroll to the details section where the AR controls are located.</p>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 border border-primary/20">
+              <Box className="w-5 h-5 text-primary" />
+            </div>
+            <div className="space-y-1">
+              <p className="font-medium text-primary uppercase tracking-widest text-xs">Final Step</p>
+              <p className="font-medium">Tap "View in Reality"</p>
+              <p className="text-sm text-muted-foreground">Press the gold button to launch the AR experience directly on your smartphone.</p>
+            </div>
+          </div>
+          
+          <div className="pt-4">
+            <Link href="/categories">
+              <Button className="w-full h-12 text-xs tracking-widest uppercase font-bold rounded-none shadow-lg shadow-primary/20" onClick={() => setShowARTutorial(false)}>
+                Start Browsing
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 
   return (
     <Layout>
+      <ARTutorial />
       {/* Hero Section */}
       <section className="relative h-[85vh] w-full overflow-hidden">
         {/* Unsplash luxury living room */}
@@ -140,19 +200,22 @@ export default function Home() {
       <section className="py-24 bg-primary text-primary-foreground relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
         <div className="container mx-auto px-4 relative z-10 text-center max-w-3xl">
-          <h2 className="font-serif text-3xl md:text-5xl mb-6">Experience It In Your Home</h2>
-          <p className="text-lg opacity-90 mb-10 leading-relaxed">
+          <h2 className="font-serif text-3xl md:text-5xl mb-6 font-medium">Experience It In Your Home</h2>
+          <p className="text-lg opacity-90 mb-10 leading-relaxed font-light">
             Unsure if it fits? Use our Augmented Reality feature to visualize our pieces directly in your space using just your smartphone. No app required.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link href="/categories">
-              <Button size="lg" className="bg-white text-primary hover:bg-white/90 rounded-none px-8 font-bold tracking-wider uppercase">
-                Browse with AR
-              </Button>
-            </Link>
+            <Button 
+              size="lg" 
+              className="bg-white text-primary hover:bg-white/90 rounded-none px-12 py-7 font-bold tracking-widest uppercase text-sm shadow-2xl"
+              onClick={() => setShowARTutorial(true)}
+            >
+              Browse with AR
+            </Button>
           </div>
         </div>
       </section>
     </Layout>
   );
 }
+

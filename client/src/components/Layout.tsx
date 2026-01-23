@@ -140,7 +140,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <h4 className="text-sm font-bold uppercase tracking-widest mb-4">Support</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><a href="#" className="hover:text-primary transition-colors">Contact Us</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors">Shipping & Returns</a></li>
                 <li><a href="#" className="hover:text-primary transition-colors">Care Guide</a></li>
                 <li><a href="#" className="hover:text-primary transition-colors">FAQ</a></li>
               </ul>
