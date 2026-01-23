@@ -149,8 +149,9 @@ export default function ProductDetails() {
                   target="_blank" 
                   rel="noopener noreferrer" 
                   className="block w-full"
+                  data-testid="link-ar-view"
                 >
-                  <Button size="lg" className="w-full h-14 text-base tracking-widest uppercase font-bold gap-3 rounded-none shadow-xl shadow-primary/10">
+                  <Button size="lg" className="w-full h-14 text-base tracking-widest uppercase font-bold gap-3 rounded-none shadow-xl shadow-primary/10" data-testid="button-ar-view">
                     <Box className="w-5 h-5" /> View in Reality (AR)
                   </Button>
                 </a>

@@ -35,6 +35,15 @@
   
   --font-serif: 'Playfair Display', serif;
   --font-sans: 'Inter', sans-serif;
+  
+  --sidebar-background: 40 20% 98%;
+  --sidebar-foreground: 220 10% 10%;
+  --sidebar-primary: 43 50% 45%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 43 30% 94%;
+  --sidebar-accent-foreground: 43 50% 35%;
+  --sidebar-border: 40 10% 90%;
+  --sidebar-ring: 43 50% 45%;
 }
 
 .dark {
