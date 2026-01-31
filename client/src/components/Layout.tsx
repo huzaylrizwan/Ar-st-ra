@@ -158,7 +158,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
           <div className="pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground">
-            <p>&copy; {new Date().getFullYear()} {settings?.brandName || "Luxury Furniture"}. All rights reserved.</p>
+            <div className="flex flex-col items-center md:items-start gap-1">
+              <p>&copy; {new Date().getFullYear()} {settings?.brandName || "Luxury Furniture"}. All rights reserved.</p>
+              <p className="opacity-70">Ar by growyoursmedia.com</p>
+            </div>
             <div className="flex gap-6">
               <a href="#" className="hover:text-foreground">Privacy Policy</a>
               <a href="#" className="hover:text-foreground">Terms of Service</a>
