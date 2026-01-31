@@ -105,13 +105,13 @@ export default function AdminProducts() {
   const handleImageUpload = (result: any) => {
     if (result.successful && result.successful.length > 0) {
       const newImages = result.successful.map((f: any) => {
-        // Construct the permanent public URL
-        const bucketId = import.meta.env.VITE_REPL_ID;
+        // Construct the internal proxy URL that the server serves
         const objectPath = f.response.body.objectPath;
-        return `https://storage.googleapis.com/replit-objstore-${bucketId}${objectPath}`;
+        return objectPath; // Use the path directly, e.g. /objects/uploads/...
       });
       const currentImages = form.getValues("images") || [];
-      form.setValue("images", [...currentImages, ...newImages]);
+      const updatedImages = [...currentImages, ...newImages];
+      form.setValue("images", updatedImages, { shouldValidate: true, shouldDirty: true });
       toast({ title: "Images Uploaded", description: `${newImages.length} images added.` });
     }
   };

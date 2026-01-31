@@ -78,11 +78,8 @@ export default function AdminCategories() {
   const handleImageUpload = (result: any) => {
     if (result.successful && result.successful.length > 0) {
       const file = result.successful[0];
-      const bucketId = import.meta.env.VITE_REPL_ID;
       const objectPath = file.response.body.objectPath;
-      const url = `https://storage.googleapis.com/replit-objstore-${bucketId}${objectPath}`;
-      
-      form.setValue("imageUrl", url);
+      form.setValue("imageUrl", objectPath, { shouldDirty: true, shouldValidate: true });
       toast({ title: "Image Uploaded", description: "Image successfully attached." });
     }
   };
