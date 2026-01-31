@@ -102,7 +102,7 @@ function CategoriesCarousel({ categories, isLoading }: { categories: Category[],
                   transition={{ duration: 0.5, delay: index * 0.1 }}
                   className="flex-none w-[75%] sm:w-[45%] lg:w-[30%]"
                 >
-                  <Link href={`/categories/${category.id}`}>
+                  <Link href={`/categories?id=${category.id}`}>
                     <div className="group relative aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer" data-testid={`category-card-${category.id}`}>
                       {/* Category Image */}
                       {category.imageUrl ? (
