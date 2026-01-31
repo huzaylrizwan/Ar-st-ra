@@ -49,6 +49,16 @@ export default function AdminProducts() {
 
   const onSubmit = async (data: InsertProduct) => {
     try {
+      // Ensure categoryId is not 0
+      if (data.categoryId === 0) {
+        toast({ 
+          title: "Selection Required", 
+          description: "Please select a valid category for this product.",
+          variant: "destructive" 
+        });
+        return;
+      }
+
       if (editingProduct) {
         await updateMutation.mutateAsync({ id: editingProduct.id, ...data });
       } else {
@@ -163,7 +173,10 @@ export default function AdminProducts() {
                   <Label htmlFor="categoryId">Category</Label>
                   <Select 
                     value={form.watch("categoryId") ? String(form.watch("categoryId")) : undefined} 
-                    onValueChange={(val) => form.setValue("categoryId", Number(val), { shouldValidate: true })}
+                    onValueChange={(val) => {
+                      const numVal = Number(val);
+                      form.setValue("categoryId", numVal, { shouldValidate: true, shouldDirty: true });
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select Category" />
