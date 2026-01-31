@@ -5,16 +5,142 @@ import { CategoryCard } from "@/components/CategoryCard";
 import { ProductCard } from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Box, Smartphone, Pointer, MousePointer2, CheckCircle2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowRight, Box, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
+import useEmblaCarousel from "embla-carousel-react";
+import type { Category } from "@shared/schema";
+
+// Categories Carousel Component
+function CategoriesCarousel({ categories, isLoading }: { categories: Category[], isLoading: boolean }) {
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    align: "start",
+    containScroll: "trimSnaps",
+    slidesToScroll: 1,
+    dragFree: true,
+  });
+
+  const [canScrollPrev, setCanScrollPrev] = useState(false);
+  const [canScrollNext, setCanScrollNext] = useState(false);
+
+  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
+  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
+
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setCanScrollPrev(emblaApi.canScrollPrev());
+    setCanScrollNext(emblaApi.canScrollNext());
+  }, [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    onSelect();
+    emblaApi.on("select", onSelect);
+    emblaApi.on("reInit", onSelect);
+    return () => {
+      emblaApi.off("select", onSelect);
+      emblaApi.off("reInit", onSelect);
+    };
+  }, [emblaApi, onSelect]);
+
+  return (
+    <section className="py-24 bg-background">
+      <div className="container mx-auto px-4">
+        <div className="flex items-end justify-between mb-12">
+          <div className="space-y-4">
+            <h2 className="font-serif text-3xl md:text-4xl">Curated Collections</h2>
+            <p className="text-muted-foreground">Each piece tells a story of craftsmanship and luxury.</p>
+          </div>
+          
+          {/* Navigation Arrows */}
+          <div className="hidden sm:flex gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-full disabled:opacity-30"
+              onClick={scrollPrev}
+              disabled={!canScrollPrev}
+              data-testid="button-carousel-prev"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="rounded-full disabled:opacity-30"
+              onClick={scrollNext}
+              disabled={!canScrollNext}
+              data-testid="button-carousel-next"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Carousel Container - pr-16 ensures partial peek of next card */}
+        <div className="overflow-hidden -mr-4 sm:-mr-8" ref={emblaRef}>
+          <div className="flex gap-4 pr-4 sm:pr-8">
+            {isLoading ? (
+              [1, 2, 3, 4].map((i) => (
+                <div 
+                  key={i} 
+                  className="flex-none w-[75%] sm:w-[45%] lg:w-[30%] aspect-[3/4] bg-muted animate-pulse rounded-2xl" 
+                />
+              ))
+            ) : (
+              categories.map((category, index) => (
+                <motion.div
+                  key={category.id}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                  className="flex-none w-[75%] sm:w-[45%] lg:w-[30%]"
+                >
+                  <Link href={`/categories/${category.id}`}>
+                    <div className="group relative aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer" data-testid={`category-card-${category.id}`}>
+                      {/* Category Image */}
+                      {category.imageUrl ? (
+                        <img 
+                          src={category.imageUrl} 
+                          alt={category.name}
+                          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="absolute inset-0 bg-muted flex items-center justify-center">
+                          <span className="text-muted-foreground">No Image</span>
+                        </div>
+                      )}
+                      
+                      {/* Gradient Overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                      
+                      {/* Category Info */}
+                      <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                        <h3 className="font-serif text-xl md:text-2xl font-medium mb-1">{category.name}</h3>
+                        <p className="text-sm text-white/70 uppercase tracking-wider">View Collection</p>
+                      </div>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))
+            )}
+          </div>
+        </div>
+        
+        {/* Mobile scroll hint */}
+        <p className="text-center text-xs text-muted-foreground mt-6 sm:hidden">
+          Swipe to explore more collections
+        </p>
+      </div>
+    </section>
+  );
+}
 
 export default function Home() {
   const { data: categories, isLoading: isCategoriesLoading } = useCategories();
@@ -97,25 +223,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Categories */}
-      <section className="py-24 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="text-center max-w-2xl mx-auto mb-16 space-y-4">
-            <h2 className="font-serif text-3xl md:text-4xl">Curated Collections</h2>
-            <p className="text-muted-foreground">Each piece tells a story of craftsmanship and luxury.</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {isCategoriesLoading ? (
-              [1, 2, 3].map((i) => <div key={i} className="aspect-square bg-muted animate-pulse" />)
-            ) : (
-              categories?.filter(c => !c.isHidden).slice(0, 3).map((category) => (
-                <CategoryCard key={category.id} category={category} />
-              ))
-            )}
-          </div>
-        </div>
-      </section>
+      {/* Featured Categories - Horizontal Carousel */}
+      <CategoriesCarousel 
+        categories={categories?.filter(c => !c.isHidden) || []} 
+        isLoading={isCategoriesLoading} 
+      />
 
       {/* Philosophy / About Block */}
       <section className="py-24 bg-muted/30">
@@ -144,7 +256,7 @@ export default function Home() {
                   <p className="text-xs uppercase tracking-wider text-muted-foreground mt-1">Year Warranty</p>
                 </div>
               </div>
-              <Button variant="link" className="px-0 text-primary hover:text-primary/80 uppercase tracking-widest text-xs font-bold mt-4">
+              <Button variant="ghost" className="px-0 text-primary hover:text-primary/80 hover:bg-transparent uppercase tracking-widest text-xs font-bold mt-4">
                 Read Our Story <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
             </div>
