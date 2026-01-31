@@ -81,7 +81,10 @@ export function ObjectUploader({
         getUploadParameters: onGetUploadParameters,
       })
       .on("complete", (result) => {
-        onComplete?.(result);
+        if (result && result.successful && result.successful.length > 0) {
+          onComplete?.(result);
+          setShowModal(false);
+        }
       })
   );
 
