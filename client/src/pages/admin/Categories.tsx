@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from "@/hooks/use-categories";
 import { Button } from "@/components/ui/button";
@@ -23,7 +23,8 @@ export default function AdminCategories() {
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [pendingObjectPath, setPendingObjectPath] = useState<string>("");
+  // Store object path during upload process (using ref for immediate access)
+  const pendingObjectPathRef = useRef<string>("");
 
   const form = useForm<InsertCategory>({
     resolver: zodResolver(insertCategorySchema),
@@ -77,10 +78,10 @@ export default function AdminCategories() {
   };
 
   const handleImageUpload = (result: any) => {
-    if (result.successful && result.successful.length > 0 && pendingObjectPath) {
-      form.setValue("imageUrl", pendingObjectPath, { shouldDirty: true, shouldValidate: true });
+    if (result.successful && result.successful.length > 0 && pendingObjectPathRef.current) {
+      form.setValue("imageUrl", pendingObjectPathRef.current, { shouldDirty: true, shouldValidate: true });
       toast({ title: "Image Uploaded", description: "Image successfully attached." });
-      setPendingObjectPath("");
+      pendingObjectPathRef.current = "";
     }
   };
 
@@ -132,8 +133,8 @@ export default function AdminCategories() {
                         }),
                       });
                       const { uploadURL, objectPath } = await res.json();
-                      // Store the objectPath for use after upload completes
-                      setPendingObjectPath(objectPath);
+                      // Store the objectPath immediately in ref for use after upload completes
+                      pendingObjectPathRef.current = objectPath;
                       return {
                         method: "PUT",
                         url: uploadURL,

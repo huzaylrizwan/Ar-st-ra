@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } from "@/hooks/use-products";
 import { useCategories } from "@/hooks/use-categories";
@@ -32,8 +32,8 @@ export default function AdminProducts() {
   const [colorsInput, setColorsInput] = useState("");
   const [sizesInput, setSizesInput] = useState("");
   
-  // Store object paths during upload process
-  const [pendingObjectPaths, setPendingObjectPaths] = useState<Map<string, string>>(new Map());
+  // Store object paths during upload process (using ref for immediate access)
+  const pendingObjectPathsRef = useRef<Map<string, string>>(new Map());
 
   const form = useForm<InsertProduct>({
     resolver: zodResolver(insertProductSchema),
@@ -118,8 +118,8 @@ export default function AdminProducts() {
   const handleImageUpload = (result: any) => {
     if (result.successful && result.successful.length > 0) {
       const newImages = result.successful.map((f: any) => {
-        // Get the object path from our stored map using the file ID
-        const objectPath = pendingObjectPaths.get(f.id) || f.meta?.objectPath;
+        // Get the object path from our stored ref using the file ID
+        const objectPath = pendingObjectPathsRef.current.get(f.id);
         return objectPath;
       }).filter(Boolean);
       
@@ -129,7 +129,7 @@ export default function AdminProducts() {
         form.setValue("images", updatedImages, { shouldValidate: true, shouldDirty: true });
         toast({ title: "Images Uploaded", description: `${newImages.length} image(s) added.` });
         // Clear the pending paths
-        setPendingObjectPaths(new Map());
+        pendingObjectPathsRef.current = new Map();
       }
     }
   };
@@ -271,8 +271,8 @@ export default function AdminProducts() {
                         }),
                       });
                       const { uploadURL, objectPath } = await res.json();
-                      // Store the objectPath for this file
-                      setPendingObjectPaths(prev => new Map(prev).set(file.id, objectPath));
+                      // Store the objectPath for this file immediately in ref
+                      pendingObjectPathsRef.current.set(file.id, objectPath);
                       return {
                         method: "PUT",
                         url: uploadURL,
