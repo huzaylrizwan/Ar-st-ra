@@ -23,6 +23,7 @@ export default function AdminCategories() {
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [pendingObjectPath, setPendingObjectPath] = useState<string>("");
 
   const form = useForm<InsertCategory>({
     resolver: zodResolver(insertCategorySchema),
@@ -76,11 +77,10 @@ export default function AdminCategories() {
   };
 
   const handleImageUpload = (result: any) => {
-    if (result.successful && result.successful.length > 0) {
-      const file = result.successful[0];
-      const objectPath = file.response.body.objectPath;
-      form.setValue("imageUrl", objectPath, { shouldDirty: true, shouldValidate: true });
+    if (result.successful && result.successful.length > 0 && pendingObjectPath) {
+      form.setValue("imageUrl", pendingObjectPath, { shouldDirty: true, shouldValidate: true });
       toast({ title: "Image Uploaded", description: "Image successfully attached." });
+      setPendingObjectPath("");
     }
   };
 
@@ -131,7 +131,9 @@ export default function AdminCategories() {
                           contentType: file.type,
                         }),
                       });
-                      const { uploadURL } = await res.json();
+                      const { uploadURL, objectPath } = await res.json();
+                      // Store the objectPath for use after upload completes
+                      setPendingObjectPath(objectPath);
                       return {
                         method: "PUT",
                         url: uploadURL,
