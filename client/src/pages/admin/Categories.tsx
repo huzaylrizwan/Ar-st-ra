@@ -102,7 +102,14 @@ export default function AdminCategories() {
             <DialogHeader>
               <DialogTitle>{editingCategory ? "Edit Category" : "New Category"}</DialogTitle>
             </DialogHeader>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
+            <form 
+              onSubmit={(e) => {
+                if (form.formState.isSubmitting) {
+                  e.preventDefault();
+                }
+              }} 
+              className="space-y-6 pt-4"
+            >
               <div className="space-y-2">
                 <Label htmlFor="name">Name</Label>
                 <Input id="name" {...form.register("name")} placeholder="Living Room" />
@@ -158,7 +165,10 @@ export default function AdminCategories() {
 
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+                <Button 
+                  type="submit"
+                  disabled={createMutation.isPending || updateMutation.isPending}
+                >
                   {editingCategory ? "Update" : "Create"}
                 </Button>
               </div>
