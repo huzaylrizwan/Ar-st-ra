@@ -161,15 +161,7 @@ export default function AdminProducts() {
             <DialogHeader>
               <DialogTitle>{editingProduct ? "Edit Product" : "New Product"}</DialogTitle>
             </DialogHeader>
-            <form 
-              onSubmit={(e) => {
-                // Prevent default but allow validation
-                if (form.formState.isSubmitting) {
-                  e.preventDefault();
-                }
-              }} 
-              className="space-y-6 pt-4"
-            >
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="name">Product Name</Label>
