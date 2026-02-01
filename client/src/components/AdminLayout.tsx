@@ -7,7 +7,9 @@ import {
   FolderTree, 
   Settings, 
   LogOut,
-  Menu
+  Menu,
+  Flag,
+  HelpCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -53,6 +55,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         <NavItem href="/admin" icon={LayoutDashboard} label="Dashboard" />
         <NavItem href="/admin/products" icon={Package} label="Products" />
         <NavItem href="/admin/categories" icon={FolderTree} label="Categories" />
+        <NavItem href="/admin/banners" icon={Flag} label="Banners" />
+        <NavItem href="/admin/faq-manage" icon={HelpCircle} label="FAQ" />
         <NavItem href="/admin/settings" icon={Settings} label="Settings" />
       </div>
       <div className="p-4 border-t border-border">

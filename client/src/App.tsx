@@ -17,6 +17,8 @@ import Dashboard from "@/pages/admin/Dashboard";
 import AdminProducts from "@/pages/admin/Products";
 import AdminCategories from "@/pages/admin/Categories";
 import AdminSettings from "@/pages/admin/Settings";
+import AdminBanners from "@/pages/admin/Banners";
+import AdminFAQ from "@/pages/admin/FAQ";
 import NotFound from "@/pages/not-found";
 
 // Redirect component for auth protection
@@ -62,6 +64,12 @@ function Router() {
       </Route>
       <Route path="/admin/settings">
         <ProtectedRoute component={AdminSettings} />
+      </Route>
+      <Route path="/admin/banners">
+        <ProtectedRoute component={AdminBanners} />
+      </Route>
+      <Route path="/admin/faq-manage">
+        <ProtectedRoute component={AdminFAQ} />
       </Route>
 
       <Route component={NotFound} />
