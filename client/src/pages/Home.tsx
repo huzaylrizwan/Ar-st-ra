@@ -50,12 +50,12 @@ function CategoriesCarousel({ categories, isLoading }: { categories: Category[],
   }, [emblaApi, onSelect]);
 
   return (
-    <section className="py-24 bg-background">
-      <div className="container mx-auto px-4">
-        <div className="flex items-end justify-between mb-12">
-          <div className="space-y-4">
-            <h2 className="font-serif text-3xl md:text-4xl">Curated Collections</h2>
-            <p className="text-muted-foreground">Each piece tells a story of craftsmanship and luxury.</p>
+    <section className="py-12 sm:py-24 bg-background">
+      <div className="container mx-auto px-4 sm:px-4">
+        <div className="flex items-end justify-between mb-6 sm:mb-12">
+          <div className="space-y-2 sm:space-y-4">
+            <h2 className="font-serif text-xl sm:text-3xl md:text-4xl">Curated Collections</h2>
+            <p className="text-xs sm:text-base text-muted-foreground">Each piece tells a story of craftsmanship.</p>
           </div>
           
           {/* Navigation Arrows */}
@@ -83,14 +83,14 @@ function CategoriesCarousel({ categories, isLoading }: { categories: Category[],
           </div>
         </div>
 
-        {/* Carousel Container - pr-16 ensures partial peek of next card */}
+        {/* Carousel Container - compact on mobile */}
         <div className="overflow-hidden -mr-4 sm:-mr-8" ref={emblaRef}>
-          <div className="flex gap-4 pr-4 sm:pr-8">
+          <div className="flex gap-3 sm:gap-4 pr-4 sm:pr-8">
             {isLoading ? (
               [1, 2, 3, 4].map((i) => (
                 <div 
                   key={i} 
-                  className="flex-none w-[75%] sm:w-[45%] lg:w-[30%] aspect-[3/4] bg-muted animate-pulse rounded-2xl" 
+                  className="flex-none w-[55%] sm:w-[45%] lg:w-[30%] aspect-[3/4] bg-muted animate-pulse rounded-2xl" 
                 />
               ))
             ) : (
@@ -99,11 +99,11 @@ function CategoriesCarousel({ categories, isLoading }: { categories: Category[],
                   key={category.id}
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                  className="flex-none w-[75%] sm:w-[45%] lg:w-[30%]"
+                  transition={{ duration: 0.4, delay: index * 0.08 }}
+                  className="flex-none w-[55%] sm:w-[45%] lg:w-[30%]"
                 >
                   <Link href={`/categories?id=${category.id}`}>
-                    <div className="group relative aspect-[3/4] rounded-2xl overflow-hidden cursor-pointer" data-testid={`category-card-${category.id}`}>
+                    <div className="group relative aspect-[3/4] rounded-2xl sm:rounded-2xl overflow-hidden cursor-pointer shadow-lg" data-testid={`category-card-${category.id}`}>
                       {/* Category Image */}
                       {category.imageUrl ? (
                         <img 
@@ -113,7 +113,7 @@ function CategoriesCarousel({ categories, isLoading }: { categories: Category[],
                         />
                       ) : (
                         <div className="absolute inset-0 bg-muted flex items-center justify-center">
-                          <span className="text-muted-foreground">No Image</span>
+                          <span className="text-muted-foreground text-xs">No Image</span>
                         </div>
                       )}
                       
@@ -121,9 +121,9 @@ function CategoriesCarousel({ categories, isLoading }: { categories: Category[],
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                       
                       {/* Category Info */}
-                      <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                        <h3 className="font-serif text-xl md:text-2xl font-medium mb-1">{category.name}</h3>
-                        <p className="text-sm text-white/70 uppercase tracking-wider">View Collection</p>
+                      <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 text-white">
+                        <h3 className="font-serif text-base sm:text-xl md:text-2xl font-medium mb-0.5 sm:mb-1">{category.name}</h3>
+                        <p className="text-[10px] sm:text-sm text-white/70 uppercase tracking-wider">View Collection</p>
                       </div>
                     </div>
                   </Link>
@@ -132,11 +132,6 @@ function CategoriesCarousel({ categories, isLoading }: { categories: Category[],
             )}
           </div>
         </div>
-        
-        {/* Mobile scroll hint */}
-        <p className="text-center text-xs text-muted-foreground mt-6 sm:hidden">
-          Swipe to explore more collections
-        </p>
       </div>
     </section>
   );
@@ -189,32 +184,32 @@ export default function Home() {
   return (
     <Layout>
       <ARTutorial />
-      {/* Hero Section */}
-      <section className="relative h-[85vh] w-full overflow-hidden">
+      {/* Hero Section - Compact on mobile */}
+      <section className="relative h-[70vh] sm:h-[85vh] w-full overflow-hidden">
         {/* Unsplash luxury living room */}
         <img 
           src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=1974&auto=format&fit=crop" 
           alt="Luxury Interior" 
           className="absolute inset-0 w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-black/30" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-black/10" />
         
-        <div className="relative container mx-auto h-full flex items-center px-4 sm:px-6">
+        <div className="relative container mx-auto h-full flex items-end sm:items-center pb-12 sm:pb-0 px-5 sm:px-6">
           <motion.div 
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="max-w-xl text-white space-y-6"
+            className="max-w-xl text-white space-y-4 sm:space-y-6"
           >
-            <h1 className="font-serif text-5xl md:text-7xl font-bold leading-tight">
+            <h1 className="font-serif text-3xl sm:text-5xl md:text-7xl font-bold leading-tight">
               Timeless Elegance for Modern Living
             </h1>
-            <p className="text-lg md:text-xl text-white/90 font-light max-w-md">
-              Discover a curated collection of furniture that defines sophistication. Designed for those who appreciate the finer details.
+            <p className="text-sm sm:text-lg md:text-xl text-white/90 font-light max-w-md leading-relaxed">
+              Discover furniture that defines sophistication.
             </p>
-            <div className="pt-4">
+            <div className="pt-2 sm:pt-4">
               <Link href="/categories">
-                <Button size="lg" className="bg-white text-black hover:bg-white/90 rounded-none px-8 py-6 text-sm tracking-widest uppercase font-bold">
+                <Button size="lg" className="bg-white text-black rounded-full sm:rounded-none px-6 sm:px-8 py-5 sm:py-6 text-xs sm:text-sm tracking-widest uppercase font-bold shadow-xl">
                   Explore Collection
                 </Button>
               </Link>
@@ -256,7 +251,7 @@ export default function Home() {
                   <p className="text-xs uppercase tracking-wider text-muted-foreground mt-1">Year Warranty</p>
                 </div>
               </div>
-              <Button variant="ghost" className="px-0 text-primary hover:text-primary/80 hover:bg-transparent uppercase tracking-widest text-xs font-bold mt-4">
+              <Button variant="ghost" className="px-0 text-primary uppercase tracking-widest text-xs font-bold mt-4">
                 Read Our Story <ArrowRight className="ml-2 w-4 h-4" />
               </Button>
             </div>
@@ -264,51 +259,43 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Featured Products */}
-      <section className="py-24 bg-background">
+      {/* Featured Products - 2 columns on mobile */}
+      <section className="py-12 sm:py-24 bg-background">
         <div className="container mx-auto px-4">
-          <div className="flex justify-between items-end mb-12">
+          <div className="flex justify-between items-end mb-6 sm:mb-12">
             <div>
-              <h2 className="font-serif text-3xl md:text-4xl mb-2">New Arrivals</h2>
-              <p className="text-muted-foreground">The latest additions to our catalog.</p>
+              <h2 className="font-serif text-xl sm:text-3xl md:text-4xl mb-1 sm:mb-2">New Arrivals</h2>
+              <p className="text-xs sm:text-base text-muted-foreground">The latest additions to our catalog.</p>
             </div>
-            <Link href="/categories">
-              <Button variant="outline" className="hidden sm:flex rounded-none border-foreground/20 hover:border-foreground hover:bg-transparent">
-                View All
-              </Button>
+            <Link href="/categories" data-testid="link-see-all-products">
+              <span className="text-xs sm:text-sm text-primary font-medium">See All</span>
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
             {isProductsLoading ? (
-              [1, 2, 3, 4].map((i) => <div key={i} className="aspect-[4/5] bg-muted animate-pulse" />)
+              [1, 2, 3, 4].map((i) => <div key={i} className="aspect-square bg-muted animate-pulse rounded-xl" />)
             ) : (
               featuredProducts?.filter(p => !p.isHidden).slice(0, 4).map((product) => (
                 <ProductCard key={product.id} product={product} />
               ))
             )}
           </div>
-          
-          <div className="mt-8 text-center sm:hidden">
-            <Link href="/categories">
-              <Button variant="outline" className="w-full rounded-none">View All</Button>
-            </Link>
-          </div>
         </div>
       </section>
 
-      {/* AR Feature Teaser */}
-      <section className="py-24 bg-primary text-primary-foreground relative overflow-hidden">
+      {/* AR Feature Teaser - Compact on mobile */}
+      <section className="py-12 sm:py-24 bg-primary text-primary-foreground relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
-        <div className="container mx-auto px-4 relative z-10 text-center max-w-3xl">
-          <h2 className="font-serif text-3xl md:text-5xl mb-6 font-medium">Experience It In Your Home</h2>
-          <p className="text-lg opacity-90 mb-10 leading-relaxed font-light">
-            Unsure if it fits? Use our Augmented Reality feature to visualize our pieces directly in your space using just your smartphone. No app required.
+        <div className="container mx-auto px-5 sm:px-4 relative z-10 text-center max-w-3xl">
+          <h2 className="font-serif text-2xl sm:text-3xl md:text-5xl mb-4 sm:mb-6 font-medium">Experience It In Your Home</h2>
+          <p className="text-sm sm:text-lg opacity-90 mb-6 sm:mb-10 leading-relaxed font-light">
+            Visualize furniture in your space using AR. No app required.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 
               size="lg" 
-              className="bg-white text-primary hover:bg-white/90 rounded-none px-12 py-7 font-bold tracking-widest uppercase text-sm shadow-2xl"
+              className="bg-white text-primary rounded-full sm:rounded-none px-8 sm:px-12 py-5 sm:py-7 font-bold tracking-widest uppercase text-xs sm:text-sm shadow-2xl"
               onClick={() => setShowARTutorial(true)}
             >
               Browse with AR

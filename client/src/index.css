@@ -116,3 +116,12 @@
 ::-webkit-scrollbar-thumb {
   @apply bg-muted-foreground/20 rounded-full hover:bg-muted-foreground/40 transition-colors;
 }
+
+/* Hide scrollbar for horizontal scroll containers */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

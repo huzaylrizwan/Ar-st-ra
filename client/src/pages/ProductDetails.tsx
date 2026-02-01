@@ -46,9 +46,9 @@ export default function ProductDetails() {
 
   return (
     <Layout>
-      <div className="container mx-auto px-4 py-8 lg:py-16">
-        {/* Breadcrumbs */}
-        <div className="flex items-center text-sm text-muted-foreground mb-8">
+      <div className="container mx-auto px-4 py-4 sm:py-8 lg:py-16">
+        {/* Breadcrumbs - Hidden on mobile */}
+        <div className="hidden sm:flex items-center text-sm text-muted-foreground mb-8">
           <a href="/" className="hover:text-primary">Home</a>
           <ChevronRight className="w-4 h-4 mx-2" />
           <a href="/categories" className="hover:text-primary">Collections</a>
@@ -62,27 +62,27 @@ export default function ProductDetails() {
           <span className="text-foreground font-medium">{product.name}</span>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20">
-          {/* Images */}
-          <div className="space-y-4">
-            <div className="overflow-hidden rounded-sm bg-muted/20" ref={emblaRef}>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-12 lg:gap-20">
+          {/* Images - Rounded on mobile */}
+          <div className="space-y-3 sm:space-y-4">
+            <div className="overflow-hidden rounded-2xl sm:rounded-sm bg-muted/20" ref={emblaRef}>
               <div className="flex">
                 {product.images?.map((src, i) => (
                   <div className="flex-[0_0_100%] min-w-0" key={i}>
-                    <img src={src} className="w-full h-auto object-cover aspect-[4/5]" alt={`${product.name} ${i + 1}`} />
+                    <img src={src} className="w-full h-auto object-cover aspect-square sm:aspect-[4/5]" alt={`${product.name} ${i + 1}`} />
                   </div>
                 ))}
               </div>
             </div>
             
-            {/* Thumbs */}
-            <div className="flex gap-4 overflow-x-auto pb-2">
+            {/* Thumbs - Compact on mobile */}
+            <div className="flex gap-2 sm:gap-4 overflow-x-auto pb-2">
               {product.images?.map((src, i) => (
                 <button
                   key={i}
                   onClick={() => scrollTo(i)}
                   className={cn(
-                    "relative flex-[0_0_80px] aspect-square rounded-sm overflow-hidden border-2 transition-all",
+                    "relative flex-[0_0_60px] sm:flex-[0_0_80px] aspect-square rounded-xl sm:rounded-sm overflow-hidden border-2 transition-all",
                     selectedIndex === i ? "border-primary opacity-100" : "border-transparent opacity-60 hover:opacity-100"
                   )}
                 >
@@ -92,28 +92,31 @@ export default function ProductDetails() {
             </div>
           </div>
 
-          {/* Details */}
-          <div className="space-y-8">
-            <div className="space-y-2 border-b border-border pb-8">
-              <h1 className="font-serif text-4xl lg:text-5xl font-medium text-foreground">{product.name}</h1>
-              <div className="text-2xl font-light text-muted-foreground">
-                ${(product.price / 100).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          {/* Details - Compact on mobile */}
+          <div className="space-y-5 sm:space-y-8">
+            <div className="space-y-1 sm:space-y-2 border-b border-border pb-4 sm:pb-8">
+              {category && (
+                <p className="text-xs sm:text-sm text-muted-foreground uppercase tracking-wider">{category.name}</p>
+              )}
+              <h1 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-medium text-foreground">{product.name}</h1>
+              <div className="text-xl sm:text-2xl font-semibold text-foreground">
+                ${Math.round(product.price / 100).toLocaleString()}
               </div>
             </div>
 
-            <div className="prose prose-stone text-muted-foreground">
+            <div className="text-sm sm:text-base text-muted-foreground leading-relaxed">
               <p>{product.description}</p>
             </div>
 
-            {/* Colors */}
+            {/* Colors - Compact on mobile */}
             {product.colors && product.colors.length > 0 && (
-              <div className="space-y-3">
-                <span className="text-sm font-bold uppercase tracking-wider">Finish</span>
-                <div className="flex gap-3">
+              <div className="space-y-2 sm:space-y-3">
+                <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">Finish</span>
+                <div className="flex gap-2 sm:gap-3">
                   {product.colors.map((color) => (
                     <div 
                       key={color} 
-                      className="w-10 h-10 rounded-full border border-border cursor-pointer shadow-sm relative group"
+                      className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-border cursor-pointer shadow-sm relative group"
                       style={{ backgroundColor: color }}
                       title={color}
                     >
@@ -124,15 +127,15 @@ export default function ProductDetails() {
               </div>
             )}
 
-            {/* Sizes */}
+            {/* Sizes - Compact rounded pills on mobile */}
             {product.sizes && product.sizes.length > 0 && (
-              <div className="space-y-3">
-                <span className="text-sm font-bold uppercase tracking-wider">Size</span>
-                <div className="flex flex-wrap gap-3">
+              <div className="space-y-2 sm:space-y-3">
+                <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">Size</span>
+                <div className="flex flex-wrap gap-2 sm:gap-3">
                   {product.sizes.map((size) => (
                     <div 
                       key={size} 
-                      className="px-4 py-2 border border-border text-sm font-medium cursor-pointer hover:border-primary hover:text-primary transition-colors min-w-[3rem] text-center"
+                      className="px-3 sm:px-4 py-1.5 sm:py-2 border border-border text-xs sm:text-sm font-medium cursor-pointer hover:border-primary hover:text-primary transition-colors rounded-full sm:rounded-none"
                     >
                       {size}
                     </div>
@@ -141,8 +144,8 @@ export default function ProductDetails() {
               </div>
             )}
 
-            {/* Actions */}
-            <div className="pt-8 space-y-4">
+            {/* Actions - Rounded on mobile */}
+            <div className="pt-4 sm:pt-8 space-y-3 sm:space-y-4">
               {product.arLink ? (
                 <a 
                   href={product.arLink} 
@@ -151,22 +154,20 @@ export default function ProductDetails() {
                   className="block w-full"
                   data-testid="link-ar-view"
                 >
-                  <Button size="lg" className="w-full h-14 text-base tracking-widest uppercase font-bold gap-3 rounded-none shadow-xl shadow-primary/10" data-testid="button-ar-view">
-                    <Box className="w-5 h-5" /> View in Reality (AR)
+                  <Button size="lg" className="w-full h-12 sm:h-14 text-sm sm:text-base tracking-widest uppercase font-bold gap-2 sm:gap-3 rounded-full sm:rounded-none shadow-xl shadow-primary/10" data-testid="button-ar-view">
+                    <Box className="w-4 h-4 sm:w-5 sm:h-5" /> View in Reality
                   </Button>
                 </a>
               ) : (
-                <div className="p-4 bg-muted/50 text-sm text-center text-muted-foreground rounded-sm">
+                <div className="p-3 sm:p-4 bg-muted/50 text-xs sm:text-sm text-center text-muted-foreground rounded-xl sm:rounded-sm">
                   AR View not available for this item
                 </div>
               )}
               
-              <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground uppercase tracking-widest pt-2">
-                <Check className="w-4 h-4 text-green-500" /> In Stock & Ready to Ship
+              <div className="flex items-center justify-center gap-2 text-[10px] sm:text-xs text-muted-foreground uppercase tracking-widest pt-1 sm:pt-2">
+                <Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" /> In Stock & Ready to Ship
               </div>
             </div>
-            
-            {/* Specs Accordion could go here */}
           </div>
         </div>
       </div>
