@@ -27,7 +27,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <div className="min-h-screen flex flex-col font-sans bg-background text-foreground">
+    <div className="min-h-screen flex flex-col font-sans bg-background text-foreground overflow-x-hidden">
       {/* Promo Bar */}
       <div className="bg-primary text-primary-foreground py-2 text-center text-xs tracking-widest uppercase font-bold">
         Complimentary White Glove Delivery on Orders Over $5,000
