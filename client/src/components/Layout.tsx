@@ -88,11 +88,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   Logout
                 </Button>
               ) : (
-                <Link href="/api/login" className="hidden md:block">
+                <a href="/api/login" className="hidden md:block">
                   <Button variant="ghost" size="sm" className="text-xs uppercase tracking-wider" data-testid="button-sign-in">
                     Sign In
                   </Button>
-                </Link>
+                </a>
               )}
               {user && (
                 <Link href="/admin" className="md:hidden" data-testid="link-admin-mobile">

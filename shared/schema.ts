@@ -30,17 +30,67 @@ export const themeSettings = pgTable("theme_settings", {
   logoUrl: text("logo_url"),
   primaryColor: text("primary_color").default("#000000").notNull(),
   fontFamily: text("font_family").default("Inter").notNull(),
+  // Extended settings
+  activeThemePreset: text("active_theme_preset").default("gold"),
+  heroImageUrl: text("hero_image_url"),
+  // Contact settings
+  instagramUrl: text("instagram_url"),
+  facebookUrl: text("facebook_url"),
+  whatsappNumber: text("whatsapp_number"),
+  address: text("address"),
+  mapEmbedUrl: text("map_embed_url"),
+  // Visibility toggles
+  showBanner: boolean("show_banner").default(true),
+  showCollections: boolean("show_collections").default(true),
+  showNewArrivals: boolean("show_new_arrivals").default(true),
+  showPhilosophy: boolean("show_philosophy").default(true),
+  showARSection: boolean("show_ar_section").default(true),
+});
+
+// Promo Banners - multiple rotating banners
+export const banners = pgTable("banners", {
+  id: serial("id").primaryKey(),
+  text: text("text").notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(),
+});
+
+// FAQ items
+export const faqItems = pgTable("faq_items", {
+  id: serial("id").primaryKey(),
+  question: text("question").notNull(),
+  answer: text("answer").notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(),
+  isVisible: boolean("is_visible").default(true).notNull(),
+});
+
+// Hero images - preset and custom options
+export const heroImages = pgTable("hero_images", {
+  id: serial("id").primaryKey(),
+  url: text("url").notNull(),
+  name: text("name").notNull(),
+  isPreset: boolean("is_preset").default(false).notNull(),
+  isActive: boolean("is_active").default(false).notNull(),
 });
 
 // Schemas
 export const insertCategorySchema = createInsertSchema(categories).omit({ id: true });
 export const insertProductSchema = createInsertSchema(products).omit({ id: true });
 export const insertThemeSettingsSchema = createInsertSchema(themeSettings).omit({ id: true });
+export const insertBannerSchema = createInsertSchema(banners).omit({ id: true });
+export const insertFaqItemSchema = createInsertSchema(faqItems).omit({ id: true });
+export const insertHeroImageSchema = createInsertSchema(heroImages).omit({ id: true });
 
 // Types
 export type Category = typeof categories.$inferSelect;
 export type Product = typeof products.$inferSelect;
 export type ThemeSettings = typeof themeSettings.$inferSelect;
+export type Banner = typeof banners.$inferSelect;
+export type FaqItem = typeof faqItems.$inferSelect;
+export type HeroImage = typeof heroImages.$inferSelect;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type InsertThemeSettings = z.infer<typeof insertThemeSettingsSchema>;
+export type InsertBanner = z.infer<typeof insertBannerSchema>;
+export type InsertFaqItem = z.infer<typeof insertFaqItemSchema>;
+export type InsertHeroImage = z.infer<typeof insertHeroImageSchema>;

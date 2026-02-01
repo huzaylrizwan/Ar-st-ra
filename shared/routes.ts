@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { insertCategorySchema, insertProductSchema, insertThemeSettingsSchema, categories, products, themeSettings } from './schema';
+import { insertCategorySchema, insertProductSchema, insertThemeSettingsSchema, insertBannerSchema, insertFaqItemSchema, insertHeroImageSchema, categories, products, themeSettings, banners, faqItems, heroImages } from './schema';
 
 export const errorSchemas = {
   validation: z.object({
@@ -143,6 +143,143 @@ export const api = {
             contentType: z.string(),
           }),
         }),
+      },
+    },
+  },
+  banners: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/banners',
+      responses: {
+        200: z.array(z.custom<typeof banners.$inferSelect>()),
+      },
+    },
+    active: {
+      method: 'GET' as const,
+      path: '/api/banners/active',
+      responses: {
+        200: z.array(z.custom<typeof banners.$inferSelect>()),
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/banners',
+      input: insertBannerSchema,
+      responses: {
+        201: z.custom<typeof banners.$inferSelect>(),
+        400: errorSchemas.validation,
+      },
+    },
+    update: {
+      method: 'PUT' as const,
+      path: '/api/banners/:id',
+      input: insertBannerSchema.partial(),
+      responses: {
+        200: z.custom<typeof banners.$inferSelect>(),
+        400: errorSchemas.validation,
+        404: errorSchemas.notFound,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/banners/:id',
+      responses: {
+        204: z.void(),
+        404: errorSchemas.notFound,
+      },
+    },
+  },
+  faq: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/faq',
+      responses: {
+        200: z.array(z.custom<typeof faqItems.$inferSelect>()),
+      },
+    },
+    visible: {
+      method: 'GET' as const,
+      path: '/api/faq/visible',
+      responses: {
+        200: z.array(z.custom<typeof faqItems.$inferSelect>()),
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/faq',
+      input: insertFaqItemSchema,
+      responses: {
+        201: z.custom<typeof faqItems.$inferSelect>(),
+        400: errorSchemas.validation,
+      },
+    },
+    update: {
+      method: 'PUT' as const,
+      path: '/api/faq/:id',
+      input: insertFaqItemSchema.partial(),
+      responses: {
+        200: z.custom<typeof faqItems.$inferSelect>(),
+        400: errorSchemas.validation,
+        404: errorSchemas.notFound,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/faq/:id',
+      responses: {
+        204: z.void(),
+        404: errorSchemas.notFound,
+      },
+    },
+  },
+  heroImages: {
+    list: {
+      method: 'GET' as const,
+      path: '/api/hero-images',
+      responses: {
+        200: z.array(z.custom<typeof heroImages.$inferSelect>()),
+      },
+    },
+    active: {
+      method: 'GET' as const,
+      path: '/api/hero-images/active',
+      responses: {
+        200: z.custom<typeof heroImages.$inferSelect>().nullable(),
+      },
+    },
+    create: {
+      method: 'POST' as const,
+      path: '/api/hero-images',
+      input: insertHeroImageSchema,
+      responses: {
+        201: z.custom<typeof heroImages.$inferSelect>(),
+        400: errorSchemas.validation,
+      },
+    },
+    update: {
+      method: 'PUT' as const,
+      path: '/api/hero-images/:id',
+      input: insertHeroImageSchema.partial(),
+      responses: {
+        200: z.custom<typeof heroImages.$inferSelect>(),
+        400: errorSchemas.validation,
+        404: errorSchemas.notFound,
+      },
+    },
+    delete: {
+      method: 'DELETE' as const,
+      path: '/api/hero-images/:id',
+      responses: {
+        204: z.void(),
+        404: errorSchemas.notFound,
+      },
+    },
+    activate: {
+      method: 'PUT' as const,
+      path: '/api/hero-images/:id/activate',
+      responses: {
+        200: z.custom<typeof heroImages.$inferSelect>(),
+        404: errorSchemas.notFound,
       },
     },
   },

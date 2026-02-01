@@ -2,15 +2,24 @@ import {
   categories,
   products,
   themeSettings,
+  banners,
+  faqItems,
+  heroImages,
   type Category,
   type InsertCategory,
   type Product,
   type InsertProduct,
   type ThemeSettings,
   type InsertThemeSettings,
+  type Banner,
+  type InsertBanner,
+  type FaqItem,
+  type InsertFaqItem,
+  type HeroImage,
+  type InsertHeroImage,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, asc } from "drizzle-orm";
 
 export interface IStorage {
   // Categories
@@ -31,6 +40,28 @@ export interface IStorage {
   getThemeSettings(): Promise<ThemeSettings | undefined>;
   updateThemeSettings(settings: Partial<InsertThemeSettings>): Promise<ThemeSettings>;
   createThemeSettings(settings: InsertThemeSettings): Promise<ThemeSettings>;
+
+  // Banners
+  getBanners(): Promise<Banner[]>;
+  getActiveBanners(): Promise<Banner[]>;
+  createBanner(banner: InsertBanner): Promise<Banner>;
+  updateBanner(id: number, banner: Partial<InsertBanner>): Promise<Banner>;
+  deleteBanner(id: number): Promise<void>;
+
+  // FAQ Items
+  getFaqItems(): Promise<FaqItem[]>;
+  getVisibleFaqItems(): Promise<FaqItem[]>;
+  createFaqItem(item: InsertFaqItem): Promise<FaqItem>;
+  updateFaqItem(id: number, item: Partial<InsertFaqItem>): Promise<FaqItem>;
+  deleteFaqItem(id: number): Promise<void>;
+
+  // Hero Images
+  getHeroImages(): Promise<HeroImage[]>;
+  getActiveHeroImage(): Promise<HeroImage | undefined>;
+  createHeroImage(image: InsertHeroImage): Promise<HeroImage>;
+  updateHeroImage(id: number, image: Partial<InsertHeroImage>): Promise<HeroImage>;
+  deleteHeroImage(id: number): Promise<void>;
+  setActiveHeroImage(id: number): Promise<HeroImage>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -126,6 +157,84 @@ export class DatabaseStorage implements IStorage {
       .where(eq(themeSettings.id, existing.id))
       .returning();
     return settings;
+  }
+
+  // Banners
+  async getBanners(): Promise<Banner[]> {
+    return await db.select().from(banners).orderBy(asc(banners.sortOrder));
+  }
+
+  async getActiveBanners(): Promise<Banner[]> {
+    return await db.select().from(banners).where(eq(banners.isActive, true)).orderBy(asc(banners.sortOrder));
+  }
+
+  async createBanner(banner: InsertBanner): Promise<Banner> {
+    const [newBanner] = await db.insert(banners).values(banner).returning();
+    return newBanner;
+  }
+
+  async updateBanner(id: number, updates: Partial<InsertBanner>): Promise<Banner> {
+    const [banner] = await db.update(banners).set(updates).where(eq(banners.id, id)).returning();
+    return banner;
+  }
+
+  async deleteBanner(id: number): Promise<void> {
+    await db.delete(banners).where(eq(banners.id, id));
+  }
+
+  // FAQ Items
+  async getFaqItems(): Promise<FaqItem[]> {
+    return await db.select().from(faqItems).orderBy(asc(faqItems.sortOrder));
+  }
+
+  async getVisibleFaqItems(): Promise<FaqItem[]> {
+    return await db.select().from(faqItems).where(eq(faqItems.isVisible, true)).orderBy(asc(faqItems.sortOrder));
+  }
+
+  async createFaqItem(item: InsertFaqItem): Promise<FaqItem> {
+    const [newItem] = await db.insert(faqItems).values(item).returning();
+    return newItem;
+  }
+
+  async updateFaqItem(id: number, updates: Partial<InsertFaqItem>): Promise<FaqItem> {
+    const [item] = await db.update(faqItems).set(updates).where(eq(faqItems.id, id)).returning();
+    return item;
+  }
+
+  async deleteFaqItem(id: number): Promise<void> {
+    await db.delete(faqItems).where(eq(faqItems.id, id));
+  }
+
+  // Hero Images
+  async getHeroImages(): Promise<HeroImage[]> {
+    return await db.select().from(heroImages);
+  }
+
+  async getActiveHeroImage(): Promise<HeroImage | undefined> {
+    const [image] = await db.select().from(heroImages).where(eq(heroImages.isActive, true));
+    return image;
+  }
+
+  async createHeroImage(image: InsertHeroImage): Promise<HeroImage> {
+    const [newImage] = await db.insert(heroImages).values(image).returning();
+    return newImage;
+  }
+
+  async updateHeroImage(id: number, updates: Partial<InsertHeroImage>): Promise<HeroImage> {
+    const [image] = await db.update(heroImages).set(updates).where(eq(heroImages.id, id)).returning();
+    return image;
+  }
+
+  async deleteHeroImage(id: number): Promise<void> {
+    await db.delete(heroImages).where(eq(heroImages.id, id));
+  }
+
+  async setActiveHeroImage(id: number): Promise<HeroImage> {
+    // First, deactivate all hero images
+    await db.update(heroImages).set({ isActive: false });
+    // Then activate the selected one
+    const [image] = await db.update(heroImages).set({ isActive: true }).where(eq(heroImages.id, id)).returning();
+    return image;
   }
 }
 

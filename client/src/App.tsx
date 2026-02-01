@@ -20,13 +20,13 @@ import NotFound from "@/pages/not-found";
 // Redirect component for auth protection
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   const { user, isLoading } = useAuth();
-  const [, setLocation] = useLocation();
 
   useEffect(() => {
     if (!isLoading && !user) {
-      setLocation("/api/login");
+      // Use window.location for server-side auth routes
+      window.location.href = "/api/login";
     }
-  }, [user, isLoading, setLocation]);
+  }, [user, isLoading]);
 
   if (isLoading || !user) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   return <Component />;
