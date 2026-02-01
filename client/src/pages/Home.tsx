@@ -84,8 +84,8 @@ function CategoriesCarousel({ categories, isLoading }: { categories: Category[],
         </div>
 
         {/* Carousel Container - compact on mobile */}
-        <div className="overflow-hidden -mr-4 sm:-mr-8" ref={emblaRef}>
-          <div className="flex gap-3 sm:gap-4 pr-4 sm:pr-8">
+        <div className="overflow-hidden" ref={emblaRef}>
+          <div className="flex gap-3 sm:gap-4">
             {isLoading ? (
               [1, 2, 3, 4].map((i) => (
                 <div 
@@ -185,7 +185,7 @@ export default function Home() {
     <Layout>
       <ARTutorial />
       {/* Hero Section - Compact on mobile */}
-      <section className="relative h-[70vh] sm:h-[85vh] w-full overflow-hidden">
+      <section className="relative h-[70vh] sm:h-[85vh] w-full max-w-full overflow-hidden">
         {/* Unsplash luxury living room */}
         <img 
           src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=1974&auto=format&fit=crop" 

@@ -45,7 +45,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     <Menu className="h-6 w-6" />
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+                <SheetContent side="left" className="w-[85vw] max-w-[300px] sm:max-w-[400px]">
                   <div className="flex flex-col gap-8 mt-10">
                     <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="text-2xl font-serif font-bold">
                       {settings?.brandName || "LUXE"}
@@ -65,10 +65,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
 
             {/* Logo */}
-            <div className="flex-shrink-0 flex items-center justify-center md:justify-start w-full md:w-auto">
-              <Link href="/" className="group flex items-center gap-2">
-                {settings?.logoUrl && <img src={settings.logoUrl} alt="Logo" className="h-8 w-auto object-contain" />}
-                <span className="font-serif text-2xl font-bold tracking-tight group-hover:text-primary transition-colors">
+            <div className="flex-1 flex items-center justify-center md:justify-start md:flex-none overflow-hidden">
+              <Link href="/" className="group flex items-center gap-2" data-testid="link-home-logo">
+                {settings?.logoUrl && <img src={settings.logoUrl} alt="Logo" className="h-6 sm:h-8 w-auto object-contain flex-shrink-0" />}
+                <span className="font-serif text-lg sm:text-2xl font-bold tracking-tight group-hover:text-primary transition-colors truncate">
                   {settings?.brandName || "LUXE"}
                 </span>
               </Link>
@@ -82,20 +82,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </nav>
 
             {/* Right Actions */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
               {user ? (
-                <Button variant="ghost" size="sm" onClick={() => logout()} className="text-xs uppercase tracking-wider text-muted-foreground hover:text-foreground">
+                <Button variant="ghost" size="sm" onClick={() => logout()} className="text-[10px] sm:text-xs uppercase tracking-wider text-muted-foreground px-2 sm:px-3" data-testid="button-logout">
                   Logout
                 </Button>
               ) : (
                 <Link href="/api/login" className="hidden md:block">
-                  <Button variant="ghost" size="sm" className="text-xs uppercase tracking-wider">
+                  <Button variant="ghost" size="sm" className="text-xs uppercase tracking-wider" data-testid="button-sign-in">
                     Sign In
                   </Button>
                 </Link>
               )}
               {user && (
-                <Link href="/admin" className="md:hidden">
+                <Link href="/admin" className="md:hidden" data-testid="link-admin-mobile">
                   <ShieldCheck className="w-5 h-5 text-muted-foreground" />
                 </Link>
               )}
