@@ -1,6 +1,7 @@
 import { Layout } from "@/components/Layout";
 import { useCategories } from "@/hooks/use-categories";
 import { useProducts } from "@/hooks/use-products";
+import { useSettings } from "@/hooks/use-settings";
 import { CategoryCard } from "@/components/CategoryCard";
 import { ProductCard } from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
@@ -14,8 +15,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useState, useCallback, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import useEmblaCarousel from "embla-carousel-react";
-import type { Category } from "@shared/schema";
+import { api } from "@shared/routes";
+import type { Category, HeroImage } from "@shared/schema";
 
 // Categories Carousel Component
 function CategoriesCarousel({ categories, isLoading }: { categories: Category[], isLoading: boolean }) {
@@ -137,10 +140,29 @@ function CategoriesCarousel({ categories, isLoading }: { categories: Category[],
   );
 }
 
+const FALLBACK_HERO_IMAGE = "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=1974&auto=format&fit=crop";
+
 export default function Home() {
   const { data: categories, isLoading: isCategoriesLoading } = useCategories();
   const { data: featuredProducts, isLoading: isProductsLoading } = useProducts();
+  const { data: settings } = useSettings();
   const [showARTutorial, setShowARTutorial] = useState(false);
+
+  const { data: activeHeroImage, isLoading: isHeroImageLoading } = useQuery<HeroImage | null>({
+    queryKey: [api.heroImages.active.path],
+    queryFn: async () => {
+      const res = await fetch(api.heroImages.active.path, { credentials: "include" });
+      if (!res.ok) return null;
+      return res.json();
+    },
+  });
+
+  const heroImageUrl = activeHeroImage?.url || FALLBACK_HERO_IMAGE;
+
+  const showCollections = settings?.showCollections !== false;
+  const showNewArrivals = settings?.showNewArrivals !== false;
+  const showPhilosophy = settings?.showPhilosophy !== false;
+  const showARSection = settings?.showARSection !== false;
 
   const ARTutorial = () => (
     <Dialog open={showARTutorial} onOpenChange={setShowARTutorial}>
@@ -186,12 +208,15 @@ export default function Home() {
       <ARTutorial />
       {/* Hero Section - Compact on mobile */}
       <section className="relative h-[70vh] sm:h-[85vh] w-full max-w-full overflow-hidden">
-        {/* Unsplash luxury living room */}
-        <img 
-          src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=1974&auto=format&fit=crop" 
-          alt="Luxury Interior" 
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+        {isHeroImageLoading ? (
+          <div className="absolute inset-0 w-full h-full bg-muted animate-pulse" />
+        ) : (
+          <img 
+            src={heroImageUrl} 
+            alt="Luxury Interior" 
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-black/10" />
         
         <div className="relative container mx-auto h-full flex items-end sm:items-center pb-12 sm:pb-0 px-5 sm:px-6">
@@ -219,12 +244,15 @@ export default function Home() {
       </section>
 
       {/* Featured Categories - Horizontal Carousel */}
-      <CategoriesCarousel 
-        categories={categories?.filter(c => !c.isHidden) || []} 
-        isLoading={isCategoriesLoading} 
-      />
+      {showCollections && (
+        <CategoriesCarousel 
+          categories={categories?.filter(c => !c.isHidden) || []} 
+          isLoading={isCategoriesLoading} 
+        />
+      )}
 
       {/* Philosophy / About Block */}
+      {showPhilosophy && (
       <section className="py-24 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
@@ -258,8 +286,10 @@ export default function Home() {
           </div>
         </div>
       </section>
+      )}
 
       {/* Featured Products - 2 columns on mobile */}
+      {showNewArrivals && (
       <section className="py-12 sm:py-24 bg-background">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-end mb-6 sm:mb-12">
@@ -283,8 +313,10 @@ export default function Home() {
           </div>
         </div>
       </section>
+      )}
 
       {/* AR Feature Teaser - Compact on mobile */}
+      {showARSection && (
       <section className="py-12 sm:py-24 bg-primary text-primary-foreground relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
         <div className="container mx-auto px-5 sm:px-4 relative z-10 text-center max-w-3xl">
@@ -303,6 +335,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      )}
     </Layout>
   );
 }

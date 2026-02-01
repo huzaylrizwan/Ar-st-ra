@@ -1,17 +1,29 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useSettings } from "@/hooks/use-settings";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { ShoppingBag, Menu, X, ShieldCheck } from "lucide-react";
+import { Menu, ShieldCheck, Instagram, Facebook, MessageCircle, MapPin, ExternalLink } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import type { Banner } from "@shared/schema";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const { data: settings } = useSettings();
   const [location] = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const { data: banners, isLoading: bannersLoading } = useQuery<Banner[]>({
+    queryKey: ["/api/banners/active"],
+  });
+
+  const randomBanner = useMemo(() => {
+    if (!banners || banners.length === 0) return null;
+    const randomIndex = Math.floor(Math.random() * banners.length);
+    return banners[randomIndex];
+  }, [banners]);
 
   const NavLink = ({ href, children }: { href: string; children: React.ReactNode }) => {
     const isActive = location === href;
@@ -26,11 +38,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
     );
   };
 
+  const getBannerText = () => {
+    if (bannersLoading) return "...";
+    if (randomBanner) return randomBanner.text;
+    return "Welcome to our luxury furniture collection";
+  };
+
   return (
     <div className="min-h-screen flex flex-col font-sans bg-background text-foreground overflow-x-hidden">
       {/* Promo Bar */}
-      <div className="bg-primary text-primary-foreground py-2 text-center text-xs tracking-widest uppercase font-bold">
-        Complimentary White Glove Delivery on Orders Over $5,000
+      <div className="bg-primary text-primary-foreground py-2 text-center text-xs tracking-widest uppercase font-bold" data-testid="banner-promo">
+        {getBannerText()}
       </div>
 
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/40">
@@ -41,7 +59,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <div className="md:hidden">
               <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
                 <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="-ml-2">
+                  <Button variant="ghost" size="icon" className="-ml-2" data-testid="button-mobile-menu">
                     <Menu className="h-6 w-6" />
                   </Button>
                 </SheetTrigger>
@@ -51,10 +69,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       {settings?.brandName || "LUXE"}
                     </Link>
                     <nav className="flex flex-col gap-4">
-                      <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium">Home</Link>
-                      <Link href="/categories" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium">Collections</Link>
+                      <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium" data-testid="link-mobile-home">Home</Link>
+                      <Link href="/categories" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium" data-testid="link-mobile-collections">Collections</Link>
+                      <Link href="/faq" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium" data-testid="link-mobile-faq">FAQ</Link>
+                      <Link href="/contact" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium" data-testid="link-mobile-contact">Contact</Link>
                       {user && (
-                        <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium text-primary">
+                        <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)} className="text-lg font-medium text-primary" data-testid="link-mobile-admin">
                           Admin Dashboard
                         </Link>
                       )}
@@ -118,16 +138,58 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </AnimatePresence>
       </main>
 
-      <footer className="bg-muted/30 pt-16 pb-8 border-t border-border">
+      <footer className="bg-muted/30 pt-10 md:pt-16 pb-6 md:pb-8 border-t border-border">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-12 mb-8 md:mb-12">
+            {/* Brand Column */}
             <div>
               <h3 className="font-serif text-xl font-bold mb-4">{settings?.brandName || "LUXE"}</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed max-w-xs">
+              <p className="text-muted-foreground text-sm leading-relaxed max-w-xs mb-4">
                 Crafting exceptional living spaces with timeless furniture pieces designed for the modern connoisseur.
               </p>
+              
+              {/* Social Media Links */}
+              {(settings?.instagramUrl || settings?.facebookUrl || settings?.whatsappNumber) && (
+                <div className="flex gap-3 mt-4">
+                  {settings?.instagramUrl && (
+                    <a 
+                      href={settings.instagramUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="p-2 bg-muted rounded-full hover:bg-primary hover:text-primary-foreground transition-colors"
+                      data-testid="link-social-instagram"
+                    >
+                      <Instagram className="w-4 h-4" />
+                    </a>
+                  )}
+                  {settings?.facebookUrl && (
+                    <a 
+                      href={settings.facebookUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="p-2 bg-muted rounded-full hover:bg-primary hover:text-primary-foreground transition-colors"
+                      data-testid="link-social-facebook"
+                    >
+                      <Facebook className="w-4 h-4" />
+                    </a>
+                  )}
+                  {settings?.whatsappNumber && (
+                    <a 
+                      href={`https://wa.me/${settings.whatsappNumber.replace(/\D/g, '')}`}
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="p-2 bg-muted rounded-full hover:bg-primary hover:text-primary-foreground transition-colors"
+                      data-testid="link-social-whatsapp"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                    </a>
+                  )}
+                </div>
+              )}
             </div>
-            <div>
+
+            {/* Collections - Hidden on mobile */}
+            <div className="hidden md:block">
               <h4 className="text-sm font-bold uppercase tracking-widest mb-4">Collections</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li><Link href="/categories" className="hover:text-primary transition-colors">Living Room</Link></li>
@@ -136,35 +198,80 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <li><Link href="/categories" className="hover:text-primary transition-colors">Office</Link></li>
               </ul>
             </div>
+
+            {/* Support */}
             <div>
               <h4 className="text-sm font-bold uppercase tracking-widest mb-4">Support</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><a href="#" className="hover:text-primary transition-colors" data-testid="link-contact">Contact Us</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors" data-testid="link-care-guide">Care Guide</a></li>
-                <li><a href="#" className="hover:text-primary transition-colors" data-testid="link-faq">FAQ</a></li>
+                <li><Link href="/contact" className="hover:text-primary transition-colors" data-testid="link-footer-contact">Contact Us</Link></li>
+                <li><Link href="/faq" className="hover:text-primary transition-colors" data-testid="link-footer-faq">FAQ</Link></li>
               </ul>
             </div>
+
+            {/* Location / Address */}
             <div>
-              <h4 className="text-sm font-bold uppercase tracking-widest mb-4">Newsletter</h4>
-              <p className="text-xs text-muted-foreground mb-4">Subscribe to receive exclusive offers and design inspiration.</p>
-              <div className="flex gap-2">
-                <input 
-                  type="email" 
-                  placeholder="Email Address" 
-                  className="bg-background border border-input rounded-sm px-3 py-2 text-sm w-full focus:outline-none focus:ring-1 focus:ring-primary"
-                />
-                <Button variant="default" size="sm" className="rounded-sm">Join</Button>
-              </div>
+              {settings?.address && (
+                <>
+                  <h4 className="text-sm font-bold uppercase tracking-widest mb-4">Visit Us</h4>
+                  <div className="flex items-start gap-2 text-sm text-muted-foreground mb-3">
+                    <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    <p className="leading-relaxed">{settings.address}</p>
+                  </div>
+                  {settings?.mapEmbedUrl && (
+                    <a 
+                      href={settings.mapEmbedUrl} 
+                      target="_blank" 
+                      rel="noopener noreferrer" 
+                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                      data-testid="link-footer-map"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      View on Google Maps
+                    </a>
+                  )}
+                </>
+              )}
+              
+              {!settings?.address && (
+                <>
+                  <h4 className="text-sm font-bold uppercase tracking-widest mb-4">Newsletter</h4>
+                  <p className="text-xs text-muted-foreground mb-4">Subscribe to receive exclusive offers and design inspiration.</p>
+                  <div className="flex gap-2">
+                    <input 
+                      type="email" 
+                      placeholder="Email Address" 
+                      className="bg-background border border-input rounded-sm px-3 py-2 text-sm w-full focus:outline-none focus:ring-1 focus:ring-primary"
+                      data-testid="input-newsletter-email"
+                    />
+                    <Button variant="default" size="sm" className="rounded-sm" data-testid="button-newsletter-join">Join</Button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
-          <div className="pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground">
-            <div className="flex flex-col items-center md:items-start gap-1">
-              <p>&copy; {new Date().getFullYear()} {settings?.brandName || "Luxury Furniture"}. All rights reserved.</p>
-              <p className="opacity-70">Ar by growyoursmedia.com</p>
-            </div>
+
+          {/* Attribution - Prominent */}
+          <div className="py-4 mb-4 border-t border-b border-border/50 text-center">
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium">AR Experience</span> powered by{" "}
+              <a 
+                href="https://growyoursmedia.com" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-primary hover:underline font-semibold"
+                data-testid="link-attribution"
+              >
+                GrowYourMedia
+              </a>
+            </p>
+          </div>
+
+          {/* Copyright */}
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground">
+            <p>&copy; {new Date().getFullYear()} {settings?.brandName || "Luxury Furniture"}. All rights reserved.</p>
             <div className="flex gap-6">
-              <a href="#" className="hover:text-foreground">Privacy Policy</a>
-              <a href="#" className="hover:text-foreground">Terms of Service</a>
+              <a href="#" className="hover:text-foreground" data-testid="link-privacy">Privacy Policy</a>
+              <a href="#" className="hover:text-foreground" data-testid="link-terms">Terms of Service</a>
             </div>
           </div>
         </div>

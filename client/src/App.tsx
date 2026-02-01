@@ -11,6 +11,8 @@ import { useSettings } from "@/hooks/use-settings";
 import Home from "@/pages/Home";
 import CategoryPage from "@/pages/CategoryPage";
 import ProductDetails from "@/pages/ProductDetails";
+import Contact from "@/pages/Contact";
+import FAQ from "@/pages/FAQ";
 import Dashboard from "@/pages/admin/Dashboard";
 import AdminProducts from "@/pages/admin/Products";
 import AdminCategories from "@/pages/admin/Categories";
@@ -45,6 +47,8 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/categories" component={CategoryPage} />
       <Route path="/products/:id" component={ProductDetails} />
+      <Route path="/contact" component={Contact} />
+      <Route path="/faq" component={FAQ} />
       
       {/* Admin Routes */}
       <Route path="/admin">
