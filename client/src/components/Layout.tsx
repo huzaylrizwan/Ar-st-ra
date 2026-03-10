@@ -8,6 +8,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Banner } from "@shared/schema";
+import { FloatingContactButton } from "@/components/FloatingContactButton";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
@@ -276,6 +277,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </footer>
+
+      <FloatingContactButton />
     </div>
   );
 }
