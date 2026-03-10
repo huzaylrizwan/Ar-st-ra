@@ -124,6 +124,10 @@ export default function AdminSettings() {
   const handlePresetClick = (preset: typeof THEME_PRESETS[number]) => {
     form.setValue("primaryColor", preset.primaryColor);
     form.setValue("activeThemePreset", preset.id);
+    updateMutation.mutate({
+      primaryColor: preset.primaryColor,
+      activeThemePreset: preset.id,
+    });
   };
 
   if (isLoading) return <AdminLayout>Loading...</AdminLayout>;

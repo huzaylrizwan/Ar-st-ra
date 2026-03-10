@@ -4,6 +4,26 @@ import { useToast } from "@/hooks/use-toast";
 import type { InsertThemeSettings } from "@shared/schema";
 import { useEffect } from "react";
 
+function hexToHsl(hex: string): string {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0, s = 0;
+  const l = (max + min) / 2;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+      case g: h = ((b - r) / d + 2) / 6; break;
+      case b: h = ((r - g) / d + 4) / 6; break;
+    }
+  }
+  return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+}
+
 export function useSettings() {
   const query = useQuery({
     queryKey: [api.settings.get.path],
@@ -18,14 +38,11 @@ export function useSettings() {
   useEffect(() => {
     if (query.data) {
       const root = document.documentElement;
+      document.title = query.data.brandName;
+      
       if (query.data.primaryColor) {
-        // We'd need to convert hex to HSL here properly, but for simplicity
-        // let's assume we might just set it directly or handle it in a utils file.
-        // For this implementation, let's just stick to the CSS variable updates if we had a converter.
-        // Or simpler: The backend stores hex, but tailwind uses HSL.
-        // A robust app would use a library like 'color' to convert.
-        // For now, let's just update the document title and maybe logo.
-        document.title = query.data.brandName;
+        const hsl = hexToHsl(query.data.primaryColor);
+        root.style.setProperty('--primary', hsl);
       }
       
       if (query.data.fontFamily && query.data.fontFamily !== "Inter") {
