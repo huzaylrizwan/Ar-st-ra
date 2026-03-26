@@ -4,10 +4,11 @@ import { useProduct } from "@/hooks/use-products";
 import { useCategory } from "@/hooks/use-categories";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState } from "react";
-import { Box, Check, ChevronRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Box, Check, ChevronRight, X } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import { cn } from "@/lib/utils";
+import "@google/model-viewer";
 
 export default function ProductDetails() {
   const [match, params] = useRoute("/products/:id");
@@ -17,6 +18,18 @@ export default function ProductDetails() {
   
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [arViewerOpen, setArViewerOpen] = useState(false);
+
+  useEffect(() => {
+    if (arViewerOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [arViewerOpen]);
 
   // Re-sync index when embla changes
   if (emblaApi) {
@@ -147,17 +160,14 @@ export default function ProductDetails() {
             {/* Actions - Rounded on mobile */}
             <div className="pt-4 sm:pt-8 space-y-3 sm:space-y-4">
               {product.arLink ? (
-                <a 
-                  href={product.arLink} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="block w-full"
-                  data-testid="link-ar-view"
+                <Button
+                  size="lg"
+                  className="w-full h-12 sm:h-14 text-sm sm:text-base tracking-widest uppercase font-bold gap-2 sm:gap-3 rounded-full sm:rounded-none shadow-xl shadow-primary/10"
+                  onClick={() => setArViewerOpen(true)}
+                  data-testid="button-ar-view"
                 >
-                  <Button size="lg" className="w-full h-12 sm:h-14 text-sm sm:text-base tracking-widest uppercase font-bold gap-2 sm:gap-3 rounded-full sm:rounded-none shadow-xl shadow-primary/10" data-testid="button-ar-view">
-                    <Box className="w-4 h-4 sm:w-5 sm:h-5" /> View in Reality
-                  </Button>
-                </a>
+                  <Box className="w-4 h-4 sm:w-5 sm:h-5" /> View in Reality
+                </Button>
               ) : (
                 <div className="p-3 sm:p-4 bg-muted/50 text-xs sm:text-sm text-center text-muted-foreground rounded-xl sm:rounded-sm">
                   AR View not available for this item
@@ -171,6 +181,36 @@ export default function ProductDetails() {
           </div>
         </div>
       </div>
+
+      {/* Full-screen AR Viewer Overlay */}
+      {arViewerOpen && product.arLink && (
+        <div
+          className="fixed inset-0 z-50 bg-black flex flex-col"
+          data-testid="ar-viewer-overlay"
+        >
+          <div className="relative flex items-center justify-between px-4 py-3 bg-black/80 text-white shrink-0">
+            <span className="font-medium text-sm">{product.name}</span>
+            <button
+              onClick={() => setArViewerOpen(false)}
+              className="p-2 rounded-full hover:bg-white/10 transition-colors"
+              data-testid="button-close-ar-viewer"
+              aria-label="Close AR viewer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+          <model-viewer
+            src={product.arLink}
+            alt={`3D model of ${product.name}`}
+            camera-controls
+            ar
+            ar-modes="scene-viewer quick-look"
+            auto-rotate
+            shadow-intensity="1"
+            style={{ width: "100%", flex: 1, background: "#111" }}
+          />
+        </div>
+      )}
     </Layout>
   );
 }

@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ObjectUploader } from "@/components/ObjectUploader";
-import { Plus, Pencil, Trash2, Image as ImageIcon, X } from "lucide-react";
+import { Plus, Pencil, Trash2, Image as ImageIcon, X, Box, Upload } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertProductSchema, type InsertProduct, type Product } from "@shared/schema";
@@ -34,6 +34,9 @@ export default function AdminProducts() {
   
   // Store object paths during upload process (using ref for immediate access)
   const pendingObjectPathsRef = useRef<Map<string, string>>(new Map());
+  
+  // AR model upload tracking
+  const pendingArModelPathRef = useRef<string | null>(null);
 
   const form = useForm<InsertProduct>({
     resolver: zodResolver(insertProductSchema),
@@ -141,6 +144,18 @@ export default function AdminProducts() {
     form.setValue("images", newImages);
   };
 
+  const handleArModelUpload = (result: any) => {
+    if (result.successful && result.successful.length > 0) {
+      const file = result.successful[0];
+      const objectPath = pendingArModelPathRef.current;
+      if (objectPath) {
+        form.setValue("arLink", objectPath, { shouldValidate: true, shouldDirty: true });
+        pendingArModelPathRef.current = null;
+        toast({ title: "3D Model Uploaded", description: `${file.name} is ready.` });
+      }
+    }
+  };
+
   // Process manual inputs for arrays on blur
   const handleArraysBlur = () => {
     if (colorsInput) {
@@ -215,8 +230,51 @@ export default function AdminProducts() {
                   <p className="text-xs text-muted-foreground">Example: 249900 = $2,499.00</p>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="arLink">AR Model Link (URL)</Label>
-                  <Input id="arLink" {...form.register("arLink")} placeholder="https://..." />
+                  <Label>AR 3D Model (.glb / .gltf)</Label>
+                  {form.watch("arLink") ? (
+                    <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-sm border border-border">
+                      <Box className="w-4 h-4 text-blue-500 shrink-0" />
+                      <span className="text-xs text-muted-foreground truncate flex-1">Model uploaded</span>
+                      <button
+                        type="button"
+                        onClick={() => form.setValue("arLink", "", { shouldValidate: true })}
+                        className="text-destructive hover:text-destructive/70"
+                        data-testid="button-remove-ar-model"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : null}
+                  <ObjectUploader
+                    maxNumberOfFiles={1}
+                    maxFileSize={104857600}
+                    allowedFileTypes={[".glb", ".gltf"]}
+                    onGetUploadParameters={async (file) => {
+                      const res = await fetch("/api/uploads/request-url", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          name: file.name,
+                          size: file.size,
+                          contentType: file.type || "model/gltf-binary",
+                        }),
+                      });
+                      const { uploadURL, objectPath } = await res.json();
+                      pendingArModelPathRef.current = objectPath;
+                      return {
+                        method: "PUT",
+                        url: uploadURL,
+                        headers: { "Content-Type": file.type || "model/gltf-binary" },
+                      };
+                    }}
+                    onComplete={handleArModelUpload}
+                    buttonClassName="w-full"
+                  >
+                    <div className="flex items-center gap-2" data-testid="button-upload-ar-model">
+                      <Upload className="w-4 h-4" />
+                      {form.watch("arLink") ? "Replace Model" : "Upload Model"}
+                    </div>
+                  </ObjectUploader>
                 </div>
               </div>
 
