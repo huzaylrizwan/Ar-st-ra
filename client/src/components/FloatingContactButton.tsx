@@ -32,6 +32,7 @@ export function FloatingContactButton() {
   const hasContact = hasWhatsApp || hasInstagram;
   const hasBoth = hasWhatsApp && hasInstagram;
   const isAdminPage = location.startsWith("/admin");
+  const isProductPage = /^\/products\/\d+/.test(location);
 
   const close = useCallback(() => setIsOpen(false), []);
 
@@ -53,7 +54,7 @@ export function FloatingContactButton() {
     };
   }, [isOpen, close]);
 
-  if (!hasContact || isAdminPage) return null;
+  if (!hasContact || isAdminPage || isProductPage) return null;
 
   function handleClick() {
     if (hasBoth) {

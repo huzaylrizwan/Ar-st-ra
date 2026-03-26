@@ -155,16 +155,22 @@ export default function AdminProducts() {
     });
 
     // Load existing materials
-    const res = await fetch(`/api/products/${product.id}/materials`);
-    const existingMaterials: ProductMaterial[] = await res.json();
-    setPendingMaterials(existingMaterials.map((m) => ({
-      tempId: String(m.id),
-      name: m.name,
-      colorHex: m.colorHex,
-      textureUrl: m.textureUrl || "",
-      isNew: false,
-      id: m.id,
-    })));
+    try {
+      const res = await fetch(`/api/products/${product.id}/materials`);
+      if (!res.ok) throw new Error(`Server returned ${res.status}`);
+      const existingMaterials: ProductMaterial[] = await res.json();
+      setPendingMaterials(existingMaterials.map((m) => ({
+        tempId: String(m.id),
+        name: m.name,
+        colorHex: m.colorHex,
+        textureUrl: m.textureUrl || "",
+        isNew: false,
+        id: m.id,
+      })));
+    } catch (err) {
+      console.warn("Failed to load materials for product, opening dialog with empty materials:", err);
+      setPendingMaterials([]);
+    }
     setDeletedMaterialIds([]);
     setIsDialogOpen(true);
   };

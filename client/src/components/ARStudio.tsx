@@ -88,62 +88,64 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
         <X className="w-5 h-5 text-gray-700" />
       </button>
 
-      {/* model-viewer fills the screen */}
-      <model-viewer
-        ref={modelViewerRef}
-        src={product.arLink}
-        alt={`3D model of ${product.name}`}
-        camera-controls
-        ar
-        ar-modes="scene-viewer quick-look"
-        auto-rotate
-        shadow-intensity="1"
-        environment-image="neutral"
-        exposure="1"
-        style={{
-          width: "100%",
-          flex: 1,
-          background: "transparent",
-        }}
-      />
-
-      {/* Material swatches panel — left on desktop, bottom on mobile */}
-      {hasMaterials && (
-        <div
-          className="absolute left-4 top-1/2 -translate-y-1/2 hidden md:flex flex-col gap-2 p-3 rounded-2xl shadow-xl"
+      {/* model-viewer wrapper — flex-grow with min-height: 0 so it never overflows */}
+      <div style={{ flex: 1, minHeight: 0, overflow: "hidden", position: "relative" }}>
+        <model-viewer
+          ref={modelViewerRef}
+          src={product.arLink}
+          alt={`3D model of ${product.name}`}
+          camera-controls
+          ar
+          ar-modes="scene-viewer quick-look"
+          auto-rotate
+          shadow-intensity="1"
+          environment-image="neutral"
+          exposure="1"
           style={{
-            background: "rgba(255,255,255,0.55)",
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-            border: "1px solid rgba(255,255,255,0.7)",
+            width: "100%",
+            height: "100%",
+            background: "transparent",
           }}
-          data-testid="panel-material-swatches"
-        >
-          <p className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold text-center mb-1">
-            Finish
-          </p>
-          {materials.map((mat) => (
-            <button
-              key={mat.id}
-              onClick={() => applyMaterial(mat)}
-              title={mat.name}
-              data-testid={`swatch-material-${mat.id}`}
-              className={cn(
-                "w-10 h-10 rounded-full border-2 transition-all shadow-sm",
-                activeMaterialId === mat.id
-                  ? "border-gray-800 scale-110"
-                  : "border-white hover:scale-105"
-              )}
-              style={{ backgroundColor: mat.colorHex }}
-            />
-          ))}
-        </div>
-      )}
+        />
 
-      {/* Mobile material swatches - horizontal strip */}
+        {/* Material swatches panel — left on desktop */}
+        {hasMaterials && (
+          <div
+            className="absolute left-4 top-1/2 -translate-y-1/2 hidden md:flex flex-col gap-2 p-3 rounded-2xl shadow-xl"
+            style={{
+              background: "rgba(255,255,255,0.55)",
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)",
+              border: "1px solid rgba(255,255,255,0.7)",
+            }}
+            data-testid="panel-material-swatches"
+          >
+            <p className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold text-center mb-1">
+              Finish
+            </p>
+            {materials.map((mat) => (
+              <button
+                key={mat.id}
+                onClick={() => applyMaterial(mat)}
+                title={mat.name}
+                data-testid={`swatch-material-${mat.id}`}
+                className={cn(
+                  "w-10 h-10 rounded-full border-2 transition-all shadow-sm",
+                  activeMaterialId === mat.id
+                    ? "border-gray-800 scale-110"
+                    : "border-white hover:scale-105"
+                )}
+                style={{ backgroundColor: mat.colorHex }}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Mobile material swatches - horizontal strip, sits between model and bottom bar */}
       {hasMaterials && (
         <div
-          className="md:hidden absolute bottom-28 left-0 right-0 flex justify-center px-4"
+          className="md:hidden flex justify-center px-4 py-2"
           data-testid="panel-material-swatches-mobile"
         >
           <div
@@ -174,9 +176,9 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
         </div>
       )}
 
-      {/* Bottom info bar */}
+      {/* Bottom info bar — always rendered in normal flow below the model wrapper */}
       <div
-        className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-5 py-4 gap-4"
+        className="flex items-center justify-between px-5 py-4 gap-4 shrink-0"
         style={{
           background: "rgba(255,255,255,0.6)",
           backdropFilter: "blur(20px)",
