@@ -5,6 +5,7 @@ import { api } from "@shared/routes";
 import { z } from "zod";
 import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
+import { insertProductMaterialSchema } from "@shared/schema";
 
 // Seed function
 async function seedDatabase() {
@@ -311,6 +312,35 @@ export async function registerRoutes(
     if (!req.isAuthenticated()) return res.sendStatus(401);
     const image = await storage.setActiveHeroImage(Number(req.params.id));
     res.json(image);
+  });
+
+  // Product Materials
+  app.get("/api/products/:id/materials", async (req, res) => {
+    const materials = await storage.getProductMaterials(Number(req.params.id));
+    res.json(materials);
+  });
+
+  app.post("/api/products/:id/materials", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const input = insertProductMaterialSchema.parse({
+      ...req.body,
+      productId: Number(req.params.id),
+    });
+    const material = await storage.createProductMaterial(input);
+    res.status(201).json(material);
+  });
+
+  app.put("/api/products/materials/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const input = insertProductMaterialSchema.partial().parse(req.body);
+    const material = await storage.updateProductMaterial(Number(req.params.id), input);
+    res.json(material);
+  });
+
+  app.delete("/api/products/materials/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    await storage.deleteProductMaterial(Number(req.params.id));
+    res.sendStatus(204);
   });
 
   // Run seed

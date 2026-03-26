@@ -1,5 +1,5 @@
 export * from "./models/auth";
-import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -73,6 +73,16 @@ export const heroImages = pgTable("hero_images", {
   isActive: boolean("is_active").default(false).notNull(),
 });
 
+// Product Material Variants
+export const productMaterials = pgTable("product_materials", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").references(() => products.id, { onDelete: "cascade" }).notNull(),
+  name: text("name").notNull(),
+  colorHex: text("color_hex").notNull(),
+  textureUrl: text("texture_url"),
+  sortOrder: integer("sort_order").default(0).notNull(),
+});
+
 // Schemas
 export const insertCategorySchema = createInsertSchema(categories).omit({ id: true });
 export const insertProductSchema = createInsertSchema(products).omit({ id: true });
@@ -80,6 +90,7 @@ export const insertThemeSettingsSchema = createInsertSchema(themeSettings).omit(
 export const insertBannerSchema = createInsertSchema(banners).omit({ id: true });
 export const insertFaqItemSchema = createInsertSchema(faqItems).omit({ id: true });
 export const insertHeroImageSchema = createInsertSchema(heroImages).omit({ id: true });
+export const insertProductMaterialSchema = createInsertSchema(productMaterials).omit({ id: true });
 
 // Types
 export type Category = typeof categories.$inferSelect;
@@ -88,9 +99,11 @@ export type ThemeSettings = typeof themeSettings.$inferSelect;
 export type Banner = typeof banners.$inferSelect;
 export type FaqItem = typeof faqItems.$inferSelect;
 export type HeroImage = typeof heroImages.$inferSelect;
+export type ProductMaterial = typeof productMaterials.$inferSelect;
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type InsertThemeSettings = z.infer<typeof insertThemeSettingsSchema>;
 export type InsertBanner = z.infer<typeof insertBannerSchema>;
 export type InsertFaqItem = z.infer<typeof insertFaqItemSchema>;
 export type InsertHeroImage = z.infer<typeof insertHeroImageSchema>;
+export type InsertProductMaterial = z.infer<typeof insertProductMaterialSchema>;

@@ -4,11 +4,11 @@ import { useProduct } from "@/hooks/use-products";
 import { useCategory } from "@/hooks/use-categories";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState, useEffect } from "react";
-import { Box, Check, ChevronRight, X } from "lucide-react";
+import { useState } from "react";
+import { Box, Check, ChevronRight } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import { cn } from "@/lib/utils";
-import "@google/model-viewer";
+import { ARStudio } from "@/components/ARStudio";
 
 export default function ProductDetails() {
   const [match, params] = useRoute("/products/:id");
@@ -19,17 +19,6 @@ export default function ProductDetails() {
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [arViewerOpen, setArViewerOpen] = useState(false);
-
-  useEffect(() => {
-    if (arViewerOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [arViewerOpen]);
 
   // Re-sync index when embla changes
   if (emblaApi) {
@@ -182,34 +171,9 @@ export default function ProductDetails() {
         </div>
       </div>
 
-      {/* Full-screen AR Viewer Overlay */}
+      {/* Full-screen 3D Studio Overlay */}
       {arViewerOpen && product.arLink && (
-        <div
-          className="fixed inset-0 z-50 bg-black flex flex-col"
-          data-testid="ar-viewer-overlay"
-        >
-          <div className="relative flex items-center justify-between px-4 py-3 bg-black/80 text-white shrink-0">
-            <span className="font-medium text-sm">{product.name}</span>
-            <button
-              onClick={() => setArViewerOpen(false)}
-              className="p-2 rounded-full hover:bg-white/10 transition-colors"
-              data-testid="button-close-ar-viewer"
-              aria-label="Close AR viewer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-          <model-viewer
-            src={product.arLink}
-            alt={`3D model of ${product.name}`}
-            camera-controls
-            ar
-            ar-modes="scene-viewer quick-look"
-            auto-rotate
-            shadow-intensity="1"
-            style={{ width: "100%", flex: 1, background: "#111" }}
-          />
-        </div>
+        <ARStudio product={product} onClose={() => setArViewerOpen(false)} />
       )}
     </Layout>
   );

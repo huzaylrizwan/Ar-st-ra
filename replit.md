@@ -32,6 +32,7 @@ Preferred communication style: Simple, everyday language.
 - **Tables**:
   - `categories`: Product categories with visibility toggle
   - `products`: Furniture items with AR links, colors, sizes, and multiple images
+  - `product_materials`: Material/color variants per product (id, productId FK, name, colorHex, textureUrl, sortOrder)
   - `theme_settings`: Brand customization (colors, fonts, logo)
   - `users` and `sessions`: Authentication storage
 
@@ -54,13 +55,22 @@ Preferred communication style: Simple, everyday language.
 ### Admin Panel Features
 - Theme customization (brand name, colors, fonts, logo, 5 preset themes)
 - Category management with image uploads and visibility controls
-- Product management with multi-image support, AR link validation, color/size variants
+- Product management with multi-image support, AR link validation, color/size variants, and Material Variants
+- Material Variants: per-product color/texture variants (name, hex color swatch, optional PNG texture for 3D model texture swapping)
 - Rotating promotional banners management
 - Hero image selection (6 presets + custom upload)
 - FAQ management (accordion display on /faq page)
 - Contact settings (Instagram, Facebook, WhatsApp, address, Google Maps embed)
 - Homepage section visibility toggles (banner, collections, new arrivals, philosophy, AR section)
 - Dashboard accessible at `/admin/*` routes
+
+### 3D Studio Viewer
+- Clicking "View in Reality" opens a full-screen 3D Studio overlay (`ARStudio` component)
+- Studio has a neutral/light background with model-viewer centered (camera-controls, auto-rotate, neutral environment)
+- Glass-effect left panel (desktop) / bottom strip (mobile) shows material color swatches fetched from `/api/products/:id/materials`
+- Clicking a swatch: if textureUrl exists, applies PNG texture via model-viewer materials API; otherwise applies hex color via setBaseColorFactor
+- Glass-effect bottom info bar shows product name, price, and "View in AR" button (triggers model-viewer AR mode)
+- Close (×) button top-right dismisses the studio
 
 ### Floating Contact Button
 - `FloatingContactButton` component (`client/src/components/FloatingContactButton.tsx`)

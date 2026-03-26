@@ -5,6 +5,7 @@ import {
   banners,
   faqItems,
   heroImages,
+  productMaterials,
   type Category,
   type InsertCategory,
   type Product,
@@ -17,6 +18,8 @@ import {
   type InsertFaqItem,
   type HeroImage,
   type InsertHeroImage,
+  type ProductMaterial,
+  type InsertProductMaterial,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, asc } from "drizzle-orm";
@@ -62,6 +65,12 @@ export interface IStorage {
   updateHeroImage(id: number, image: Partial<InsertHeroImage>): Promise<HeroImage>;
   deleteHeroImage(id: number): Promise<void>;
   setActiveHeroImage(id: number): Promise<HeroImage>;
+
+  // Product Materials
+  getProductMaterials(productId: number): Promise<ProductMaterial[]>;
+  createProductMaterial(material: InsertProductMaterial): Promise<ProductMaterial>;
+  updateProductMaterial(id: number, material: Partial<InsertProductMaterial>): Promise<ProductMaterial>;
+  deleteProductMaterial(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -235,6 +244,33 @@ export class DatabaseStorage implements IStorage {
     // Then activate the selected one
     const [image] = await db.update(heroImages).set({ isActive: true }).where(eq(heroImages.id, id)).returning();
     return image;
+  }
+
+  // Product Materials
+  async getProductMaterials(productId: number): Promise<ProductMaterial[]> {
+    return await db
+      .select()
+      .from(productMaterials)
+      .where(eq(productMaterials.productId, productId))
+      .orderBy(asc(productMaterials.sortOrder));
+  }
+
+  async createProductMaterial(material: InsertProductMaterial): Promise<ProductMaterial> {
+    const [newMaterial] = await db.insert(productMaterials).values(material).returning();
+    return newMaterial;
+  }
+
+  async updateProductMaterial(id: number, updates: Partial<InsertProductMaterial>): Promise<ProductMaterial> {
+    const [material] = await db
+      .update(productMaterials)
+      .set(updates)
+      .where(eq(productMaterials.id, id))
+      .returning();
+    return material;
+  }
+
+  async deleteProductMaterial(id: number): Promise<void> {
+    await db.delete(productMaterials).where(eq(productMaterials.id, id));
   }
 }
 

@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } from "@/hooks/use-products";
 import { useCategories } from "@/hooks/use-categories";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,11 +12,21 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ObjectUploader } from "@/components/ObjectUploader";
-import { Plus, Pencil, Trash2, Image as ImageIcon, X, Box, Upload } from "lucide-react";
+import { Plus, Pencil, Trash2, Image as ImageIcon, X, Box, Upload, Palette } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertProductSchema, type InsertProduct, type Product } from "@shared/schema";
+import { insertProductSchema, type InsertProduct, type Product, type ProductMaterial } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
+
+interface PendingMaterial {
+  tempId: string;
+  name: string;
+  colorHex: string;
+  textureUrl: string;
+  isNew: boolean;
+  id?: number;
+}
 
 export default function AdminProducts() {
   const { data: products, isLoading } = useProducts();
@@ -24,19 +35,21 @@ export default function AdminProducts() {
   const updateMutation = useUpdateProduct();
   const deleteMutation = useDeleteProduct();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  // Helper for array fields (colors, sizes)
   const [colorsInput, setColorsInput] = useState("");
   const [sizesInput, setSizesInput] = useState("");
   
-  // Store object paths during upload process (using ref for immediate access)
   const pendingObjectPathsRef = useRef<Map<string, string>>(new Map());
-  
-  // AR model upload tracking
   const pendingArModelPathRef = useRef<string | null>(null);
+
+  // Material variants state
+  const [pendingMaterials, setPendingMaterials] = useState<PendingMaterial[]>([]);
+  const [deletedMaterialIds, setDeletedMaterialIds] = useState<number[]>([]);
+  const pendingTexturePathsRef = useRef<Map<string, string>>(new Map());
 
   const form = useForm<InsertProduct>({
     resolver: zodResolver(insertProductSchema),
@@ -55,7 +68,6 @@ export default function AdminProducts() {
 
   const onSubmit = async (data: InsertProduct) => {
     try {
-      // Ensure categoryId is not 0
       if (data.categoryId === 0) {
         toast({ 
           title: "Selection Required", 
@@ -65,11 +77,41 @@ export default function AdminProducts() {
         return;
       }
 
+      let savedProduct: Product;
       if (editingProduct) {
-        await updateMutation.mutateAsync({ id: editingProduct.id, ...data });
+        savedProduct = await updateMutation.mutateAsync({ id: editingProduct.id, ...data });
       } else {
-        await createMutation.mutateAsync(data);
+        savedProduct = await createMutation.mutateAsync(data);
       }
+
+      const productId = savedProduct.id;
+
+      // Delete removed materials
+      for (const id of deletedMaterialIds) {
+        await apiRequest("DELETE", `/api/products/materials/${id}`);
+      }
+
+      // Save pending materials
+      for (const mat of pendingMaterials) {
+        if (mat.isNew) {
+          await apiRequest("POST", `/api/products/${productId}/materials`, {
+            name: mat.name,
+            colorHex: mat.colorHex,
+            textureUrl: mat.textureUrl || null,
+            sortOrder: pendingMaterials.indexOf(mat),
+          });
+        } else if (mat.id) {
+          await apiRequest("PUT", `/api/products/materials/${mat.id}`, {
+            name: mat.name,
+            colorHex: mat.colorHex,
+            textureUrl: mat.textureUrl || null,
+            sortOrder: pendingMaterials.indexOf(mat),
+          });
+        }
+      }
+
+      queryClient.invalidateQueries({ queryKey: ["/api/products", productId, "materials"] });
+
       setIsDialogOpen(false);
       resetForm();
     } catch (error) {
@@ -81,6 +123,8 @@ export default function AdminProducts() {
     setEditingProduct(null);
     setColorsInput("");
     setSizesInput("");
+    setPendingMaterials([]);
+    setDeletedMaterialIds([]);
     form.reset({
       name: "",
       description: "",
@@ -94,7 +138,7 @@ export default function AdminProducts() {
     });
   };
 
-  const handleEdit = (product: Product) => {
+  const handleEdit = async (product: Product) => {
     setEditingProduct(product);
     setColorsInput(product.colors?.join(", ") || "");
     setSizesInput(product.sizes?.join(", ") || "");
@@ -109,6 +153,19 @@ export default function AdminProducts() {
       images: product.images,
       isHidden: product.isHidden
     });
+
+    // Load existing materials
+    const res = await fetch(`/api/products/${product.id}/materials`);
+    const existingMaterials: ProductMaterial[] = await res.json();
+    setPendingMaterials(existingMaterials.map((m) => ({
+      tempId: String(m.id),
+      name: m.name,
+      colorHex: m.colorHex,
+      textureUrl: m.textureUrl || "",
+      isNew: false,
+      id: m.id,
+    })));
+    setDeletedMaterialIds([]);
     setIsDialogOpen(true);
   };
 
@@ -121,7 +178,6 @@ export default function AdminProducts() {
   const handleImageUpload = (result: any) => {
     if (result.successful && result.successful.length > 0) {
       const newImages = result.successful.map((f: any) => {
-        // Get the object path from our stored ref using the file ID
         const objectPath = pendingObjectPathsRef.current.get(f.id);
         return objectPath;
       }).filter(Boolean);
@@ -131,7 +187,6 @@ export default function AdminProducts() {
         const updatedImages = [...currentImages, ...newImages];
         form.setValue("images", updatedImages, { shouldValidate: true, shouldDirty: true });
         toast({ title: "Images Uploaded", description: `${newImages.length} image(s) added.` });
-        // Clear the pending paths
         pendingObjectPathsRef.current = new Map();
       }
     }
@@ -156,7 +211,6 @@ export default function AdminProducts() {
     }
   };
 
-  // Process manual inputs for arrays on blur
   const handleArraysBlur = () => {
     if (colorsInput) {
       form.setValue("colors", colorsInput.split(",").map(s => s.trim()).filter(Boolean));
@@ -164,6 +218,29 @@ export default function AdminProducts() {
     if (sizesInput) {
       form.setValue("sizes", sizesInput.split(",").map(s => s.trim()).filter(Boolean));
     }
+  };
+
+  // Material variant helpers
+  const addMaterialRow = () => {
+    setPendingMaterials(prev => [...prev, {
+      tempId: `new-${Date.now()}`,
+      name: "",
+      colorHex: "#888888",
+      textureUrl: "",
+      isNew: true,
+    }]);
+  };
+
+  const removeMaterialRow = (tempId: string) => {
+    const mat = pendingMaterials.find(m => m.tempId === tempId);
+    if (mat && !mat.isNew && mat.id) {
+      setDeletedMaterialIds(prev => [...prev, mat.id!]);
+    }
+    setPendingMaterials(prev => prev.filter(m => m.tempId !== tempId));
+  };
+
+  const updateMaterialField = (tempId: string, field: keyof PendingMaterial, value: string) => {
+    setPendingMaterials(prev => prev.map(m => m.tempId === tempId ? { ...m, [field]: value } : m));
   };
 
   return (
@@ -329,7 +406,6 @@ export default function AdminProducts() {
                         }),
                       });
                       const { uploadURL, objectPath } = await res.json();
-                      // Store the objectPath for this file immediately in ref
                       pendingObjectPathsRef.current.set(file.id, objectPath);
                       return {
                         method: "PUT",
@@ -343,6 +419,140 @@ export default function AdminProducts() {
                       <ImageIcon className="w-6 h-6 text-muted-foreground" />
                     </div>
                   </ObjectUploader>
+                </div>
+              </div>
+
+              {/* Material Variants Section */}
+              <div className="space-y-3 border-t border-border pt-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Palette className="w-4 h-4 text-muted-foreground" />
+                    <Label className="text-base font-semibold">Material Variants</Label>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addMaterialRow}
+                    className="gap-1"
+                    data-testid="button-add-material-variant"
+                  >
+                    <Plus className="w-3 h-3" /> Add Variant
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Variants appear as swatches in the 3D Studio viewer. Provide a PNG texture for texture swapping, or leave blank to apply the color directly.
+                </p>
+
+                {pendingMaterials.length === 0 && (
+                  <p className="text-sm text-muted-foreground italic text-center py-3">
+                    No variants added yet.
+                  </p>
+                )}
+
+                <div className="space-y-3">
+                  {pendingMaterials.map((mat) => (
+                    <div
+                      key={mat.tempId}
+                      className="flex items-start gap-3 p-3 border border-border rounded-md bg-muted/20"
+                      data-testid={`material-row-${mat.tempId}`}
+                    >
+                      {/* Color swatch */}
+                      <div className="flex flex-col items-center gap-1 shrink-0">
+                        <div
+                          className="w-8 h-8 rounded-full border border-border shadow-sm"
+                          style={{ backgroundColor: mat.colorHex }}
+                        />
+                        <input
+                          type="color"
+                          value={mat.colorHex}
+                          onChange={(e) => updateMaterialField(mat.tempId, "colorHex", e.target.value)}
+                          className="w-8 h-5 cursor-pointer rounded border-0 p-0 bg-transparent"
+                          data-testid={`input-material-color-${mat.tempId}`}
+                          title="Pick color"
+                        />
+                      </div>
+
+                      <div className="flex-1 space-y-2 min-w-0">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Variant Name</Label>
+                          <Input
+                            value={mat.name}
+                            onChange={(e) => updateMaterialField(mat.tempId, "name", e.target.value)}
+                            placeholder="e.g. Walnut, Ivory, Ocean Blue"
+                            className="h-8 text-sm"
+                            data-testid={`input-material-name-${mat.tempId}`}
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">PNG Texture (optional)</Label>
+                          {mat.textureUrl ? (
+                            <div className="flex items-center gap-2 p-1.5 bg-muted/50 rounded border border-border">
+                              <img
+                                src={mat.textureUrl}
+                                alt="Texture preview"
+                                className="w-6 h-6 object-cover rounded"
+                              />
+                              <span className="text-xs text-muted-foreground flex-1 truncate">Texture uploaded</span>
+                              <button
+                                type="button"
+                                onClick={() => updateMaterialField(mat.tempId, "textureUrl", "")}
+                                className="text-destructive hover:text-destructive/70"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ) : null}
+                          <ObjectUploader
+                            maxNumberOfFiles={1}
+                            allowedFileTypes={[".png"]}
+                            onGetUploadParameters={async (file) => {
+                              const res = await fetch("/api/uploads/request-url", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  name: file.name,
+                                  size: file.size,
+                                  contentType: file.type,
+                                }),
+                              });
+                              const { uploadURL, objectPath } = await res.json();
+                              pendingTexturePathsRef.current.set(mat.tempId, objectPath);
+                              return {
+                                method: "PUT",
+                                url: uploadURL,
+                                headers: { "Content-Type": file.type },
+                              };
+                            }}
+                            onComplete={(result) => {
+                              if (result.successful && result.successful.length > 0) {
+                                const objectPath = pendingTexturePathsRef.current.get(mat.tempId);
+                                if (objectPath) {
+                                  updateMaterialField(mat.tempId, "textureUrl", objectPath);
+                                  pendingTexturePathsRef.current.delete(mat.tempId);
+                                }
+                              }
+                            }}
+                            buttonClassName="h-7 text-xs px-2"
+                          >
+                            <div className="flex items-center gap-1" data-testid={`button-upload-texture-${mat.tempId}`}>
+                              <Upload className="w-3 h-3" />
+                              {mat.textureUrl ? "Replace" : "Upload PNG"}
+                            </div>
+                          </ObjectUploader>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => removeMaterialRow(mat.tempId)}
+                        className="text-destructive hover:text-destructive/70 mt-1 shrink-0"
+                        data-testid={`button-remove-material-${mat.tempId}`}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
               </div>
 

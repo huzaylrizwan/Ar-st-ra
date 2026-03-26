@@ -1,0 +1,214 @@
+import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { X, Box } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import type { Product, ProductMaterial } from "@shared/schema";
+import type { ModelViewerElement } from "@google/model-viewer";
+import "@google/model-viewer";
+
+interface ARStudioProps {
+  product: Product;
+  onClose: () => void;
+}
+
+export function ARStudio({ product, onClose }: ARStudioProps) {
+  const modelViewerRef = useRef<ModelViewerElement>(null);
+  const [activeMaterialId, setActiveMaterialId] = useState<number | null>(null);
+  const [isApplyingTexture, setIsApplyingTexture] = useState(false);
+
+  const { data: materials } = useQuery<ProductMaterial[]>({
+    queryKey: ["/api/products", product.id, "materials"],
+    queryFn: async () => {
+      const res = await fetch(`/api/products/${product.id}/materials`);
+      if (!res.ok) throw new Error("Failed to fetch materials");
+      return res.json();
+    },
+  });
+
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
+  const applyMaterial = async (material: ProductMaterial) => {
+    if (isApplyingTexture) return;
+    setActiveMaterialId(material.id);
+
+    const mv = modelViewerRef.current;
+    if (!mv) return;
+
+    setIsApplyingTexture(true);
+    try {
+      const model = mv.model;
+      if (!model || !model.materials || model.materials.length === 0) return;
+
+      const mat = model.materials[0];
+      const pbr = mat.pbrMetallicRoughness;
+
+      if (material.textureUrl) {
+        const texture = await mv.createTexture(material.textureUrl);
+        if (texture && pbr.baseColorTexture) {
+          pbr.baseColorTexture.setTexture(texture);
+        }
+      } else {
+        pbr.setBaseColorFactor(material.colorHex);
+      }
+    } catch (err) {
+      console.error("Failed to apply material:", err);
+    } finally {
+      setIsApplyingTexture(false);
+    }
+  };
+
+  const launchAR = () => {
+    const mv = modelViewerRef.current;
+    if (mv) {
+      mv.activateAR();
+    }
+  };
+
+  const hasMaterials = materials && materials.length > 0;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex flex-col"
+      style={{ background: "#f5f5f0" }}
+      data-testid="ar-studio-overlay"
+    >
+      {/* Close button */}
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 z-10 w-10 h-10 rounded-full flex items-center justify-center bg-white/80 backdrop-blur-sm shadow-md hover:bg-white transition-colors"
+        data-testid="button-close-ar-studio"
+        aria-label="Close 3D Studio"
+      >
+        <X className="w-5 h-5 text-gray-700" />
+      </button>
+
+      {/* model-viewer fills the screen */}
+      <model-viewer
+        ref={modelViewerRef}
+        src={product.arLink}
+        alt={`3D model of ${product.name}`}
+        camera-controls
+        ar
+        ar-modes="scene-viewer quick-look"
+        auto-rotate
+        shadow-intensity="1"
+        environment-image="neutral"
+        exposure="1"
+        style={{
+          width: "100%",
+          flex: 1,
+          background: "transparent",
+        }}
+      />
+
+      {/* Material swatches panel — left on desktop, bottom on mobile */}
+      {hasMaterials && (
+        <div
+          className="absolute left-4 top-1/2 -translate-y-1/2 hidden md:flex flex-col gap-2 p-3 rounded-2xl shadow-xl"
+          style={{
+            background: "rgba(255,255,255,0.55)",
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+            border: "1px solid rgba(255,255,255,0.7)",
+          }}
+          data-testid="panel-material-swatches"
+        >
+          <p className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold text-center mb-1">
+            Finish
+          </p>
+          {materials.map((mat) => (
+            <button
+              key={mat.id}
+              onClick={() => applyMaterial(mat)}
+              title={mat.name}
+              data-testid={`swatch-material-${mat.id}`}
+              className={cn(
+                "w-10 h-10 rounded-full border-2 transition-all shadow-sm",
+                activeMaterialId === mat.id
+                  ? "border-gray-800 scale-110"
+                  : "border-white hover:scale-105"
+              )}
+              style={{ backgroundColor: mat.colorHex }}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Mobile material swatches - horizontal strip */}
+      {hasMaterials && (
+        <div
+          className="md:hidden absolute bottom-28 left-0 right-0 flex justify-center px-4"
+          data-testid="panel-material-swatches-mobile"
+        >
+          <div
+            className="flex gap-3 px-4 py-3 rounded-2xl shadow-xl"
+            style={{
+              background: "rgba(255,255,255,0.55)",
+              backdropFilter: "blur(16px)",
+              WebkitBackdropFilter: "blur(16px)",
+              border: "1px solid rgba(255,255,255,0.7)",
+            }}
+          >
+            {materials.map((mat) => (
+              <button
+                key={mat.id}
+                onClick={() => applyMaterial(mat)}
+                title={mat.name}
+                data-testid={`swatch-material-mobile-${mat.id}`}
+                className={cn(
+                  "w-9 h-9 rounded-full border-2 transition-all shadow-sm",
+                  activeMaterialId === mat.id
+                    ? "border-gray-800 scale-110"
+                    : "border-white hover:scale-105"
+                )}
+                style={{ backgroundColor: mat.colorHex }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Bottom info bar */}
+      <div
+        className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-5 py-4 gap-4"
+        style={{
+          background: "rgba(255,255,255,0.6)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
+          borderTop: "1px solid rgba(255,255,255,0.7)",
+        }}
+        data-testid="panel-product-info"
+      >
+        <div className="min-w-0">
+          <p
+            className="font-serif font-semibold text-gray-900 truncate text-base sm:text-lg"
+            data-testid="text-product-name"
+          >
+            {product.name}
+          </p>
+          <p
+            className="text-sm text-gray-600 font-medium"
+            data-testid="text-product-price"
+          >
+            ${Math.round(product.price / 100).toLocaleString()}
+          </p>
+        </div>
+        <Button
+          onClick={launchAR}
+          size="lg"
+          className="shrink-0 gap-2 rounded-full px-6 shadow-lg"
+          data-testid="button-view-in-ar"
+        >
+          <Box className="w-4 h-4" />
+          View in AR
+        </Button>
+      </div>
+    </div>
+  );
+}
