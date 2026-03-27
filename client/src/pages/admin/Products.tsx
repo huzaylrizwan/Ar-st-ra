@@ -17,7 +17,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertProductSchema, type InsertProduct, type Product, type ProductMaterial } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface PendingMaterial {
   tempId: string;
@@ -154,11 +154,12 @@ export default function AdminProducts() {
       isHidden: product.isHidden
     });
 
-    // Load existing materials
+    // Load existing materials using TanStack Query (ensures credentials are sent)
     try {
-      const res = await fetch(`/api/products/${product.id}/materials`);
-      if (!res.ok) throw new Error(`Server returned ${res.status}`);
-      const existingMaterials: ProductMaterial[] = await res.json();
+      const existingMaterials = await queryClient.fetchQuery<ProductMaterial[]>({
+        queryKey: ["/api/products", product.id, "materials"],
+        staleTime: 0,
+      });
       setPendingMaterials(existingMaterials.map((m) => ({
         tempId: String(m.id),
         name: m.name,

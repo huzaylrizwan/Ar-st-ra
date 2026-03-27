@@ -20,7 +20,9 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
   const { data: materials } = useQuery<ProductMaterial[]>({
     queryKey: ["/api/products", product.id, "materials"],
     queryFn: async () => {
-      const res = await fetch(`/api/products/${product.id}/materials`);
+      const res = await fetch(`/api/products/${product.id}/materials`, {
+        credentials: "include",
+      });
       if (!res.ok) throw new Error("Failed to fetch materials");
       return res.json();
     },
@@ -88,7 +90,7 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
         <X className="w-5 h-5 text-gray-700" />
       </button>
 
-      {/* model-viewer wrapper — flex-grow with min-height: 0 so it never overflows */}
+      {/* model-viewer wrapper */}
       <div style={{ flex: 1, minHeight: 0, overflow: "hidden", position: "relative" }}>
         <model-viewer
           ref={modelViewerRef}
@@ -108,21 +110,21 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
           }}
         />
 
-        {/* Material swatches panel — left on desktop */}
+        {/* Floating material swatches — horizontal bar centred at bottom of viewer */}
         {hasMaterials && (
           <div
-            className="absolute left-4 top-1/2 -translate-y-1/2 hidden md:flex flex-col gap-2 p-3 rounded-2xl shadow-xl"
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1 px-4 py-3 rounded-2xl shadow-2xl"
             style={{
-              background: "rgba(255,255,255,0.55)",
-              backdropFilter: "blur(16px)",
-              WebkitBackdropFilter: "blur(16px)",
-              border: "1px solid rgba(255,255,255,0.7)",
+              background: "rgba(255,255,255,0.75)",
+              backdropFilter: "blur(20px)",
+              WebkitBackdropFilter: "blur(20px)",
+              border: "1px solid rgba(255,255,255,0.85)",
             }}
             data-testid="panel-material-swatches"
           >
-            <p className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold text-center mb-1">
+            <span className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mr-2 whitespace-nowrap">
               Finish
-            </p>
+            </span>
             {materials.map((mat) => (
               <button
                 key={mat.id}
@@ -130,10 +132,10 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
                 title={mat.name}
                 data-testid={`swatch-material-${mat.id}`}
                 className={cn(
-                  "w-10 h-10 rounded-full border-2 transition-all shadow-sm",
+                  "w-9 h-9 rounded-full transition-all duration-150 shrink-0",
                   activeMaterialId === mat.id
-                    ? "border-gray-800 scale-110"
-                    : "border-white hover:scale-105"
+                    ? "ring-2 ring-offset-2 ring-gray-800 scale-110 shadow-lg"
+                    : "ring-1 ring-white hover:scale-110 hover:shadow-md shadow-sm"
                 )}
                 style={{ backgroundColor: mat.colorHex }}
               />
@@ -142,41 +144,7 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
         )}
       </div>
 
-      {/* Mobile material swatches - horizontal strip, sits between model and bottom bar */}
-      {hasMaterials && (
-        <div
-          className="md:hidden flex justify-center px-4 py-2"
-          data-testid="panel-material-swatches-mobile"
-        >
-          <div
-            className="flex gap-3 px-4 py-3 rounded-2xl shadow-xl"
-            style={{
-              background: "rgba(255,255,255,0.55)",
-              backdropFilter: "blur(16px)",
-              WebkitBackdropFilter: "blur(16px)",
-              border: "1px solid rgba(255,255,255,0.7)",
-            }}
-          >
-            {materials.map((mat) => (
-              <button
-                key={mat.id}
-                onClick={() => applyMaterial(mat)}
-                title={mat.name}
-                data-testid={`swatch-material-mobile-${mat.id}`}
-                className={cn(
-                  "w-9 h-9 rounded-full border-2 transition-all shadow-sm",
-                  activeMaterialId === mat.id
-                    ? "border-gray-800 scale-110"
-                    : "border-white hover:scale-105"
-                )}
-                style={{ backgroundColor: mat.colorHex }}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Bottom info bar — always rendered in normal flow below the model wrapper */}
+      {/* Bottom info bar */}
       <div
         className="flex items-center justify-between px-5 py-4 gap-4 shrink-0"
         style={{
