@@ -24,6 +24,7 @@ interface PendingMaterial {
   name: string;
   colorHex: string;
   textureUrl: string;
+  variantModelUrl: string;
   isNew: boolean;
   isDefault: boolean;
   id?: number;
@@ -51,6 +52,7 @@ export default function AdminProducts() {
   const [pendingMaterials, setPendingMaterials] = useState<PendingMaterial[]>([]);
   const [deletedMaterialIds, setDeletedMaterialIds] = useState<number[]>([]);
   const pendingTexturePathsRef = useRef<Map<string, string>>(new Map());
+  const pendingVariantModelPathsRef = useRef<Map<string, string>>(new Map());
 
   const form = useForm<InsertProduct>({
     resolver: zodResolver(insertProductSchema),
@@ -99,6 +101,7 @@ export default function AdminProducts() {
             name: mat.name,
             colorHex: mat.colorHex,
             textureUrl: mat.textureUrl || null,
+            variantModelUrl: mat.variantModelUrl || null,
             sortOrder: pendingMaterials.indexOf(mat),
             isDefault: mat.isDefault,
           });
@@ -107,6 +110,7 @@ export default function AdminProducts() {
             name: mat.name,
             colorHex: mat.colorHex,
             textureUrl: mat.textureUrl || null,
+            variantModelUrl: mat.variantModelUrl || null,
             sortOrder: pendingMaterials.indexOf(mat),
             isDefault: mat.isDefault,
           });
@@ -168,6 +172,7 @@ export default function AdminProducts() {
         name: m.name,
         colorHex: m.colorHex,
         textureUrl: m.textureUrl || "",
+        variantModelUrl: m.variantModelUrl || "",
         isNew: false,
         isDefault: m.isDefault,
         id: m.id,
@@ -238,6 +243,7 @@ export default function AdminProducts() {
       name: "",
       colorHex: "#888888",
       textureUrl: "",
+      variantModelUrl: "",
       isNew: true,
       isDefault: false,
     }]);
@@ -566,6 +572,59 @@ export default function AdminProducts() {
                             <div className="flex items-center gap-1" data-testid={`button-upload-texture-${mat.tempId}`}>
                               <Upload className="w-3 h-3" />
                               {mat.textureUrl ? "Replace" : "Upload PNG"}
+                            </div>
+                          </ObjectUploader>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">3D Model GLB (optional)</Label>
+                          {mat.variantModelUrl ? (
+                            <div className="flex items-center gap-2 p-1.5 bg-muted/50 rounded border border-border">
+                              <Box className="w-4 h-4 text-muted-foreground shrink-0" />
+                              <span className="text-xs text-muted-foreground flex-1 truncate">3D model uploaded ✓</span>
+                              <button
+                                type="button"
+                                onClick={() => updateMaterialField(mat.tempId, "variantModelUrl", "")}
+                                className="text-destructive hover:text-destructive/70"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ) : null}
+                          <ObjectUploader
+                            maxNumberOfFiles={1}
+                            allowedFileTypes={[".glb", ".gltf"]}
+                            onGetUploadParameters={async (file) => {
+                              const res = await fetch("/api/uploads/request-url", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  name: file.name,
+                                  size: file.size,
+                                  contentType: file.type || "model/gltf-binary",
+                                }),
+                              });
+                              const { uploadURL, objectPath } = await res.json();
+                              pendingVariantModelPathsRef.current.set(mat.tempId, objectPath);
+                              return {
+                                method: "PUT",
+                                url: uploadURL,
+                                headers: { "Content-Type": file.type || "model/gltf-binary" },
+                              };
+                            }}
+                            onComplete={(result) => {
+                              if (result.successful && result.successful.length > 0) {
+                                const objectPath = pendingVariantModelPathsRef.current.get(mat.tempId);
+                                if (objectPath) {
+                                  updateMaterialField(mat.tempId, "variantModelUrl", objectPath);
+                                  pendingVariantModelPathsRef.current.delete(mat.tempId);
+                                }
+                              }
+                            }}
+                            buttonClassName="h-7 text-xs px-2"
+                          >
+                            <div className="flex items-center gap-1" data-testid={`button-upload-variant-model-${mat.tempId}`}>
+                              <Box className="w-3 h-3" />
+                              {mat.variantModelUrl ? "Replace GLB" : "Upload GLB"}
                             </div>
                           </ObjectUploader>
                         </div>

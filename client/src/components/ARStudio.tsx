@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { X, Box, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, Box, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Product, ProductMaterial } from "@shared/schema";
@@ -13,12 +13,22 @@ interface ARStudioProps {
   onClose: () => void;
 }
 
+function toAbsoluteUrl(path: string): string {
+  if (!path) return path;
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  return `${window.location.origin}${path.startsWith("/") ? "" : "/"}${path}`;
+}
+
 export function ARStudio({ product, onClose }: ARStudioProps) {
   const modelViewerRef = useRef<ModelViewerElement>(null);
   const [activeMaterialId, setActiveMaterialId] = useState<number | null>(null);
   const [isApplyingTexture, setIsApplyingTexture] = useState(false);
+  const [isSwappingModel, setIsSwappingModel] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [modelLoaded, setModelLoaded] = useState(false);
+  const [currentModelSrc, setCurrentModelSrc] = useState<string>(
+    toAbsoluteUrl(product.arLink)
+  );
   const originalMaterialRef = useRef<{
     colorFactor: number[] | null;
     originalTexture: MVTexture | null;
@@ -44,14 +54,13 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
 
   const captureOriginalMaterial = useCallback(() => {
     const mv = modelViewerRef.current;
-    if (!mv || originalMaterialRef.current !== null) return;
+    if (!mv) return;
     const model = mv.model;
     if (!model || !model.materials || model.materials.length === 0) return;
     const mat = model.materials[0];
     const pbr = mat.pbrMetallicRoughness;
     originalMaterialRef.current = {
       colorFactor: pbr.baseColorFactor ? [...pbr.baseColorFactor] : null,
-      // Store the texture object itself so we can restore it
       originalTexture: pbr.baseColorTexture ? pbr.baseColorTexture.texture : null,
     };
   }, []);
@@ -66,49 +75,72 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
     ];
   };
 
+  const applyTextureOrColor = useCallback(async (material: ProductMaterial) => {
+    const mv = modelViewerRef.current;
+    if (!mv) return;
+    const model = mv.model;
+    if (!model || !model.materials || model.materials.length === 0) return;
+    const mat = model.materials[0];
+    const pbr = mat.pbrMetallicRoughness;
+
+    if (material.textureUrl) {
+      if (pbr.baseColorTexture) {
+        const texture = await mv.createTexture(toAbsoluteUrl(material.textureUrl));
+        if (texture) {
+          pbr.baseColorTexture.setTexture(texture);
+          texture.sampler.setScale({ u: 8, v: 8 });
+          pbr.setBaseColorFactor([1, 1, 1, 1]);
+        }
+      } else {
+        pbr.setBaseColorFactor(hexToRgba(material.colorHex));
+      }
+    } else {
+      if (pbr.baseColorTexture) {
+        pbr.baseColorTexture.setTexture(null);
+      }
+      pbr.setBaseColorFactor(hexToRgba(material.colorHex));
+    }
+  }, []);
+
   const applyMaterialById = useCallback(async (material: ProductMaterial) => {
-    if (isApplyingTexture) return;
+    if (isApplyingTexture || isSwappingModel) return;
     setActiveMaterialId(material.id);
+
+    if (material.variantModelUrl) {
+      const newSrc = toAbsoluteUrl(material.variantModelUrl);
+      if (newSrc !== currentModelSrc) {
+        setIsSwappingModel(true);
+        setModelLoaded(false);
+        originalMaterialRef.current = null;
+        setCurrentModelSrc(newSrc);
+      }
+      return;
+    }
+
     const mv = modelViewerRef.current;
     if (!mv) return;
     setIsApplyingTexture(true);
     try {
-      const model = mv.model;
-      if (!model || !model.materials || model.materials.length === 0) return;
-      const mat = model.materials[0];
-      const pbr = mat.pbrMetallicRoughness;
-
-      if (material.textureUrl) {
-        if (pbr.baseColorTexture) {
-          // Model has a texture slot — create and swap in the new texture
-          const texture = await mv.createTexture(material.textureUrl);
-          if (texture) {
-            pbr.baseColorTexture.setTexture(texture);
-            // Apply UV tiling so PNG covers the model and doesn't look flat
-            texture.sampler.setScale({ u: 2, v: 2 });
-            // Reset color factor to white so texture shows at full brightness
-            pbr.setBaseColorFactor([1, 1, 1, 1]);
-          }
-        } else {
-          // Model has no texture slot — fall back to colorHex tint
-          pbr.setBaseColorFactor(hexToRgba(material.colorHex));
-        }
-      } else {
-        // Color-only: clear any previously-applied texture and apply flat color
-        if (pbr.baseColorTexture) {
-          pbr.baseColorTexture.setTexture(null);
-        }
-        pbr.setBaseColorFactor(hexToRgba(material.colorHex));
-      }
+      await applyTextureOrColor(material);
     } catch (err) {
       console.error("Failed to apply material:", err);
     } finally {
       setIsApplyingTexture(false);
     }
-  }, [isApplyingTexture]);
+  }, [isApplyingTexture, isSwappingModel, currentModelSrc, applyTextureOrColor]);
 
   const resetToDefault = useCallback(async () => {
     setActiveMaterialId(null);
+
+    const baseSrc = toAbsoluteUrl(product.arLink);
+    if (currentModelSrc !== baseSrc) {
+      setIsSwappingModel(true);
+      setModelLoaded(false);
+      originalMaterialRef.current = null;
+      setCurrentModelSrc(baseSrc);
+      return;
+    }
+
     const mv = modelViewerRef.current;
     if (!mv) return;
     const orig = originalMaterialRef.current;
@@ -118,55 +150,90 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
     const mat = model.materials[0];
     const pbr = mat.pbrMetallicRoughness;
 
-    // Restore original color factor
     if (orig.colorFactor) {
       pbr.setBaseColorFactor(orig.colorFactor as [number, number, number, number]);
     }
 
-    // Restore original texture state
     if (pbr.baseColorTexture) {
       if (orig.originalTexture) {
-        // Original had a texture — restore it and reset UV tiling
         pbr.baseColorTexture.setTexture(orig.originalTexture);
         orig.originalTexture.sampler.setScale(null);
       } else {
-        // Original had no texture — clear any applied texture
         pbr.baseColorTexture.setTexture(null);
       }
     }
-  }, []);
+  }, [currentModelSrc, product.arLink]);
 
   const materialsRef = useRef(materials);
   materialsRef.current = materials;
 
-  // Attach native load event listener to model-viewer
+  const activeMaterialIdRef = useRef(activeMaterialId);
+  activeMaterialIdRef.current = activeMaterialId;
+
   useEffect(() => {
     const mv = modelViewerRef.current;
     if (!mv) return;
 
-    const handleLoad = () => {
+    const handleLoad = async () => {
       setModelLoaded(true);
+      setIsSwappingModel(false);
       captureOriginalMaterial();
-      // Auto-apply default material
+
       const mats = materialsRef.current;
+      const currentActiveId = activeMaterialIdRef.current;
+
+      if (currentActiveId !== null && mats) {
+        const activeMat = mats.find(m => m.id === currentActiveId);
+        if (activeMat && !activeMat.variantModelUrl) {
+          try {
+            await applyTextureOrColor(activeMat);
+          } catch (err) {
+            console.error("Failed to re-apply material after model swap:", err);
+          }
+        }
+        return;
+      }
+
       if (mats) {
         const defaultMat = mats.find(m => m.isDefault);
         if (defaultMat) {
-          applyMaterialById(defaultMat);
+          if (defaultMat.variantModelUrl) {
+            setActiveMaterialId(defaultMat.id);
+          } else {
+            try {
+              setActiveMaterialId(defaultMat.id);
+              await applyTextureOrColor(defaultMat);
+            } catch (err) {
+              console.error("Failed to apply default material:", err);
+            }
+          }
         }
       }
     };
 
     mv.addEventListener("load", handleLoad);
     return () => mv.removeEventListener("load", handleLoad);
-  }, [captureOriginalMaterial]);
+  }, [captureOriginalMaterial, applyTextureOrColor]);
 
-  // When materials load after model already loaded, auto-apply default
   useEffect(() => {
-    if (modelLoaded && materials) {
+    if (modelLoaded && materials && activeMaterialId === null) {
       const defaultMat = materials.find(m => m.isDefault);
-      if (defaultMat && activeMaterialId === null) {
-        applyMaterialById(defaultMat);
+      if (defaultMat) {
+        if (defaultMat.variantModelUrl) {
+          const newSrc = toAbsoluteUrl(defaultMat.variantModelUrl);
+          if (newSrc !== currentModelSrc) {
+            setActiveMaterialId(defaultMat.id);
+            setIsSwappingModel(true);
+            setModelLoaded(false);
+            originalMaterialRef.current = null;
+            setCurrentModelSrc(newSrc);
+          } else {
+            setActiveMaterialId(defaultMat.id);
+          }
+        } else {
+          setActiveMaterialId(defaultMat.id);
+          applyTextureOrColor(defaultMat).catch(console.error);
+        }
       }
     }
   }, [materials, modelLoaded]);
@@ -196,11 +263,11 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
         <X className="w-5 h-5 text-gray-700" />
       </button>
 
-      {/* model-viewer wrapper — takes all space, never shrinks */}
+      {/* model-viewer wrapper */}
       <div style={{ flex: 1, minHeight: 0, overflow: "hidden", position: "relative" }}>
         <model-viewer
           ref={modelViewerRef}
-          src={product.arLink}
+          src={currentModelSrc}
           alt={`3D model of ${product.name}`}
           camera-controls
           ar
@@ -217,10 +284,20 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
           }}
         />
 
-        {/* Sliding sidebar — overlays the model */}
+        {/* Model swap loading overlay */}
+        {isSwappingModel && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm z-10 pointer-events-none">
+            <div className="flex flex-col items-center gap-2">
+              <Loader2 className="w-8 h-8 text-white animate-spin" />
+              <span className="text-white/90 text-sm font-medium">Loading variant…</span>
+            </div>
+          </div>
+        )}
+
+        {/* Sliding sidebar */}
         {hasMaterials && (
           <>
-            {/* Toggle button — always visible at right edge */}
+            {/* Toggle button */}
             <button
               onClick={() => setSidebarOpen(prev => !prev)}
               className="absolute top-1/2 -translate-y-1/2 z-10 w-10 h-14 flex items-center justify-center rounded-l-xl shadow-lg transition-all duration-300"
@@ -283,16 +360,22 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
                     key={mat.id}
                     onClick={() => applyMaterialById(mat)}
                     data-testid={`button-material-card-${mat.id}`}
+                    disabled={isApplyingTexture || isSwappingModel}
                     className={cn(
                       "w-full rounded-xl p-2 flex flex-col items-center gap-1.5 transition-all duration-150 border",
                       activeMaterialId === mat.id
                         ? "border-white/60 bg-white/15"
-                        : "border-transparent bg-white/5 hover:bg-white/10"
+                        : "border-transparent bg-white/5 hover:bg-white/10",
+                      (isApplyingTexture || isSwappingModel) && "opacity-60 cursor-not-allowed"
                     )}
                   >
-                    {mat.textureUrl ? (
+                    {mat.variantModelUrl ? (
+                      <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-white/20 to-white/5 border border-white/20 flex items-center justify-center">
+                        <Box className="w-5 h-5 text-white/70" />
+                      </div>
+                    ) : mat.textureUrl ? (
                       <img
-                        src={mat.textureUrl}
+                        src={toAbsoluteUrl(mat.textureUrl)}
                         alt={mat.name}
                         className="w-12 h-12 rounded-lg object-cover border border-white/20"
                       />
@@ -340,13 +423,13 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
         </div>
         <Button
           onClick={launchAR}
-          disabled={!modelLoaded}
+          disabled={!modelLoaded || isSwappingModel}
           size="lg"
           className="shrink-0 gap-2 rounded-full px-6 shadow-lg"
           data-testid="button-view-in-ar"
         >
           <Box className="w-4 h-4" />
-          {modelLoaded ? "View in AR" : "Loading…"}
+          {modelLoaded && !isSwappingModel ? "View in AR" : "Loading…"}
         </Button>
       </div>
     </div>

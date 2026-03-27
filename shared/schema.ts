@@ -80,6 +80,7 @@ export const productMaterials = pgTable("product_materials", {
   name: text("name").notNull(),
   colorHex: text("color_hex").notNull(),
   textureUrl: text("texture_url"),
+  variantModelUrl: text("variant_model_url"),
   sortOrder: integer("sort_order").default(0).notNull(),
   isDefault: boolean("is_default").default(false).notNull(),
 });
