@@ -256,11 +256,38 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createProductMaterial(material: InsertProductMaterial): Promise<ProductMaterial> {
+    // If this material is the new default, clear any existing defaults for the product
+    if (material.isDefault) {
+      await db
+        .update(productMaterials)
+        .set({ isDefault: false })
+        .where(eq(productMaterials.productId, material.productId));
+    }
     const [newMaterial] = await db.insert(productMaterials).values(material).returning();
     return newMaterial;
   }
 
   async updateProductMaterial(id: number, updates: Partial<InsertProductMaterial>): Promise<ProductMaterial> {
+    // If marking as default, clear existing defaults for this product first
+    if (updates.isDefault && updates.productId) {
+      await db
+        .update(productMaterials)
+        .set({ isDefault: false })
+        .where(eq(productMaterials.productId, updates.productId));
+    } else if (updates.isDefault) {
+      // productId not in updates — look it up from existing record
+      const existing = await db
+        .select({ productId: productMaterials.productId })
+        .from(productMaterials)
+        .where(eq(productMaterials.id, id))
+        .limit(1);
+      if (existing.length > 0) {
+        await db
+          .update(productMaterials)
+          .set({ isDefault: false })
+          .where(eq(productMaterials.productId, existing[0].productId));
+      }
+    }
     const [material] = await db
       .update(productMaterials)
       .set(updates)

@@ -25,6 +25,7 @@ interface PendingMaterial {
   colorHex: string;
   textureUrl: string;
   isNew: boolean;
+  isDefault: boolean;
   id?: number;
 }
 
@@ -99,6 +100,7 @@ export default function AdminProducts() {
             colorHex: mat.colorHex,
             textureUrl: mat.textureUrl || null,
             sortOrder: pendingMaterials.indexOf(mat),
+            isDefault: mat.isDefault,
           });
         } else if (mat.id) {
           await apiRequest("PUT", `/api/products/materials/${mat.id}`, {
@@ -106,6 +108,7 @@ export default function AdminProducts() {
             colorHex: mat.colorHex,
             textureUrl: mat.textureUrl || null,
             sortOrder: pendingMaterials.indexOf(mat),
+            isDefault: mat.isDefault,
           });
         }
       }
@@ -166,6 +169,7 @@ export default function AdminProducts() {
         colorHex: m.colorHex,
         textureUrl: m.textureUrl || "",
         isNew: false,
+        isDefault: m.isDefault,
         id: m.id,
       })));
     } catch (err) {
@@ -235,7 +239,12 @@ export default function AdminProducts() {
       colorHex: "#888888",
       textureUrl: "",
       isNew: true,
+      isDefault: false,
     }]);
+  };
+
+  const setMaterialDefault = (tempId: string) => {
+    setPendingMaterials(prev => prev.map(m => ({ ...m, isDefault: m.tempId === tempId })));
   };
 
   const removeMaterialRow = (tempId: string) => {
@@ -464,6 +473,18 @@ export default function AdminProducts() {
                       className="flex items-start gap-3 p-3 border border-border rounded-md bg-muted/20"
                       data-testid={`material-row-${mat.tempId}`}
                     >
+                      {/* Default radio */}
+                      <div className="flex flex-col items-center justify-start gap-1 pt-1 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => setMaterialDefault(mat.tempId)}
+                          title={mat.isDefault ? "Default material" : "Set as default"}
+                          data-testid={`radio-material-default-${mat.tempId}`}
+                          className={`w-4 h-4 rounded-full border-2 transition-colors ${mat.isDefault ? "border-primary bg-primary" : "border-muted-foreground bg-transparent hover:border-primary"}`}
+                        />
+                        <span className="text-[9px] text-muted-foreground leading-none">Default</span>
+                      </div>
+
                       {/* Color swatch */}
                       <div className="flex flex-col items-center gap-1 shrink-0">
                         <div
