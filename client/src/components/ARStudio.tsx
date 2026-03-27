@@ -29,6 +29,13 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
   const [currentModelSrc, setCurrentModelSrc] = useState<string>(
     toAbsoluteUrl(product.arLink)
   );
+  const currentModelSrcRef = useRef<string>(toAbsoluteUrl(product.arLink));
+
+  const updateModelSrc = (newSrc: string) => {
+    currentModelSrcRef.current = newSrc;
+    setCurrentModelSrc(newSrc);
+  };
+
   const originalMaterialRef = useRef<{
     colorFactor: number[] | null;
     originalTexture: MVTexture | null;
@@ -108,11 +115,11 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
 
     if (material.variantModelUrl) {
       const newSrc = toAbsoluteUrl(material.variantModelUrl);
-      if (newSrc !== currentModelSrc) {
+      if (newSrc !== currentModelSrcRef.current) {
         setIsSwappingModel(true);
         setModelLoaded(false);
         originalMaterialRef.current = null;
-        setCurrentModelSrc(newSrc);
+        updateModelSrc(newSrc);
       }
       return;
     }
@@ -133,11 +140,11 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
     setActiveMaterialId(null);
 
     const baseSrc = toAbsoluteUrl(product.arLink);
-    if (currentModelSrc !== baseSrc) {
+    if (currentModelSrcRef.current !== baseSrc) {
       setIsSwappingModel(true);
       setModelLoaded(false);
       originalMaterialRef.current = null;
-      setCurrentModelSrc(baseSrc);
+      updateModelSrc(baseSrc);
       return;
     }
 
@@ -198,7 +205,14 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
         const defaultMat = mats.find(m => m.isDefault);
         if (defaultMat) {
           if (defaultMat.variantModelUrl) {
+            const newSrc = toAbsoluteUrl(defaultMat.variantModelUrl);
             setActiveMaterialId(defaultMat.id);
+            if (newSrc !== currentModelSrcRef.current) {
+              setIsSwappingModel(true);
+              setModelLoaded(false);
+              originalMaterialRef.current = null;
+              updateModelSrc(newSrc);
+            }
           } else {
             try {
               setActiveMaterialId(defaultMat.id);
@@ -221,12 +235,12 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
       if (defaultMat) {
         if (defaultMat.variantModelUrl) {
           const newSrc = toAbsoluteUrl(defaultMat.variantModelUrl);
-          if (newSrc !== currentModelSrc) {
+          if (newSrc !== currentModelSrcRef.current) {
             setActiveMaterialId(defaultMat.id);
             setIsSwappingModel(true);
             setModelLoaded(false);
             originalMaterialRef.current = null;
-            setCurrentModelSrc(newSrc);
+            updateModelSrc(newSrc);
           } else {
             setActiveMaterialId(defaultMat.id);
           }
