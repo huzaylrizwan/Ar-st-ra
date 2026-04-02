@@ -5,7 +5,7 @@ import { api } from "@shared/routes";
 import { z } from "zod";
 import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
-import { insertProductMaterialSchema } from "@shared/schema";
+import { insertProductMaterialSchema, insertProductModelSchema, insertProductMeasurementSchema } from "@shared/schema";
 
 // Seed function
 async function seedDatabase() {
@@ -340,6 +340,64 @@ export async function registerRoutes(
   app.delete("/api/products/materials/:id", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     await storage.deleteProductMaterial(Number(req.params.id));
+    res.sendStatus(204);
+  });
+
+  // Product Models
+  app.get("/api/products/:id/models", async (req, res) => {
+    const models = await storage.getProductModels(Number(req.params.id));
+    res.json(models);
+  });
+
+  app.post("/api/products/:id/models", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const input = insertProductModelSchema.parse({
+      ...req.body,
+      productId: Number(req.params.id),
+    });
+    const model = await storage.createProductModel(input);
+    res.status(201).json(model);
+  });
+
+  app.put("/api/products/models/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const input = insertProductModelSchema.partial().parse(req.body);
+    const model = await storage.updateProductModel(Number(req.params.id), input);
+    res.json(model);
+  });
+
+  app.delete("/api/products/models/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    await storage.deleteProductModel(Number(req.params.id));
+    res.sendStatus(204);
+  });
+
+  // Product Measurements
+  app.get("/api/products/:id/measurements", async (req, res) => {
+    const measurements = await storage.getProductMeasurements(Number(req.params.id));
+    res.json(measurements);
+  });
+
+  app.post("/api/products/:id/measurements", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const input = insertProductMeasurementSchema.parse({
+      ...req.body,
+      productId: Number(req.params.id),
+    });
+    const measurement = await storage.createProductMeasurement(input);
+    res.status(201).json(measurement);
+  });
+
+  app.put("/api/products/measurements/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const input = insertProductMeasurementSchema.partial().parse(req.body);
+    const measurement = await storage.updateProductMeasurement(Number(req.params.id), input);
+    res.json(measurement);
+  });
+
+  app.delete("/api/products/measurements/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    await storage.deleteProductMeasurement(Number(req.params.id));
     res.sendStatus(204);
   });
 

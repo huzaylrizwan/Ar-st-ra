@@ -6,6 +6,8 @@ import {
   faqItems,
   heroImages,
   productMaterials,
+  productModels,
+  productMeasurements,
   type Category,
   type InsertCategory,
   type Product,
@@ -20,6 +22,10 @@ import {
   type InsertHeroImage,
   type ProductMaterial,
   type InsertProductMaterial,
+  type ProductModel,
+  type InsertProductModel,
+  type ProductMeasurement,
+  type InsertProductMeasurement,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, asc } from "drizzle-orm";
@@ -71,6 +77,18 @@ export interface IStorage {
   createProductMaterial(material: InsertProductMaterial): Promise<ProductMaterial>;
   updateProductMaterial(id: number, material: Partial<InsertProductMaterial>): Promise<ProductMaterial>;
   deleteProductMaterial(id: number): Promise<void>;
+
+  // Product Models
+  getProductModels(productId: number): Promise<ProductModel[]>;
+  createProductModel(model: InsertProductModel): Promise<ProductModel>;
+  updateProductModel(id: number, model: Partial<InsertProductModel>): Promise<ProductModel>;
+  deleteProductModel(id: number): Promise<void>;
+
+  // Product Measurements
+  getProductMeasurements(productId: number): Promise<ProductMeasurement[]>;
+  createProductMeasurement(measurement: InsertProductMeasurement): Promise<ProductMeasurement>;
+  updateProductMeasurement(id: number, measurement: Partial<InsertProductMeasurement>): Promise<ProductMeasurement>;
+  deleteProductMeasurement(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -298,6 +316,58 @@ export class DatabaseStorage implements IStorage {
 
   async deleteProductMaterial(id: number): Promise<void> {
     await db.delete(productMaterials).where(eq(productMaterials.id, id));
+  }
+
+  // Product Models
+  async getProductModels(productId: number): Promise<ProductModel[]> {
+    return await db
+      .select()
+      .from(productModels)
+      .where(eq(productModels.productId, productId))
+      .orderBy(asc(productModels.sortOrder));
+  }
+
+  async createProductModel(model: InsertProductModel): Promise<ProductModel> {
+    if (model.isDefault) {
+      await db.update(productModels).set({ isDefault: false }).where(eq(productModels.productId, model.productId));
+    }
+    const [newModel] = await db.insert(productModels).values(model).returning();
+    return newModel;
+  }
+
+  async updateProductModel(id: number, updates: Partial<InsertProductModel>): Promise<ProductModel> {
+    if (updates.isDefault && updates.productId) {
+      await db.update(productModels).set({ isDefault: false }).where(eq(productModels.productId, updates.productId));
+    }
+    const [model] = await db.update(productModels).set(updates).where(eq(productModels.id, id)).returning();
+    return model;
+  }
+
+  async deleteProductModel(id: number): Promise<void> {
+    await db.delete(productModels).where(eq(productModels.id, id));
+  }
+
+  // Product Measurements
+  async getProductMeasurements(productId: number): Promise<ProductMeasurement[]> {
+    return await db
+      .select()
+      .from(productMeasurements)
+      .where(eq(productMeasurements.productId, productId))
+      .orderBy(asc(productMeasurements.sortOrder));
+  }
+
+  async createProductMeasurement(measurement: InsertProductMeasurement): Promise<ProductMeasurement> {
+    const [newMeasurement] = await db.insert(productMeasurements).values(measurement).returning();
+    return newMeasurement;
+  }
+
+  async updateProductMeasurement(id: number, updates: Partial<InsertProductMeasurement>): Promise<ProductMeasurement> {
+    const [measurement] = await db.update(productMeasurements).set(updates).where(eq(productMeasurements.id, id)).returning();
+    return measurement;
+  }
+
+  async deleteProductMeasurement(id: number): Promise<void> {
+    await db.delete(productMeasurements).where(eq(productMeasurements.id, id));
   }
 }
 
