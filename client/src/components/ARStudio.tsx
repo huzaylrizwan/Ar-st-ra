@@ -59,7 +59,7 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
   const getDefaultModelSrc = useCallback((models: ProductModel[] | undefined): string => {
     if (models && models.length > 0) {
       const defaultModel = models.find(m => m.isDefault) ?? models[0];
-      return toAbsoluteUrl(defaultModel.glbUrl);
+      return toAbsoluteUrl(defaultModel.modelUrl);
     }
     return toAbsoluteUrl(product.arLink);
   }, [product.arLink]);
@@ -96,7 +96,7 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
 
     if (productModels.length > 0) {
       const defaultModel = productModels.find(m => m.isDefault) ?? productModels[0];
-      const newSrc = toAbsoluteUrl(defaultModel.glbUrl);
+      const newSrc = toAbsoluteUrl(defaultModel.modelUrl);
       setActiveModelId(defaultModel.id);
       if (newSrc !== currentModelSrcRef.current) {
         setIsSwappingModel(true);
@@ -253,7 +253,7 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
     if (isSwappingModel) return;
     setActiveModelId(modelConfig.id);
     setActiveMaterialId(null);
-    const newSrc = toAbsoluteUrl(modelConfig.glbUrl);
+    const newSrc = toAbsoluteUrl(modelConfig.modelUrl);
     if (newSrc !== currentModelSrcRef.current) {
       setIsSwappingModel(true);
       setModelLoaded(false);
