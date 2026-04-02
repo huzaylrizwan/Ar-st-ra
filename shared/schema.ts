@@ -1,5 +1,5 @@
 export * from "./models/auth";
-import { pgTable, text, serial, integer, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -105,6 +105,22 @@ export const productMeasurements = pgTable("product_measurements", {
   sortOrder: integer("sort_order").default(0).notNull(),
 });
 
+// Supervisors table
+export const supervisors = pgTable("supervisors", {
+  id: serial("id").primaryKey(),
+  email: text("email").notNull().unique(),
+  name: text("name"),
+  addedAt: timestamp("added_at").defaultNow().notNull(),
+});
+
+// Page views for live visitor tracking
+export const pageViews = pgTable("page_views", {
+  id: serial("id").primaryKey(),
+  sessionId: text("session_id").notNull(),
+  path: text("path").notNull(),
+  viewedAt: timestamp("viewed_at").defaultNow().notNull(),
+});
+
 // Schemas
 export const insertCategorySchema = createInsertSchema(categories).omit({ id: true });
 export const insertProductSchema = createInsertSchema(products).omit({ id: true });
@@ -115,6 +131,8 @@ export const insertHeroImageSchema = createInsertSchema(heroImages).omit({ id: t
 export const insertProductMaterialSchema = createInsertSchema(productMaterials).omit({ id: true });
 export const insertProductModelSchema = createInsertSchema(productModels).omit({ id: true });
 export const insertProductMeasurementSchema = createInsertSchema(productMeasurements).omit({ id: true });
+export const insertSupervisorSchema = createInsertSchema(supervisors).omit({ id: true, addedAt: true });
+export const insertPageViewSchema = createInsertSchema(pageViews).omit({ id: true, viewedAt: true });
 
 // Types
 export type Category = typeof categories.$inferSelect;
@@ -135,3 +153,7 @@ export type InsertHeroImage = z.infer<typeof insertHeroImageSchema>;
 export type InsertProductMaterial = z.infer<typeof insertProductMaterialSchema>;
 export type InsertProductModel = z.infer<typeof insertProductModelSchema>;
 export type InsertProductMeasurement = z.infer<typeof insertProductMeasurementSchema>;
+export type Supervisor = typeof supervisors.$inferSelect;
+export type InsertSupervisor = z.infer<typeof insertSupervisorSchema>;
+export type PageView = typeof pageViews.$inferSelect;
+export type InsertPageView = z.infer<typeof insertPageViewSchema>;

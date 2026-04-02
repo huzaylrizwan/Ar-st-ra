@@ -62,7 +62,16 @@ Preferred communication style: Simple, everyday language.
 - FAQ management (accordion display on /faq page)
 - Contact settings (Instagram, Facebook, WhatsApp, address, Google Maps embed)
 - Homepage section visibility toggles (banner, collections, new arrivals, philosophy, AR section)
+- **Supervisor Management**: Add/remove supervisor emails that grant access to the supervisor portal
 - Dashboard accessible at `/admin/*` routes
+
+### Supervisor Portal (`/supervisor/*`)
+- Accessible to users whose email is in the `supervisors` table (managed by admin)
+- Authentication guard: redirects unauthenticated users to OIDC login, shows "Access Denied" for non-supervisors
+- **Dashboard** (`/supervisor`): Shows live visitor counter (distinct sessionIds in last 10 min, polling every 15s)
+- **Contact Info** (`/supervisor/contact`): Edit WhatsApp, Instagram, Facebook URL, address, and Google Maps embed URL
+- **Products** (`/supervisor/products`): Add/edit products (name, description, price, category, images, AR link)
+- No access to theme settings, categories, banners, FAQs, or supervisor management
 
 ### 3D Studio Viewer
 - Clicking "View in Reality" opens a full-screen 3D Studio overlay (`ARStudio` component)

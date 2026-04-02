@@ -102,8 +102,27 @@ export async function setupAuth(app: Express) {
   passport.serializeUser((user: Express.User, cb) => cb(null, user));
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
+  // Validate that a redirect path is a safe internal relative path (prevents open-redirect attacks)
+  function isSafeInternalPath(path: string): boolean {
+    // Must start with a single slash (not // which could be protocol-relative)
+    if (!path.startsWith("/") || path.startsWith("//")) return false;
+    // Must not contain a protocol (e.g. http://, https://, javascript:)
+    if (/^[a-zA-Z][a-zA-Z0-9+\-.]*:/.test(path)) return false;
+    // Only allow /supervisor* paths for this feature
+    if (!path.startsWith("/supervisor")) return false;
+    return true;
+  }
+
   app.get("/api/login", (req, res, next) => {
     ensureStrategy(req.hostname);
+    // Store the redirect path in the session so the callback can return to it.
+    // Only allow safe internal /supervisor paths to prevent open-redirect attacks.
+    if (req.query.redirect && typeof req.query.redirect === "string") {
+      const redirectPath = req.query.redirect;
+      if (isSafeInternalPath(redirectPath)) {
+        (req.session as any).returnTo = redirectPath;
+      }
+    }
     passport.authenticate(`replitauth:${req.hostname}`, {
       prompt: "login consent",
       scope: ["openid", "email", "profile", "offline_access"],

@@ -5,7 +5,8 @@ import { api } from "@shared/routes";
 import { z } from "zod";
 import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
-import { insertProductMaterialSchema, insertProductModelSchema, insertProductMeasurementSchema } from "@shared/schema";
+import { insertProductMaterialSchema, insertProductModelSchema, insertProductMeasurementSchema, insertSupervisorSchema } from "@shared/schema";
+import type { Request, Response, NextFunction } from "express";
 
 // Seed function
 async function seedDatabase() {
@@ -120,6 +121,17 @@ async function seedDatabase() {
       await storage.createFaqItem(faq);
     }
   }
+}
+
+// Supervisor middleware
+async function requireSupervisor(req: Request, res: Response, next: NextFunction) {
+  if (!req.isAuthenticated()) return res.sendStatus(403);
+  const user = req.user as any;
+  const email = user?.claims?.email || user?.email;
+  if (!email) return res.sendStatus(403);
+  const supervisor = await storage.getSupervisorByEmail(email);
+  if (!supervisor) return res.sendStatus(403);
+  next();
 }
 
 export async function registerRoutes(
@@ -399,6 +411,108 @@ export async function registerRoutes(
     if (!req.isAuthenticated()) return res.sendStatus(401);
     await storage.deleteProductMeasurement(Number(req.params.id));
     res.sendStatus(204);
+  });
+
+  // Supervisor management (admin only)
+  app.get("/api/supervisors", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const supervisorList = await storage.getSupervisors();
+    res.json(supervisorList);
+  });
+
+  app.post("/api/supervisors", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const input = insertSupervisorSchema.parse(req.body);
+    const supervisor = await storage.createSupervisor(input);
+    res.status(201).json(supervisor);
+  });
+
+  app.delete("/api/supervisors/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    await storage.deleteSupervisor(Number(req.params.id));
+    res.sendStatus(204);
+  });
+
+  // Supervisor portal routes
+  app.get("/api/supervisor/contact", requireSupervisor, async (req, res) => {
+    const settings = await storage.getThemeSettings();
+    res.json(settings || {});
+  });
+
+  app.put("/api/supervisor/contact", requireSupervisor, async (req, res) => {
+    const contactSchema = z.object({
+      whatsappNumber: z.string().optional().nullable(),
+      instagramUrl: z.string().optional().nullable(),
+      facebookUrl: z.string().optional().nullable(),
+      address: z.string().optional().nullable(),
+      mapEmbedUrl: z.string().optional().nullable(),
+    });
+    const input = contactSchema.parse(req.body);
+    const settings = await storage.updateThemeSettings(input);
+    res.json(settings);
+  });
+
+  app.get("/api/supervisor/products", requireSupervisor, async (req, res) => {
+    const productList = await storage.getProducts();
+    res.json(productList);
+  });
+
+  app.post("/api/supervisor/products", requireSupervisor, async (req, res) => {
+    const input = z.object({
+      name: z.string(),
+      description: z.string(),
+      price: z.number(),
+      categoryId: z.number(),
+      arLink: z.string().default(""),
+      colors: z.array(z.string()).default([]),
+      sizes: z.array(z.string()).default([]),
+      images: z.array(z.string()).default([]),
+      isHidden: z.boolean().default(false),
+    }).parse(req.body);
+    const product = await storage.createProduct(input);
+    res.status(201).json(product);
+  });
+
+  app.put("/api/supervisor/products/:id", requireSupervisor, async (req, res) => {
+    const input = z.object({
+      name: z.string().optional(),
+      description: z.string().optional(),
+      price: z.number().optional(),
+      categoryId: z.number().optional(),
+      arLink: z.string().optional(),
+      colors: z.array(z.string()).optional(),
+      sizes: z.array(z.string()).optional(),
+      images: z.array(z.string()).optional(),
+      isHidden: z.boolean().optional(),
+    }).parse(req.body);
+    const product = await storage.updateProduct(Number(req.params.id), input);
+    res.json(product);
+  });
+
+  // Page view tracking (public)
+  app.post("/api/page-view", async (req, res) => {
+    const input = z.object({
+      sessionId: z.string(),
+      path: z.string(),
+    }).parse(req.body);
+    await storage.recordPageView(input);
+    res.sendStatus(204);
+  });
+
+  // Live visitor analytics (supervisor)
+  app.get("/api/analytics/live-visitors", requireSupervisor, async (req, res) => {
+    const count = await storage.getLiveVisitorCount();
+    res.json({ count });
+  });
+
+  // Check if current user is a supervisor (for frontend auth guard)
+  app.get("/api/supervisor/me", async (req, res) => {
+    if (!req.isAuthenticated()) return res.json({ isSupervisor: false });
+    const user = req.user as any;
+    const email = user?.claims?.email || user?.email;
+    if (!email) return res.json({ isSupervisor: false });
+    const supervisor = await storage.getSupervisorByEmail(email);
+    res.json({ isSupervisor: !!supervisor });
   });
 
   // Run seed

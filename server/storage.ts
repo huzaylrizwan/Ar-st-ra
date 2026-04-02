@@ -8,6 +8,8 @@ import {
   productMaterials,
   productModels,
   productMeasurements,
+  supervisors,
+  pageViews,
   type Category,
   type InsertCategory,
   type Product,
@@ -26,9 +28,13 @@ import {
   type InsertProductModel,
   type ProductMeasurement,
   type InsertProductMeasurement,
+  type Supervisor,
+  type InsertSupervisor,
+  type PageView,
+  type InsertPageView,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, gt, countDistinct } from "drizzle-orm";
 
 export interface IStorage {
   // Categories
@@ -89,6 +95,16 @@ export interface IStorage {
   createProductMeasurement(measurement: InsertProductMeasurement): Promise<ProductMeasurement>;
   updateProductMeasurement(id: number, measurement: Partial<InsertProductMeasurement>): Promise<ProductMeasurement>;
   deleteProductMeasurement(id: number): Promise<void>;
+
+  // Supervisors
+  getSupervisors(): Promise<Supervisor[]>;
+  getSupervisorByEmail(email: string): Promise<Supervisor | undefined>;
+  createSupervisor(supervisor: InsertSupervisor): Promise<Supervisor>;
+  deleteSupervisor(id: number): Promise<void>;
+
+  // Page Views
+  recordPageView(view: InsertPageView): Promise<PageView>;
+  getLiveVisitorCount(): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -394,6 +410,40 @@ export class DatabaseStorage implements IStorage {
 
   async deleteProductMeasurement(id: number): Promise<void> {
     await db.delete(productMeasurements).where(eq(productMeasurements.id, id));
+  }
+
+  // Supervisors
+  async getSupervisors(): Promise<Supervisor[]> {
+    return await db.select().from(supervisors).orderBy(asc(supervisors.addedAt));
+  }
+
+  async getSupervisorByEmail(email: string): Promise<Supervisor | undefined> {
+    const [supervisor] = await db.select().from(supervisors).where(eq(supervisors.email, email));
+    return supervisor;
+  }
+
+  async createSupervisor(supervisor: InsertSupervisor): Promise<Supervisor> {
+    const [newSupervisor] = await db.insert(supervisors).values(supervisor).returning();
+    return newSupervisor;
+  }
+
+  async deleteSupervisor(id: number): Promise<void> {
+    await db.delete(supervisors).where(eq(supervisors.id, id));
+  }
+
+  // Page Views
+  async recordPageView(view: InsertPageView): Promise<PageView> {
+    const [newView] = await db.insert(pageViews).values(view).returning();
+    return newView;
+  }
+
+  async getLiveVisitorCount(): Promise<number> {
+    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
+    const result = await db
+      .select({ count: countDistinct(pageViews.sessionId) })
+      .from(pageViews)
+      .where(gt(pageViews.viewedAt, tenMinutesAgo));
+    return result[0]?.count ?? 0;
   }
 }
 
