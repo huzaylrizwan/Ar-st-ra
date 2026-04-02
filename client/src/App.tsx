@@ -7,6 +7,14 @@ import { useAuth } from "@/hooks/use-auth";
 import { useEffect } from "react";
 import { useSettings } from "@/hooks/use-settings";
 
+function ScrollToTop() {
+  const [location] = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+  }, [location]);
+  return null;
+}
+
 // Pages
 import Home from "@/pages/Home";
 import CategoryPage from "@/pages/CategoryPage";
@@ -82,6 +90,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <ThemeApplicator />
+        <ScrollToTop />
         <Router />
         <Toaster />
       </TooltipProvider>

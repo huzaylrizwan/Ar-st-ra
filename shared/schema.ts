@@ -90,7 +90,7 @@ export const productModels = pgTable("product_models", {
   id: serial("id").primaryKey(),
   productId: integer("product_id").references(() => products.id, { onDelete: "cascade" }).notNull(),
   name: text("name").notNull(),
-  glbUrl: text("glb_url").notNull(),
+  modelUrl: text("model_url").notNull(),
   thumbnailUrl: text("thumbnail_url"),
   isDefault: boolean("is_default").default(false).notNull(),
   sortOrder: integer("sort_order").default(0).notNull(),

@@ -329,7 +329,10 @@ export class DatabaseStorage implements IStorage {
 
   async createProductModel(model: InsertProductModel): Promise<ProductModel> {
     if (model.isDefault) {
-      await db.update(productModels).set({ isDefault: false }).where(eq(productModels.productId, model.productId));
+      await db
+        .update(productModels)
+        .set({ isDefault: false })
+        .where(eq(productModels.productId, model.productId));
     }
     const [newModel] = await db.insert(productModels).values(model).returning();
     return newModel;
@@ -337,9 +340,28 @@ export class DatabaseStorage implements IStorage {
 
   async updateProductModel(id: number, updates: Partial<InsertProductModel>): Promise<ProductModel> {
     if (updates.isDefault && updates.productId) {
-      await db.update(productModels).set({ isDefault: false }).where(eq(productModels.productId, updates.productId));
+      await db
+        .update(productModels)
+        .set({ isDefault: false })
+        .where(eq(productModels.productId, updates.productId));
+    } else if (updates.isDefault) {
+      const existing = await db
+        .select({ productId: productModels.productId })
+        .from(productModels)
+        .where(eq(productModels.id, id))
+        .limit(1);
+      if (existing.length > 0) {
+        await db
+          .update(productModels)
+          .set({ isDefault: false })
+          .where(eq(productModels.productId, existing[0].productId));
+      }
     }
-    const [model] = await db.update(productModels).set(updates).where(eq(productModels.id, id)).returning();
+    const [model] = await db
+      .update(productModels)
+      .set(updates)
+      .where(eq(productModels.id, id))
+      .returning();
     return model;
   }
 
@@ -362,7 +384,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateProductMeasurement(id: number, updates: Partial<InsertProductMeasurement>): Promise<ProductMeasurement> {
-    const [measurement] = await db.update(productMeasurements).set(updates).where(eq(productMeasurements.id, id)).returning();
+    const [measurement] = await db
+      .update(productMeasurements)
+      .set(updates)
+      .where(eq(productMeasurements.id, id))
+      .returning();
     return measurement;
   }
 
