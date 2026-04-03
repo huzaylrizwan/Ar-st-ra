@@ -397,7 +397,7 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
   };
 
   const hasMaterials = materials && materials.length > 0;
-  const hasModelConfigs = productModels && productModels.length > 1;
+  const hasModelConfigs = productModels && productModels.length > 0;
   const hasMeasurements = measurements && measurements.length > 0;
   const showSidebar = hasMaterials || hasModelConfigs;
 
