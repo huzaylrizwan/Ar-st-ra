@@ -30,7 +30,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   }
 
   const NavItem = ({ href, icon: Icon, label }: { href: string; icon: any; label: string }) => {
-    const isActive = location === href;
+    const isActive = href === "/admin" ? location === href : location.startsWith(href);
     return (
       <Link href={href} className={`
         flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors

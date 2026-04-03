@@ -55,6 +55,7 @@ import Contact from "@/pages/Contact";
 import FAQ from "@/pages/FAQ";
 import Dashboard from "@/pages/admin/Dashboard";
 import AdminProducts from "@/pages/admin/Products";
+import AdminProductEditor from "@/pages/admin/AdminProductEditor";
 import AdminCategories from "@/pages/admin/Categories";
 import AdminSettings from "@/pages/admin/Settings";
 import AdminBanners from "@/pages/admin/Banners";
@@ -158,6 +159,12 @@ function Router() {
       </Route>
       <Route path="/admin/products">
         <ProtectedRoute component={AdminProducts} />
+      </Route>
+      <Route path="/admin/products/new">
+        <ProtectedRoute component={AdminProductEditor} />
+      </Route>
+      <Route path="/admin/products/:id">
+        <ProtectedRoute component={AdminProductEditor} />
       </Route>
       <Route path="/admin/categories">
         <ProtectedRoute component={AdminCategories} />
