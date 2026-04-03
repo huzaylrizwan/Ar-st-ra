@@ -99,6 +99,10 @@ export default function AdminSettings() {
         showNewArrivals: settings.showNewArrivals,
         showPhilosophy: settings.showPhilosophy,
         showARSection: settings.showARSection,
+        arStudioTab1Label: settings.arStudioTab1Label ?? "Model",
+        arStudioTab1Icon: settings.arStudioTab1Icon ?? "",
+        arStudioTab2Label: settings.arStudioTab2Label ?? "Variants",
+        arStudioTab2Icon: settings.arStudioTab2Icon ?? "",
       });
     }
   }, [settings, form]);
@@ -485,6 +489,76 @@ export default function AdminSettings() {
                 <p className="text-xs text-muted-foreground">
                   Paste the embed URL from Google Maps to show a map on your contact page.
                 </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>3D Studio Tab Labels</CardTitle>
+              <CardDescription>
+                Customise the two tab buttons that appear on the sidebar in the 3D viewer.
+                You can set a short label and an optional emoji icon for each tab.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="arStudioTab1Label">Tab 1 — Label</Label>
+                  <Input
+                    id="arStudioTab1Label"
+                    placeholder="Model"
+                    data-testid="input-tab1-label"
+                    {...form.register("arStudioTab1Label")}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="arStudioTab1Icon">
+                    Tab 1 — Icon <span className="text-muted-foreground font-normal">(emoji)</span>
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    {form.watch("arStudioTab1Icon") && (
+                      <span className="text-2xl leading-none">{form.watch("arStudioTab1Icon")}</span>
+                    )}
+                    <Input
+                      id="arStudioTab1Icon"
+                      placeholder="🪑"
+                      maxLength={4}
+                      data-testid="input-tab1-icon"
+                      className="w-24"
+                      {...form.register("arStudioTab1Icon")}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="arStudioTab2Label">Tab 2 — Label</Label>
+                  <Input
+                    id="arStudioTab2Label"
+                    placeholder="Variants"
+                    data-testid="input-tab2-label"
+                    {...form.register("arStudioTab2Label")}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="arStudioTab2Icon">
+                    Tab 2 — Icon <span className="text-muted-foreground font-normal">(emoji)</span>
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    {form.watch("arStudioTab2Icon") && (
+                      <span className="text-2xl leading-none">{form.watch("arStudioTab2Icon")}</span>
+                    )}
+                    <Input
+                      id="arStudioTab2Icon"
+                      placeholder="🎨"
+                      maxLength={4}
+                      data-testid="input-tab2-icon"
+                      className="w-24"
+                      {...form.register("arStudioTab2Icon")}
+                    />
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>

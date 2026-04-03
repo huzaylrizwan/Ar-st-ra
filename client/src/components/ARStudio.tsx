@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { X, Box, ChevronLeft, ChevronRight, Loader2, Ruler, Settings } from "lucide-react";
+import { X, Box, Loader2, Ruler, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { Product, ProductMaterial, ProductModel, ProductMeasurement } from "@shared/schema";
+import type { Product, ProductMaterial, ProductModel, ProductMeasurement, ThemeSettings } from "@shared/schema";
 import type { ModelViewerElement } from "@google/model-viewer";
 import type { Texture as MVTexture } from "@google/model-viewer/lib/features/scene-graph/texture";
+import { useAuth } from "@/hooks/use-auth";
 import "@google/model-viewer";
 
 interface ARStudioProps {
@@ -26,8 +27,23 @@ const glassStyle = {
 
 export function ARStudio({ product, onClose }: ARStudioProps) {
   const modelViewerRef = useRef<ModelViewerElement>(null);
+  const { isAuthenticated } = useAuth();
 
-  // Model configurations from productModels API
+  const { data: studioSettings } = useQuery<ThemeSettings>({
+    queryKey: ["/api/settings"],
+    queryFn: async () => {
+      const res = await fetch("/api/settings");
+      if (!res.ok) throw new Error("Failed to fetch settings");
+      return res.json();
+    },
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const tab1Label = studioSettings?.arStudioTab1Label ?? "Model";
+  const tab1Icon  = studioSettings?.arStudioTab1Icon ?? "";
+  const tab2Label = studioSettings?.arStudioTab2Label ?? "Variants";
+  const tab2Icon  = studioSettings?.arStudioTab2Icon ?? "";
+
   const { data: productModels } = useQuery<ProductModel[]>({
     queryKey: ["/api/products", product.id, "models"],
     queryFn: async () => {
@@ -55,7 +71,6 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
     },
   });
 
-  // Derive default model source: prefer default productModel config, fallback to product.arLink
   const getDefaultModelSrc = useCallback((models: ProductModel[] | undefined): string => {
     if (models && models.length > 0) {
       const defaultModel = models.find(m => m.isDefault) ?? models[0];
@@ -65,16 +80,15 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
   }, [product.arLink]);
 
   const [activeMaterialId, setActiveMaterialId] = useState<number | null>(null);
-  // activeModelId: null = no model config selected (using base arLink), or the id of selected model config
   const [activeModelId, setActiveModelId] = useState<number | null>(null);
   const [isApplyingTexture, setIsApplyingTexture] = useState(false);
   const [isSwappingModel, setIsSwappingModel] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"models" | "variants">("models");
   const [modelLoaded, setModelLoaded] = useState(false);
   const [measurementsOpen, setMeasurementsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  // Glass bar appearance settings — persisted in localStorage
   const readOpacity = (key: string): number => {
     const v = localStorage.getItem(key);
     if (v === null) return 0.65;
@@ -91,37 +105,35 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
   const [sidebarOpacity, setSidebarOpacity] = useState<number>(() => readOpacity("ar_studio_sidebar_opacity"));
   const [sidebarColor, setSidebarColor] = useState<string>(() => readColor("ar_studio_sidebar_color"));
 
-  const updateBottomBarOpacity = (v: number) => {
-    setBottomBarOpacity(v);
-    localStorage.setItem("ar_studio_bottom_bar_opacity", String(v));
-  };
-  const updateBottomBarColor = (v: string) => {
-    setBottomBarColor(v);
-    localStorage.setItem("ar_studio_bottom_bar_color", v);
-  };
-  const updateSidebarOpacity = (v: number) => {
-    setSidebarOpacity(v);
-    localStorage.setItem("ar_studio_sidebar_opacity", String(v));
-  };
-  const updateSidebarColor = (v: string) => {
-    setSidebarColor(v);
-    localStorage.setItem("ar_studio_sidebar_color", v);
-  };
+  const updateBottomBarOpacity = (v: number) => { setBottomBarOpacity(v); localStorage.setItem("ar_studio_bottom_bar_opacity", String(v)); };
+  const updateBottomBarColor  = (v: string) => { setBottomBarColor(v);  localStorage.setItem("ar_studio_bottom_bar_color", v); };
+  const updateSidebarOpacity  = (v: number) => { setSidebarOpacity(v);  localStorage.setItem("ar_studio_sidebar_opacity", String(v)); };
+  const updateSidebarColor    = (v: string) => { setSidebarColor(v);    localStorage.setItem("ar_studio_sidebar_color", v); };
 
-  // Derived glass styles from user settings
-  const dynamicSidebarStyle = {
-    background: `rgba(${parseInt(sidebarColor.slice(1,3),16)},${parseInt(sidebarColor.slice(3,5),16)},${parseInt(sidebarColor.slice(5,7),16)},${sidebarOpacity})`,
-    backdropFilter: "blur(16px)",
-    WebkitBackdropFilter: "blur(16px)",
-  } as const;
+  const parseRgb = (hex: string) => ({
+    r: parseInt(hex.slice(1, 3), 16),
+    g: parseInt(hex.slice(3, 5), 16),
+    b: parseInt(hex.slice(5, 7), 16),
+  });
 
-  const dynamicBottomBarStyle = {
-    background: `rgba(${parseInt(bottomBarColor.slice(1,3),16)},${parseInt(bottomBarColor.slice(3,5),16)},${parseInt(bottomBarColor.slice(5,7),16)},${bottomBarOpacity})`,
-    backdropFilter: "blur(24px)",
-    WebkitBackdropFilter: "blur(24px)",
-  } as const;
+  const dynamicSidebarStyle = (() => {
+    const { r, g, b } = parseRgb(sidebarColor);
+    return {
+      background: `rgba(${r},${g},${b},${sidebarOpacity})`,
+      backdropFilter: "blur(16px)",
+      WebkitBackdropFilter: "blur(16px)",
+    } as const;
+  })();
 
-  // Initialize src from product.arLink; will be updated once productModels loads
+  const dynamicBottomBarStyle = (() => {
+    const { r, g, b } = parseRgb(bottomBarColor);
+    return {
+      background: `rgba(${r},${g},${b},${bottomBarOpacity})`,
+      backdropFilter: "blur(24px)",
+      WebkitBackdropFilter: "blur(24px)",
+    } as const;
+  })();
+
   const [currentModelSrc, setCurrentModelSrc] = useState<string>(toAbsoluteUrl(product.arLink));
   const currentModelSrcRef = useRef<string>(toAbsoluteUrl(product.arLink));
 
@@ -135,7 +147,6 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
     originalTexture: MVTexture | null;
   } | null>(null);
 
-  // When productModels data first loads, apply the default model config
   const modelsInitializedRef = useRef(false);
   useEffect(() => {
     if (modelsInitializedRef.current) return;
@@ -160,27 +171,19 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
     return () => { document.body.style.overflow = ""; };
   }, []);
 
-  // Close measurements panel when clicking outside
   useEffect(() => {
     if (!measurementsOpen) return;
     const handleClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest("[data-measurements-panel]")) {
-        setMeasurementsOpen(false);
-      }
+      if (!(e.target as HTMLElement).closest("[data-measurements-panel]")) setMeasurementsOpen(false);
     };
     document.addEventListener("click", handleClick, { capture: true });
     return () => document.removeEventListener("click", handleClick, { capture: true });
   }, [measurementsOpen]);
 
-  // Close settings panel when clicking outside
   useEffect(() => {
     if (!settingsOpen) return;
     const handleClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest("[data-settings-panel]")) {
-        setSettingsOpen(false);
-      }
+      if (!(e.target as HTMLElement).closest("[data-settings-panel]")) setSettingsOpen(false);
     };
     document.addEventListener("click", handleClick, { capture: true });
     return () => document.removeEventListener("click", handleClick, { capture: true });
@@ -229,9 +232,7 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
         pbr.setBaseColorFactor(hexToRgba(material.colorHex));
       }
     } else {
-      if (pbr.baseColorTexture) {
-        pbr.baseColorTexture.setTexture(null);
-      }
+      if (pbr.baseColorTexture) pbr.baseColorTexture.setTexture(null);
       pbr.setBaseColorFactor(hexToRgba(material.colorHex));
     }
   }, []);
@@ -243,7 +244,6 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
     if (material.variantModelUrl) {
       const newSrc = toAbsoluteUrl(material.variantModelUrl);
       if (newSrc !== currentModelSrcRef.current) {
-        // When applying a material variant model, clear the model-config selection
         setActiveModelId(null);
         setIsSwappingModel(true);
         setModelLoaded(false);
@@ -265,13 +265,10 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
     }
   }, [isApplyingTexture, isSwappingModel, updateModelSrc, applyTextureOrColor]);
 
-  // Reset to default: uses the default model config if present, otherwise product.arLink
   const resetToDefault = useCallback(async () => {
     setActiveMaterialId(null);
-
     const defaultSrc = getDefaultModelSrc(productModels);
 
-    // Update active model id to reflect the default model config selection
     if (productModels && productModels.length > 0) {
       const defaultModel = productModels.find(m => m.isDefault) ?? productModels[0];
       setActiveModelId(defaultModel.id);
@@ -287,7 +284,6 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
       return;
     }
 
-    // Already on default model — just restore original material appearance
     const mv = modelViewerRef.current;
     if (!mv) return;
     const orig = originalMaterialRef.current;
@@ -296,10 +292,7 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
     if (!model || !model.materials || model.materials.length === 0) return;
     const mat = model.materials[0];
     const pbr = mat.pbrMetallicRoughness;
-
-    if (orig.colorFactor) {
-      pbr.setBaseColorFactor(orig.colorFactor as [number, number, number, number]);
-    }
+    if (orig.colorFactor) pbr.setBaseColorFactor(orig.colorFactor as [number, number, number, number]);
     if (pbr.baseColorTexture) {
       if (orig.originalTexture) {
         pbr.baseColorTexture.setTexture(orig.originalTexture);
@@ -325,10 +318,8 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
 
   const materialsRef = useRef(materials);
   materialsRef.current = materials;
-
   const activeMaterialIdRef = useRef(activeMaterialId);
   activeMaterialIdRef.current = activeMaterialId;
-
   const activeModelIdRef = useRef(activeModelId);
   activeModelIdRef.current = activeModelId;
 
@@ -344,31 +335,20 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
       const mats = materialsRef.current;
       const currentActiveId = activeMaterialIdRef.current;
 
-      // If an active material is set, re-apply it (unless it has a variantModelUrl — that IS the model swap)
       if (currentActiveId !== null && mats) {
         const activeMat = mats.find(m => m.id === currentActiveId);
         if (activeMat && !activeMat.variantModelUrl) {
-          try {
-            await applyTextureOrColor(activeMat);
-          } catch (err) {
-            console.error("Failed to re-apply material after model swap:", err);
-          }
+          try { await applyTextureOrColor(activeMat); } catch (err) { console.error(err); }
         }
         return;
       }
 
-      // If a model config is active (selected by user), don't auto-apply default material
-      // to avoid overriding the user's model choice via a variantModelUrl
-      if (activeModelIdRef.current !== null) {
-        return;
-      }
+      if (activeModelIdRef.current !== null) return;
 
-      // Auto-apply the default material on first load (only when no model config is selected)
       if (mats) {
         const defaultMat = mats.find(m => m.isDefault);
         if (defaultMat) {
           if (defaultMat.variantModelUrl) {
-            // Only auto-swap the model via material default if no model config is active
             const newSrc = toAbsoluteUrl(defaultMat.variantModelUrl);
             setActiveMaterialId(defaultMat.id);
             if (newSrc !== currentModelSrcRef.current) {
@@ -378,12 +358,7 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
               updateModelSrc(newSrc);
             }
           } else {
-            try {
-              setActiveMaterialId(defaultMat.id);
-              await applyTextureOrColor(defaultMat);
-            } catch (err) {
-              console.error("Failed to apply default material:", err);
-            }
+            try { setActiveMaterialId(defaultMat.id); await applyTextureOrColor(defaultMat); } catch (err) { console.error(err); }
           }
         }
       }
@@ -394,7 +369,6 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
   }, [captureOriginalMaterial, applyTextureOrColor, updateModelSrc]);
 
   useEffect(() => {
-    // Guard: don't auto-apply default material if a model config is actively selected
     if (modelLoaded && materials && activeMaterialId === null && activeModelId === null) {
       const defaultMat = materials.find(m => m.isDefault);
       if (defaultMat) {
@@ -419,15 +393,42 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
 
   const launchAR = () => {
     const mv = modelViewerRef.current;
-    if (mv && modelLoaded) {
-      mv.activateAR();
-    }
+    if (mv && modelLoaded) mv.activateAR();
   };
 
   const hasMaterials = materials && materials.length > 0;
   const hasModelConfigs = productModels && productModels.length > 1;
   const hasMeasurements = measurements && measurements.length > 0;
   const showSidebar = hasMaterials || hasModelConfigs;
+
+  const showModelTab    = !!hasModelConfigs;
+  const showVariantsTab = !!hasMaterials;
+
+  // Grouped variants: materials associated with each model config (by variantModelUrl) + universal ones
+  const universalMaterials  = materials?.filter(m => !m.variantModelUrl) ?? [];
+  const getModelMaterials   = (modelConfig: ProductModel) =>
+    materials?.filter(m => m.variantModelUrl && toAbsoluteUrl(m.variantModelUrl) === toAbsoluteUrl(modelConfig.modelUrl)) ?? [];
+
+  const handleTabClick = (tab: "models" | "variants") => {
+    if (!sidebarOpen) {
+      setSidebarOpen(true);
+      setActiveTab(tab);
+    } else if (activeTab === tab) {
+      setSidebarOpen(false);
+    } else {
+      setActiveTab(tab);
+    }
+  };
+
+  const SIDEBAR_W = "min(184px, 42vw)";
+  const TAB_W     = "36px";
+
+  // Shared card style helper
+  const cardStyle = (active: boolean) => ({
+    borderRadius: "14px",
+    border: active ? "1px solid rgba(202,138,4,0.6)" : "1px solid transparent",
+    boxShadow: active ? "0 0 10px rgba(202,138,4,0.2), 0 0 0 1px rgba(202,138,4,0.15)" : undefined,
+  });
 
   return (
     <div
@@ -445,106 +446,77 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
         <X className="w-5 h-5 text-gray-700" />
       </button>
 
-      {/* Settings gear + panel */}
-      <div
-        className="absolute top-4 z-20 flex flex-col items-end gap-2"
-        style={{ right: "3.5rem" }}
-        data-settings-panel
-      >
-        <button
-          onClick={(e) => { e.stopPropagation(); setSettingsOpen(prev => !prev); }}
-          className={cn(
-            "w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-all duration-150",
-            settingsOpen ? "bg-white/30 text-white" : "bg-white/80 text-gray-700 hover:bg-white"
-          )}
-          data-testid="button-settings-gear"
-          aria-label="Studio settings"
-        >
-          <Settings className="w-5 h-5" />
-        </button>
-
-        {/* Settings panel */}
+      {/* Settings gear — admin only */}
+      {isAuthenticated && (
         <div
-          className={cn(
-            "rounded-2xl overflow-hidden transition-all duration-250 origin-top-right",
-            settingsOpen ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none"
-          )}
-          style={{
-            ...glassStyle,
-            border: "1px solid rgba(255,255,255,0.15)",
-            width: "min(240px, 72vw)",
-          }}
-          data-testid="panel-settings"
+          className="absolute top-4 z-20 flex flex-col items-end gap-2"
+          style={{ right: "3.5rem" }}
+          data-settings-panel
         >
-          <div className="px-4 pt-3 pb-1">
-            <p className="text-[9px] uppercase tracking-widest text-white/50 font-semibold">Studio Settings</p>
-          </div>
+          <button
+            onClick={(e) => { e.stopPropagation(); setSettingsOpen(prev => !prev); }}
+            className={cn(
+              "w-10 h-10 rounded-full flex items-center justify-center shadow-md transition-all duration-150",
+              settingsOpen ? "bg-white/30 text-white" : "bg-white/80 text-gray-700 hover:bg-white"
+            )}
+            data-testid="button-settings-gear"
+            aria-label="Studio settings"
+          >
+            <Settings className="w-5 h-5" />
+          </button>
 
-          <div className="px-4 pb-4 space-y-4">
-            {/* Bottom Bar section */}
-            <div className="space-y-2.5">
-              <p className="text-[9px] uppercase tracking-widest text-white/40 font-semibold pt-1">Bottom Bar</p>
-              <div className="flex items-center gap-3">
-                <label className="text-[11px] text-white/70 w-14 shrink-0">Opacity</label>
-                <input
-                  type="range"
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  value={bottomBarOpacity}
-                  onChange={(e) => updateBottomBarOpacity(parseFloat(e.target.value))}
-                  className="flex-1 accent-yellow-500 h-1.5 rounded-full"
-                  data-testid="slider-bottom-bar-opacity"
-                />
-                <span className="text-[10px] text-white/50 w-8 text-right shrink-0">{Math.round(bottomBarOpacity * 100)}%</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <label className="text-[11px] text-white/70 w-14 shrink-0">Colour</label>
-                <input
-                  type="color"
-                  value={bottomBarColor}
-                  onChange={(e) => updateBottomBarColor(e.target.value)}
-                  className="w-8 h-8 rounded cursor-pointer border border-white/20 bg-transparent"
-                  style={{ padding: "2px" }}
-                  data-testid="color-bottom-bar"
-                />
-                <span className="text-[10px] text-white/40 font-mono">{bottomBarColor}</span>
-              </div>
+          <div
+            className={cn(
+              "rounded-2xl overflow-hidden transition-all duration-250 origin-top-right",
+              settingsOpen ? "opacity-100 scale-100 pointer-events-auto" : "opacity-0 scale-95 pointer-events-none"
+            )}
+            style={{
+              ...glassStyle,
+              border: "1px solid rgba(255,255,255,0.15)",
+              width: "min(240px, 72vw)",
+            }}
+            data-testid="panel-settings"
+          >
+            <div className="px-4 pt-3 pb-1">
+              <p className="text-[9px] uppercase tracking-widest text-white/50 font-semibold">Studio Settings</p>
             </div>
-
-            {/* Sidebar section */}
-            <div className="space-y-2.5">
-              <p className="text-[9px] uppercase tracking-widest text-white/40 font-semibold pt-1">Sidebar</p>
-              <div className="flex items-center gap-3">
-                <label className="text-[11px] text-white/70 w-14 shrink-0">Opacity</label>
-                <input
-                  type="range"
-                  min={0}
-                  max={1}
-                  step={0.01}
-                  value={sidebarOpacity}
-                  onChange={(e) => updateSidebarOpacity(parseFloat(e.target.value))}
-                  className="flex-1 accent-yellow-500 h-1.5 rounded-full"
-                  data-testid="slider-sidebar-opacity"
-                />
-                <span className="text-[10px] text-white/50 w-8 text-right shrink-0">{Math.round(sidebarOpacity * 100)}%</span>
+            <div className="px-4 pb-4 space-y-4">
+              <div className="space-y-2.5">
+                <p className="text-[9px] uppercase tracking-widest text-white/40 font-semibold pt-1">Bottom Bar</p>
+                <div className="flex items-center gap-3">
+                  <label className="text-[11px] text-white/70 w-14 shrink-0">Opacity</label>
+                  <input type="range" min={0} max={1} step={0.01} value={bottomBarOpacity}
+                    onChange={(e) => updateBottomBarOpacity(parseFloat(e.target.value))}
+                    className="flex-1 accent-yellow-500 h-1.5 rounded-full" data-testid="slider-bottom-bar-opacity" />
+                  <span className="text-[10px] text-white/50 w-8 text-right shrink-0">{Math.round(bottomBarOpacity * 100)}%</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <label className="text-[11px] text-white/70 w-14 shrink-0">Colour</label>
+                  <input type="color" value={bottomBarColor} onChange={(e) => updateBottomBarColor(e.target.value)}
+                    className="w-8 h-8 rounded cursor-pointer border border-white/20 bg-transparent" style={{ padding: "2px" }} data-testid="color-bottom-bar" />
+                  <span className="text-[10px] text-white/40 font-mono">{bottomBarColor}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <label className="text-[11px] text-white/70 w-14 shrink-0">Colour</label>
-                <input
-                  type="color"
-                  value={sidebarColor}
-                  onChange={(e) => updateSidebarColor(e.target.value)}
-                  className="w-8 h-8 rounded cursor-pointer border border-white/20 bg-transparent"
-                  style={{ padding: "2px" }}
-                  data-testid="color-sidebar"
-                />
-                <span className="text-[10px] text-white/40 font-mono">{sidebarColor}</span>
+              <div className="space-y-2.5">
+                <p className="text-[9px] uppercase tracking-widest text-white/40 font-semibold pt-1">Sidebar</p>
+                <div className="flex items-center gap-3">
+                  <label className="text-[11px] text-white/70 w-14 shrink-0">Opacity</label>
+                  <input type="range" min={0} max={1} step={0.01} value={sidebarOpacity}
+                    onChange={(e) => updateSidebarOpacity(parseFloat(e.target.value))}
+                    className="flex-1 accent-yellow-500 h-1.5 rounded-full" data-testid="slider-sidebar-opacity" />
+                  <span className="text-[10px] text-white/50 w-8 text-right shrink-0">{Math.round(sidebarOpacity * 100)}%</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <label className="text-[11px] text-white/70 w-14 shrink-0">Colour</label>
+                  <input type="color" value={sidebarColor} onChange={(e) => updateSidebarColor(e.target.value)}
+                    className="w-8 h-8 rounded cursor-pointer border border-white/20 bg-transparent" style={{ padding: "2px" }} data-testid="color-sidebar" />
+                  <span className="text-[10px] text-white/40 font-mono">{sidebarColor}</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* model-viewer wrapper */}
       <div style={{ flex: 1, minHeight: 0, overflow: "hidden", position: "relative" }}>
@@ -576,22 +548,13 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
 
         {/* Measurements button + panel (bottom-left) */}
         {hasMeasurements && (
-          <div
-            className="absolute bottom-4 left-4 z-10 flex flex-col items-start gap-2"
-            data-measurements-panel
-          >
-            {/* Measurements panel */}
+          <div className="absolute bottom-4 left-4 z-10 flex flex-col items-start gap-2" data-measurements-panel>
             <div
               className={cn(
                 "mb-1 rounded-2xl overflow-hidden transition-all duration-300 origin-bottom-left",
                 measurementsOpen ? "opacity-100 scale-100 pointer-events-auto translate-y-0" : "opacity-0 scale-95 pointer-events-none translate-y-2"
               )}
-              style={{
-                ...glassStyle,
-                border: "1px solid rgba(255,255,255,0.12)",
-                width: "min(220px, 55vw)",
-                maxHeight: "260px",
-              }}
+              style={{ ...glassStyle, border: "1px solid rgba(255,255,255,0.12)", width: "min(220px, 55vw)", maxHeight: "260px" }}
               data-testid="panel-measurements"
             >
               <div className="px-3 pt-3 pb-1 shrink-0">
@@ -606,18 +569,11 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
                 ))}
               </div>
             </div>
-
-            {/* Measurements toggle button */}
             <button
               onClick={(e) => { e.stopPropagation(); setMeasurementsOpen(prev => !prev); }}
-              className={cn(
-                "w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all duration-150",
-                measurementsOpen ? "bg-white/25" : "bg-white/10 hover:bg-white/20"
-              )}
-              style={{
-                ...glassStyle,
-                border: "1px solid rgba(255,255,255,0.18)",
-              }}
+              className={cn("w-10 h-10 rounded-full flex items-center justify-center shadow-lg transition-all duration-150",
+                measurementsOpen ? "bg-white/25" : "bg-white/10 hover:bg-white/20")}
+              style={{ ...glassStyle, border: "1px solid rgba(255,255,255,0.18)" }}
               data-testid="button-measurements-toggle"
               aria-label="Toggle measurements"
             >
@@ -626,35 +582,80 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
           </div>
         )}
 
-        {/* Unified sliding sidebar */}
+        {/* ─── Two-tab sidebar ─── */}
         {showSidebar && (
           <>
-            {/* Toggle button */}
-            <button
-              onClick={() => setSidebarOpen(prev => !prev)}
-              className="absolute top-1/2 -translate-y-1/2 z-10 w-10 h-14 flex items-center justify-center rounded-l-xl shadow-lg transition-all duration-300"
-              style={{
-                right: sidebarOpen ? "min(176px, 40vw)" : 0,
-                ...dynamicSidebarStyle,
-                border: "1px solid rgba(255,255,255,0.1)",
-                borderRight: "none",
-              }}
-              data-testid="button-toggle-material-sidebar"
-              aria-label={sidebarOpen ? "Close panel" : "Open panel"}
+            {/* Tab buttons — stacked vertically on sidebar edge */}
+            <div
+              className="absolute top-1/2 -translate-y-1/2 z-10 flex flex-col transition-all duration-300"
+              style={{ right: sidebarOpen ? SIDEBAR_W : 0 }}
+              data-testid="sidebar-tab-buttons"
             >
-              {sidebarOpen ? (
-                <ChevronRight className="w-5 h-5 text-white" />
-              ) : (
-                <ChevronLeft className="w-5 h-5 text-white" />
+              {showModelTab && (
+                <button
+                  onClick={() => handleTabClick("models")}
+                  data-testid="button-tab-models"
+                  aria-label={tab1Label}
+                  className="flex flex-col items-center justify-center gap-1 transition-all duration-150 focus:outline-none"
+                  style={{
+                    width: TAB_W,
+                    height: showVariantsTab ? "72px" : "88px",
+                    ...dynamicSidebarStyle,
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    borderRight: "none",
+                    borderBottom: showVariantsTab ? "1px solid rgba(255,255,255,0.06)" : undefined,
+                    borderRadius: showVariantsTab ? "12px 0 0 0" : "12px 0 0 12px",
+                    opacity: sidebarOpen && activeTab === "models" ? 1 : 0.6,
+                    paddingTop: "10px",
+                    paddingBottom: "10px",
+                  }}
+                >
+                  {tab1Icon && <span className="text-base leading-none select-none">{tab1Icon}</span>}
+                  <span
+                    className="text-white font-semibold leading-none select-none"
+                    style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", fontSize: "9px", letterSpacing: "0.12em" }}
+                  >
+                    {tab1Label}
+                  </span>
+                </button>
               )}
-            </button>
+
+              {showVariantsTab && (
+                <button
+                  onClick={() => handleTabClick("variants")}
+                  data-testid="button-tab-variants"
+                  aria-label={tab2Label}
+                  className="flex flex-col items-center justify-center gap-1 transition-all duration-150 focus:outline-none"
+                  style={{
+                    width: TAB_W,
+                    height: showModelTab ? "72px" : "88px",
+                    ...dynamicSidebarStyle,
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    borderRight: "none",
+                    borderTop: showModelTab ? "none" : undefined,
+                    borderRadius: showModelTab ? "0 0 0 12px" : "12px 0 0 12px",
+                    opacity: sidebarOpen && activeTab === "variants" ? 1 : 0.6,
+                    paddingTop: "10px",
+                    paddingBottom: "10px",
+                  }}
+                >
+                  {tab2Icon && <span className="text-base leading-none select-none">{tab2Icon}</span>}
+                  <span
+                    className="text-white font-semibold leading-none select-none"
+                    style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", fontSize: "9px", letterSpacing: "0.12em" }}
+                  >
+                    {tab2Label}
+                  </span>
+                </button>
+              )}
+            </div>
 
             {/* Sidebar panel */}
             <div
               className="absolute top-0 bottom-0 right-0 z-10 flex flex-col transition-transform duration-300"
               style={{
-                width: "min(176px, 40vw)",
-                transform: sidebarOpen ? "translateX(0)" : "translateX(min(176px, 40vw))",
+                width: SIDEBAR_W,
+                transform: sidebarOpen ? "translateX(0)" : `translateX(${SIDEBAR_W})`,
                 ...dynamicSidebarStyle,
                 borderLeft: "1px solid rgba(255,255,255,0.1)",
               }}
@@ -662,11 +663,13 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
             >
               <div className="flex-1 overflow-y-auto pb-4">
 
-                {/* Model section — only shown when >1 configuration */}
-                {hasModelConfigs && (
+                {/* ── MODELS TAB ── */}
+                {activeTab === "models" && hasModelConfigs && (
                   <>
                     <div className="px-3 pt-4 pb-2 shrink-0">
-                      <p className="text-[8px] uppercase tracking-widest text-white/50 font-semibold">MODEL</p>
+                      <p className="text-[8px] uppercase tracking-widest text-white/50 font-semibold">
+                        {tab1Icon} {tab1Label}
+                      </p>
                     </div>
                     <div className="px-2 space-y-2">
                       {productModels!.map((modelConfig) => (
@@ -676,34 +679,17 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
                           data-testid={`button-model-card-${modelConfig.id}`}
                           disabled={isSwappingModel}
                           className={cn(
-                            "w-full p-2 flex flex-col items-center gap-1.5 transition-all duration-150 border",
+                            "w-full p-2 flex flex-col items-center gap-1.5 transition-all duration-150",
                             "disabled:opacity-60 disabled:cursor-not-allowed",
-                            activeModelId === modelConfig.id
-                              ? "bg-white/10"
-                              : "border-transparent bg-white/5 hover:bg-white/10"
+                            activeModelId === modelConfig.id ? "bg-white/10" : "bg-white/5 hover:bg-white/10"
                           )}
-                          style={{
-                            borderRadius: "14px",
-                            border: activeModelId === modelConfig.id
-                              ? "1px solid rgba(202,138,4,0.6)"
-                              : "1px solid transparent",
-                            boxShadow: activeModelId === modelConfig.id
-                              ? "0 0 10px rgba(202,138,4,0.2), 0 0 0 1px rgba(202,138,4,0.15)"
-                              : undefined,
-                          }}
+                          style={cardStyle(activeModelId === modelConfig.id)}
                         >
                           {modelConfig.thumbnailUrl ? (
-                            <img
-                              src={toAbsoluteUrl(modelConfig.thumbnailUrl)}
-                              alt={modelConfig.name}
-                              className="w-12 h-12 object-cover border border-white/20"
-                              style={{ borderRadius: "10px" }}
-                            />
+                            <img src={toAbsoluteUrl(modelConfig.thumbnailUrl)} alt={modelConfig.name}
+                              className="w-12 h-12 object-cover border border-white/20" style={{ borderRadius: "10px" }} />
                           ) : (
-                            <div
-                              className="w-12 h-12 bg-gradient-to-br from-white/20 to-white/5 border border-white/20 flex items-center justify-center"
-                              style={{ borderRadius: "10px" }}
-                            >
+                            <div className="w-12 h-12 bg-gradient-to-br from-white/20 to-white/5 border border-white/20 flex items-center justify-center" style={{ borderRadius: "10px" }}>
                               <Box className="w-5 h-5 text-white/70" />
                             </div>
                           )}
@@ -716,107 +702,83 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
                   </>
                 )}
 
-                {/* Divider between sections when both present */}
-                {hasModelConfigs && hasMaterials && (
-                  <div className="mx-3 my-3 border-t border-white/10" />
-                )}
-
-                {/* Finish section */}
-                {hasMaterials && (
+                {/* ── VARIANTS TAB ── */}
+                {activeTab === "variants" && hasMaterials && (
                   <>
-                    <div className={cn("px-3 pb-2 shrink-0", !hasModelConfigs ? "pt-4" : "pt-0")}>
-                      <p className="text-[8px] uppercase tracking-widest text-white/50 font-semibold">FINISH</p>
-                    </div>
-                    <div className="px-2 space-y-2">
-                      {/* Default card */}
-                      <button
-                        onClick={resetToDefault}
-                        data-testid="button-material-default"
-                        className={cn(
-                          "w-full p-2 flex flex-col items-center gap-1.5 transition-all duration-150",
-                          activeMaterialId === null
-                            ? "bg-white/10"
-                            : "bg-white/5 hover:bg-white/10"
+                    {/* Grouped by model config if model configs exist */}
+                    {hasModelConfigs ? (
+                      <>
+                        {/* Universal materials (no variantModelUrl) — shown first under "All Models" */}
+                        {universalMaterials.length > 0 && (
+                          <>
+                            <div className="px-3 pt-4 pb-1 shrink-0">
+                              <p className="text-[8px] uppercase tracking-widest text-white/40 font-semibold">All Models</p>
+                            </div>
+                            <div className="px-2 space-y-2">
+                              <button
+                                onClick={resetToDefault}
+                                data-testid="button-material-default"
+                                className={cn("w-full p-2 flex flex-col items-center gap-1.5 transition-all duration-150",
+                                  activeMaterialId === null ? "bg-white/10" : "bg-white/5 hover:bg-white/10")}
+                                style={cardStyle(activeMaterialId === null)}
+                              >
+                                <div className="w-12 h-12 bg-gradient-to-br from-white/20 to-white/5 border border-white/20 flex items-center justify-center" style={{ borderRadius: "10px" }}>
+                                  <span className="text-white/80 text-xs font-medium">GLB</span>
+                                </div>
+                                <span className="text-[11px] text-white/80 font-medium leading-tight text-center">Default</span>
+                              </button>
+                              {universalMaterials.map(mat => <MaterialCard key={mat.id} mat={mat} activeMaterialId={activeMaterialId} onApply={applyMaterialById} isApplyingTexture={isApplyingTexture} isSwappingModel={isSwappingModel} cardStyle={cardStyle} toAbsoluteUrl={toAbsoluteUrl} />)}
+                            </div>
+                          </>
                         )}
-                        style={{
-                          borderRadius: "14px",
-                          border: activeMaterialId === null
-                            ? "1px solid rgba(202,138,4,0.6)"
-                            : "1px solid transparent",
-                          boxShadow: activeMaterialId === null
-                            ? "0 0 10px rgba(202,138,4,0.2), 0 0 0 1px rgba(202,138,4,0.15)"
-                            : undefined,
-                        }}
-                      >
-                        <div
-                          className="w-12 h-12 bg-gradient-to-br from-white/20 to-white/5 border border-white/20 flex items-center justify-center"
-                          style={{ borderRadius: "10px" }}
-                        >
-                          <span className="text-white/80 text-xs font-medium">GLB</span>
-                        </div>
-                        <span className="text-[11px] text-white/80 font-medium leading-tight text-center">Default</span>
-                      </button>
 
-                      {/* Material cards */}
-                      {materials!.map((mat) => (
-                        <button
-                          key={mat.id}
-                          onClick={() => applyMaterialById(mat)}
-                          data-testid={`button-material-card-${mat.id}`}
-                          disabled={isApplyingTexture || isSwappingModel}
-                          className={cn(
-                            "w-full p-2 flex flex-col items-center gap-1.5 transition-all duration-150",
-                            activeMaterialId === mat.id
-                              ? "bg-white/10"
-                              : "bg-white/5 hover:bg-white/10",
-                            (isApplyingTexture || isSwappingModel) && "opacity-60 cursor-not-allowed"
-                          )}
-                          style={{
-                            borderRadius: "14px",
-                            border: activeMaterialId === mat.id
-                              ? "1px solid rgba(202,138,4,0.6)"
-                              : "1px solid transparent",
-                            boxShadow: activeMaterialId === mat.id
-                              ? "0 0 10px rgba(202,138,4,0.2), 0 0 0 1px rgba(202,138,4,0.15)"
-                              : undefined,
-                          }}
-                        >
-                          {/* PNG texture takes priority, then box icon for GLB-only, then color circle */}
-                          {mat.textureUrl ? (
-                            <img
-                              src={toAbsoluteUrl(mat.textureUrl)}
-                              alt={mat.name}
-                              className="w-12 h-12 object-cover border border-white/20"
-                              style={{ borderRadius: "10px" }}
-                            />
-                          ) : mat.variantModelUrl ? (
-                            <div
-                              className="w-12 h-12 bg-gradient-to-br from-white/20 to-white/5 border border-white/20 flex items-center justify-center"
-                              style={{ borderRadius: "10px" }}
-                            >
-                              <Box className="w-5 h-5 text-white/70" />
+                        {/* Per-model-config groups */}
+                        {productModels!.map((modelConfig) => {
+                          const linked = getModelMaterials(modelConfig);
+                          if (linked.length === 0) return null;
+                          return (
+                            <div key={modelConfig.id}>
+                              <div className="px-3 pt-3 pb-1 shrink-0">
+                                <p className="text-[8px] uppercase tracking-widest text-white/40 font-semibold">{modelConfig.name}</p>
+                              </div>
+                              <div className="px-2 space-y-2">
+                                {linked.map(mat => <MaterialCard key={mat.id} mat={mat} activeMaterialId={activeMaterialId} onApply={applyMaterialById} isApplyingTexture={isApplyingTexture} isSwappingModel={isSwappingModel} cardStyle={cardStyle} toAbsoluteUrl={toAbsoluteUrl} />)}
+                              </div>
                             </div>
-                          ) : (
-                            <div
-                              className="flex items-center justify-center w-12 h-12"
-                            >
-                              <div
-                                className="border-2 border-white/30 shadow-inner"
-                                style={{
-                                  width: "16px",
-                                  height: "16px",
-                                  borderRadius: "50%",
-                                  backgroundColor: mat.colorHex,
-                                }}
-                              />
-                            </div>
-                          )}
-                          <span className="text-[11px] text-white/80 font-medium leading-tight text-center line-clamp-2">
-                            {mat.name}
-                          </span>
+                          );
+                        })}
+
+                        {/* If no universal and no linked materials, show flat list + default */}
+                        {universalMaterials.length === 0 && productModels!.every(mc => getModelMaterials(mc).length === 0) && (
+                          <div className="px-2 pt-4 space-y-2">
+                            <button onClick={resetToDefault} data-testid="button-material-default"
+                              className={cn("w-full p-2 flex flex-col items-center gap-1.5 transition-all duration-150",
+                                activeMaterialId === null ? "bg-white/10" : "bg-white/5 hover:bg-white/10")}
+                              style={cardStyle(activeMaterialId === null)}>
+                              <div className="w-12 h-12 bg-gradient-to-br from-white/20 to-white/5 border border-white/20 flex items-center justify-center" style={{ borderRadius: "10px" }}>
+                                <span className="text-white/80 text-xs font-medium">GLB</span>
+                              </div>
+                              <span className="text-[11px] text-white/80 font-medium leading-tight text-center">Default</span>
+                            </button>
+                            {materials!.map(mat => <MaterialCard key={mat.id} mat={mat} activeMaterialId={activeMaterialId} onApply={applyMaterialById} isApplyingTexture={isApplyingTexture} isSwappingModel={isSwappingModel} cardStyle={cardStyle} toAbsoluteUrl={toAbsoluteUrl} />)}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      /* Flat list — no model configs */
+                      <div className="px-2 pt-4 space-y-2">
+                        <button onClick={resetToDefault} data-testid="button-material-default"
+                          className={cn("w-full p-2 flex flex-col items-center gap-1.5 transition-all duration-150",
+                            activeMaterialId === null ? "bg-white/10" : "bg-white/5 hover:bg-white/10")}
+                          style={cardStyle(activeMaterialId === null)}>
+                          <div className="w-12 h-12 bg-gradient-to-br from-white/20 to-white/5 border border-white/20 flex items-center justify-center" style={{ borderRadius: "10px" }}>
+                            <span className="text-white/80 text-xs font-medium">GLB</span>
+                          </div>
+                          <span className="text-[11px] text-white/80 font-medium leading-tight text-center">Default</span>
                         </button>
-                      ))}
-                    </div>
+                        {materials!.map(mat => <MaterialCard key={mat.id} mat={mat} activeMaterialId={activeMaterialId} onApply={applyMaterialById} isApplyingTexture={isApplyingTexture} isSwappingModel={isSwappingModel} cardStyle={cardStyle} toAbsoluteUrl={toAbsoluteUrl} />)}
+                      </div>
+                    )}
                   </>
                 )}
               </div>
@@ -828,24 +790,14 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
       {/* Frosted glass bottom bar */}
       <div
         className="flex items-center justify-between px-5 py-4 gap-4 shrink-0"
-        style={{
-          ...dynamicBottomBarStyle,
-          borderTop: "1px solid rgba(255,255,255,0.14)",
-          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.18)",
-        }}
+        style={{ ...dynamicBottomBarStyle, borderTop: "1px solid rgba(255,255,255,0.14)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.18)" }}
         data-testid="panel-product-info"
       >
         <div className="min-w-0">
-          <p
-            className="font-serif font-semibold text-white truncate text-base sm:text-lg"
-            data-testid="text-product-name"
-          >
+          <p className="font-serif font-semibold text-white truncate text-base sm:text-lg" data-testid="text-product-name">
             {product.name}
           </p>
-          <p
-            className="text-sm text-white/60 font-medium"
-            data-testid="text-product-price"
-          >
+          <p className="text-sm text-white/60 font-medium" data-testid="text-product-price">
             ${Math.round(product.price / 100).toLocaleString()}
           </p>
         </div>
@@ -866,5 +818,49 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
         </button>
       </div>
     </div>
+  );
+}
+
+// ── Extracted MaterialCard sub-component ──
+function MaterialCard({
+  mat, activeMaterialId, onApply, isApplyingTexture, isSwappingModel, cardStyle, toAbsoluteUrl,
+}: {
+  mat: ProductMaterial;
+  activeMaterialId: number | null;
+  onApply: (m: ProductMaterial) => void;
+  isApplyingTexture: boolean;
+  isSwappingModel: boolean;
+  cardStyle: (active: boolean) => React.CSSProperties;
+  toAbsoluteUrl: (p: string) => string;
+}) {
+  const isActive = activeMaterialId === mat.id;
+  return (
+    <button
+      key={mat.id}
+      onClick={() => onApply(mat)}
+      data-testid={`button-material-card-${mat.id}`}
+      disabled={isApplyingTexture || isSwappingModel}
+      className={cn(
+        "w-full p-2 flex flex-col items-center gap-1.5 transition-all duration-150",
+        isActive ? "bg-white/10" : "bg-white/5 hover:bg-white/10",
+        (isApplyingTexture || isSwappingModel) && "opacity-60 cursor-not-allowed"
+      )}
+      style={cardStyle(isActive)}
+    >
+      {mat.textureUrl ? (
+        <img src={toAbsoluteUrl(mat.textureUrl)} alt={mat.name}
+          className="w-12 h-12 object-cover border border-white/20" style={{ borderRadius: "10px" }} />
+      ) : mat.variantModelUrl ? (
+        <div className="w-12 h-12 bg-gradient-to-br from-white/20 to-white/5 border border-white/20 flex items-center justify-center" style={{ borderRadius: "10px" }}>
+          <Box className="w-5 h-5 text-white/70" />
+        </div>
+      ) : (
+        <div className="flex items-center justify-center w-12 h-12">
+          <div className="border-2 border-white/30 shadow-inner"
+            style={{ width: "16px", height: "16px", borderRadius: "50%", backgroundColor: mat.colorHex }} />
+        </div>
+      )}
+      <span className="text-[11px] text-white/80 font-medium leading-tight text-center line-clamp-2">{mat.name}</span>
+    </button>
   );
 }

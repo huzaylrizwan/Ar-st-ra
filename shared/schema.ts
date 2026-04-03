@@ -45,6 +45,11 @@ export const themeSettings = pgTable("theme_settings", {
   showNewArrivals: boolean("show_new_arrivals").default(true),
   showPhilosophy: boolean("show_philosophy").default(true),
   showARSection: boolean("show_ar_section").default(true),
+  // 3D Studio tab labels
+  arStudioTab1Label: text("ar_studio_tab1_label").default("Model"),
+  arStudioTab1Icon: text("ar_studio_tab1_icon"),
+  arStudioTab2Label: text("ar_studio_tab2_label").default("Variants"),
+  arStudioTab2Icon: text("ar_studio_tab2_icon"),
 });
 
 // Promo Banners - multiple rotating banners
