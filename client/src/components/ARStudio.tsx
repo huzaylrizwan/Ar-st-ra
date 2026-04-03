@@ -705,64 +705,44 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
                 {/* ── VARIANTS TAB ── */}
                 {activeTab === "variants" && hasMaterials && (
                   <>
-                    {/* Grouped by model config if model configs exist */}
                     {hasModelConfigs ? (
                       <>
-                        {/* Universal materials (no variantModelUrl) — shown first under "All Models" */}
-                        {universalMaterials.length > 0 && (
-                          <>
-                            <div className="px-3 pt-4 pb-1 shrink-0">
-                              <p className="text-[8px] uppercase tracking-widest text-white/40 font-semibold">All Models</p>
+                        {/* Default reset card — always at the top */}
+                        <div className="px-2 pt-4">
+                          <button
+                            onClick={resetToDefault}
+                            data-testid="button-material-default"
+                            className={cn("w-full p-2 flex flex-col items-center gap-1.5 transition-all duration-150",
+                              activeMaterialId === null ? "bg-white/10" : "bg-white/5 hover:bg-white/10")}
+                            style={cardStyle(activeMaterialId === null)}
+                          >
+                            <div className="w-12 h-12 bg-gradient-to-br from-white/20 to-white/5 border border-white/20 flex items-center justify-center" style={{ borderRadius: "10px" }}>
+                              <span className="text-white/80 text-xs font-medium">GLB</span>
                             </div>
-                            <div className="px-2 space-y-2">
-                              <button
-                                onClick={resetToDefault}
-                                data-testid="button-material-default"
-                                className={cn("w-full p-2 flex flex-col items-center gap-1.5 transition-all duration-150",
-                                  activeMaterialId === null ? "bg-white/10" : "bg-white/5 hover:bg-white/10")}
-                                style={cardStyle(activeMaterialId === null)}
-                              >
-                                <div className="w-12 h-12 bg-gradient-to-br from-white/20 to-white/5 border border-white/20 flex items-center justify-center" style={{ borderRadius: "10px" }}>
-                                  <span className="text-white/80 text-xs font-medium">GLB</span>
-                                </div>
-                                <span className="text-[11px] text-white/80 font-medium leading-tight text-center">Default</span>
-                              </button>
-                              {universalMaterials.map(mat => <MaterialCard key={mat.id} mat={mat} activeMaterialId={activeMaterialId} onApply={applyMaterialById} isApplyingTexture={isApplyingTexture} isSwappingModel={isSwappingModel} cardStyle={cardStyle} toAbsoluteUrl={toAbsoluteUrl} />)}
-                            </div>
-                          </>
-                        )}
+                            <span className="text-[11px] text-white/80 font-medium leading-tight text-center">Default</span>
+                          </button>
+                        </div>
 
-                        {/* Per-model-config groups */}
+                        {/* One group per model config — each shows universal + linked materials */}
                         {productModels!.map((modelConfig) => {
                           const linked = getModelMaterials(modelConfig);
-                          if (linked.length === 0) return null;
+                          const groupItems = [...universalMaterials, ...linked];
                           return (
                             <div key={modelConfig.id}>
                               <div className="px-3 pt-3 pb-1 shrink-0">
                                 <p className="text-[8px] uppercase tracking-widest text-white/40 font-semibold">{modelConfig.name}</p>
                               </div>
                               <div className="px-2 space-y-2">
-                                {linked.map(mat => <MaterialCard key={mat.id} mat={mat} activeMaterialId={activeMaterialId} onApply={applyMaterialById} isApplyingTexture={isApplyingTexture} isSwappingModel={isSwappingModel} cardStyle={cardStyle} toAbsoluteUrl={toAbsoluteUrl} />)}
+                                {groupItems.map(mat => (
+                                  <MaterialCard key={mat.id} mat={mat} activeMaterialId={activeMaterialId} onApply={applyMaterialById} isApplyingTexture={isApplyingTexture} isSwappingModel={isSwappingModel} cardStyle={cardStyle} toAbsoluteUrl={toAbsoluteUrl} />
+                                ))}
+                                {groupItems.length === 0 && (
+                                  <p className="text-[10px] text-white/30 text-center py-2">No variants</p>
+                                )}
                               </div>
                             </div>
                           );
                         })}
-
-                        {/* If no universal and no linked materials, show flat list + default */}
-                        {universalMaterials.length === 0 && productModels!.every(mc => getModelMaterials(mc).length === 0) && (
-                          <div className="px-2 pt-4 space-y-2">
-                            <button onClick={resetToDefault} data-testid="button-material-default"
-                              className={cn("w-full p-2 flex flex-col items-center gap-1.5 transition-all duration-150",
-                                activeMaterialId === null ? "bg-white/10" : "bg-white/5 hover:bg-white/10")}
-                              style={cardStyle(activeMaterialId === null)}>
-                              <div className="w-12 h-12 bg-gradient-to-br from-white/20 to-white/5 border border-white/20 flex items-center justify-center" style={{ borderRadius: "10px" }}>
-                                <span className="text-white/80 text-xs font-medium">GLB</span>
-                              </div>
-                              <span className="text-[11px] text-white/80 font-medium leading-tight text-center">Default</span>
-                            </button>
-                            {materials!.map(mat => <MaterialCard key={mat.id} mat={mat} activeMaterialId={activeMaterialId} onApply={applyMaterialById} isApplyingTexture={isApplyingTexture} isSwappingModel={isSwappingModel} cardStyle={cardStyle} toAbsoluteUrl={toAbsoluteUrl} />)}
-                          </div>
-                        )}
                       </>
                     ) : (
                       /* Flat list — no model configs */
