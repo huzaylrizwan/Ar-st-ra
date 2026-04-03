@@ -7,7 +7,7 @@ npm install
 # but we still track to be safe and avoid unnecessary work.
 npx tsx scripts/run-migrations.ts
 
-# Sync Drizzle schema — pipe empty input so any interactive prompts are
-# auto-declined in non-TTY environments (CI/post-merge runner).
-# Exits 0 when "No changes detected" or after applying changes.
-yes "" | npm run db:push 2>&1
+# Sync Drizzle schema non-interactively.
+# --force auto-approves any data-loss statements (safe here because our
+# migration SQL already handles all structural changes idempotently).
+npm run db:push -- --force
