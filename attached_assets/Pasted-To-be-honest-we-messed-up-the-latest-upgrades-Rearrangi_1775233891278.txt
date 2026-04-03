@@ -1,0 +1,13 @@
+To be honest, we messed up the latest upgrades. Rearranging the admin panel, adding different variations, and implementing customizable transparency—everything is so cluttered that nothing is working correctly. We need to take a new approach.
+
+Let’s start by fixing the backend system and the errors in the admin panel. I want the product settings to look like a File Explorer. Think of each product as a file; each file should display an image with the name and other details written on it. Everything should be simple and clear, with a single "Add Product" button at the top.
+
+Double-clicking any product file will open it. This view should be an entirely new screen. First, it should have a layout similar to a forum where the admin enters the product name, selects categories, and sets the price. For the price, the admin should manually input the currency sign (like € or $). Then, the admin writes the description.
+
+That’s the easy part. Next, there should be a block or panel—again, in that File Explorer style—where the admin can add "Models," similar to adding folders or files. They can add multiple models, but one must be designated as the Default Model.
+
+Each model file the admin adds will contain its own material variants. Keep in mind that each model and each color variant requires its own unique .glb file. We aren't doing automatic color changes; each material requires its own specific color PNG and .glb file.
+
+Now, since we have different models and each model has different materials, let's look at the Studio view. We currently have a sidebar labeled "Model and Variant"—let's rename that to "Materials and Variants."
+
+When a user selects a different variant, the "Materials" section should update to show all materials associated with that specific variant. Selecting one should then open the corresponding .glb file for viewing. Finally, the settings options shown on the user-side viewer for transperency controls of side bar and etc  should be configurable by the admin within these settings, and those parameters should remain consistent for each model.
