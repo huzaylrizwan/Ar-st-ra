@@ -2,20 +2,12 @@
 set -e
 npm install
 
-# Apply any pending SQL migrations from the migrations/ directory
-# These are idempotent (CREATE IF NOT EXISTS / DO blocks) so safe to re-run
-for f in migrations/*.sql; do
-  if [ -f "$f" ]; then
-    echo "Applying migration: $f"
-    npx tsx -e "
-const { Pool } = require('pg');
-const fs = require('fs');
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-pool.query(fs.readFileSync('$f', 'utf8')).then(() => { console.log('OK'); pool.end(); }).catch(e => { console.error(e.message); pool.end(); process.exit(1); });
-"
-  fi
-done
+# Apply pending SQL migrations using a tracking table to avoid re-running
+# migrations that have already been applied. Each migration file is idempotent,
+# but we still track to be safe and avoid unnecessary work.
+npx tsx scripts/run-migrations.ts
 
-# Sync schema — pipe empty input to auto-decline any interactive prompts
-# If schema is already in sync this exits immediately with "No changes detected"
-yes "" | npm run db:push 2>&1 || true
+# Sync Drizzle schema — pipe empty input so any interactive prompts are
+# auto-declined in non-TTY environments (CI/post-merge runner).
+# Exits 0 when "No changes detected" or after applying changes.
+yes "" | npm run db:push 2>&1
