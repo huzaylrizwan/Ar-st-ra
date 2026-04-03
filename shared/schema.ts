@@ -1,5 +1,5 @@
 export * from "./models/auth";
-import { pgTable, text, serial, integer, boolean, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, real, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -50,6 +50,13 @@ export const themeSettings = pgTable("theme_settings", {
   arStudioTab1Icon: text("ar_studio_tab1_icon"),
   arStudioTab2Label: text("ar_studio_tab2_label").default("Variants"),
   arStudioTab2Icon: text("ar_studio_tab2_icon"),
+  // AR Studio UI appearance (persisted in DB instead of localStorage)
+  studioSidebarOpacity: real("studio_sidebar_opacity").default(0.65),
+  studioSidebarColor: text("studio_sidebar_color").default("#000000"),
+  studioBottomBarOpacity: real("studio_bottom_bar_opacity").default(0.65),
+  studioBottomBarColor: text("studio_bottom_bar_color").default("#000000"),
+  // Currency
+  currencySymbol: text("currency_symbol").default("$"),
 });
 
 // Promo Banners - multiple rotating banners
@@ -78,18 +85,6 @@ export const heroImages = pgTable("hero_images", {
   isActive: boolean("is_active").default(false).notNull(),
 });
 
-// Product Material Variants
-export const productMaterials = pgTable("product_materials", {
-  id: serial("id").primaryKey(),
-  productId: integer("product_id").references(() => products.id, { onDelete: "cascade" }).notNull(),
-  name: text("name").notNull(),
-  colorHex: text("color_hex").notNull(),
-  textureUrl: text("texture_url"),
-  variantModelUrl: text("variant_model_url"),
-  sortOrder: integer("sort_order").default(0).notNull(),
-  isDefault: boolean("is_default").default(false).notNull(),
-});
-
 // Product Model Configurations (different GLB configs for same product)
 export const productModels = pgTable("product_models", {
   id: serial("id").primaryKey(),
@@ -99,6 +94,19 @@ export const productModels = pgTable("product_models", {
   thumbnailUrl: text("thumbnail_url"),
   isDefault: boolean("is_default").default(false).notNull(),
   sortOrder: integer("sort_order").default(0).notNull(),
+});
+
+// Product Material Variants
+export const productMaterials = pgTable("product_materials", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").references(() => products.id, { onDelete: "cascade" }).notNull(),
+  modelId: integer("model_id").references(() => productModels.id, { onDelete: "set null" }),
+  name: text("name").notNull(),
+  colorHex: text("color_hex").notNull(),
+  textureUrl: text("texture_url"),
+  variantModelUrl: text("variant_model_url"),
+  sortOrder: integer("sort_order").default(0).notNull(),
+  isDefault: boolean("is_default").default(false).notNull(),
 });
 
 // Product Measurements

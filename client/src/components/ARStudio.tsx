@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { X, Box, Loader2, Ruler, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Product, ProductMaterial, ProductModel, ProductMeasurement, ThemeSettings } from "@shared/schema";
@@ -19,15 +19,10 @@ function toAbsoluteUrl(path: string): string {
   return `${window.location.origin}${path.startsWith("/") ? "" : "/"}${path}`;
 }
 
-const glassStyle = {
-  background: "rgba(0,0,0,0.65)",
-  backdropFilter: "blur(16px)",
-  WebkitBackdropFilter: "blur(16px)",
-} as const;
-
 export function ARStudio({ product, onClose }: ARStudioProps) {
   const modelViewerRef = useRef<ModelViewerElement>(null);
   const { isAuthenticated } = useAuth();
+  const queryClient = useQueryClient();
 
   const { data: studioSettings } = useQuery<ThemeSettings>({
     queryKey: ["/api/settings"],
@@ -41,8 +36,75 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
 
   const tab1Label = studioSettings?.arStudioTab1Label ?? "Model";
   const tab1Icon  = studioSettings?.arStudioTab1Icon ?? "";
-  const tab2Label = studioSettings?.arStudioTab2Label ?? "Variants";
+  const tab2Label = studioSettings?.arStudioTab2Label ?? "Materials";
   const tab2Icon  = studioSettings?.arStudioTab2Icon ?? "";
+
+  // Studio appearance — from DB (fall back to 0.65 / #000000)
+  const dbSidebarOpacity   = studioSettings?.studioSidebarOpacity   ?? 0.65;
+  const dbSidebarColor     = studioSettings?.studioSidebarColor     ?? "#000000";
+  const dbBottomBarOpacity = studioSettings?.studioBottomBarOpacity ?? 0.65;
+  const dbBottomBarColor   = studioSettings?.studioBottomBarColor   ?? "#000000";
+
+  const [bottomBarOpacity, setBottomBarOpacity] = useState<number>(0.65);
+  const [bottomBarColor,   setBottomBarColor]   = useState<string>("#000000");
+  const [sidebarOpacity,   setSidebarOpacity]   = useState<number>(0.65);
+  const [sidebarColor,     setSidebarColor]     = useState<string>("#000000");
+
+  // Sync local state from DB values when settings load
+  useEffect(() => {
+    if (studioSettings) {
+      setBottomBarOpacity(studioSettings.studioBottomBarOpacity ?? 0.65);
+      setBottomBarColor(studioSettings.studioBottomBarColor ?? "#000000");
+      setSidebarOpacity(studioSettings.studioSidebarOpacity ?? 0.65);
+      setSidebarColor(studioSettings.studioSidebarColor ?? "#000000");
+    }
+  }, [studioSettings]);
+
+  // Mutation to persist studio settings back to DB
+  const settingsMutation = useMutation({
+    mutationFn: async (updates: Partial<ThemeSettings>) => {
+      const res = await fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) throw new Error("Failed to update settings");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/settings"] });
+    },
+  });
+
+  // Debounce helper — accumulates all field changes within 500ms window then sends one PUT
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingSettingsRef = useRef<Partial<ThemeSettings>>({});
+  const debouncedSaveSettings = useCallback((updates: Partial<ThemeSettings>) => {
+    pendingSettingsRef.current = { ...pendingSettingsRef.current, ...updates };
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    debounceTimerRef.current = setTimeout(() => {
+      settingsMutation.mutate(pendingSettingsRef.current);
+      pendingSettingsRef.current = {};
+    }, 500);
+  }, [settingsMutation]);
+
+  const updateBottomBarOpacity = (v: number) => {
+    setBottomBarOpacity(v);
+    debouncedSaveSettings({ studioBottomBarOpacity: v });
+  };
+  const updateBottomBarColor = (v: string) => {
+    setBottomBarColor(v);
+    debouncedSaveSettings({ studioBottomBarColor: v });
+  };
+  const updateSidebarOpacity = (v: number) => {
+    setSidebarOpacity(v);
+    debouncedSaveSettings({ studioSidebarOpacity: v });
+  };
+  const updateSidebarColor = (v: string) => {
+    setSidebarColor(v);
+    debouncedSaveSettings({ studioSidebarColor: v });
+  };
 
   const { data: productModels } = useQuery<ProductModel[]>({
     queryKey: ["/api/products", product.id, "models"],
@@ -53,13 +115,22 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
     },
   });
 
+  // Track selected model — materials are fetched per selected model
+  const [activeModelId, setActiveModelId] = useState<number | null>(null);
+
+  // Fetch materials only for the active model (or empty if none selected)
   const { data: materials } = useQuery<ProductMaterial[]>({
-    queryKey: ["/api/products", product.id, "materials"],
+    queryKey: ["/api/products", product.id, "models", activeModelId, "materials"],
     queryFn: async () => {
-      const res = await fetch(`/api/products/${product.id}/materials`, { credentials: "include" });
+      if (activeModelId === null) return [];
+      const res = await fetch(
+        `/api/products/${product.id}/models/${activeModelId}/materials`,
+        { credentials: "include" }
+      );
       if (!res.ok) throw new Error("Failed to fetch materials");
       return res.json();
     },
+    enabled: activeModelId !== null,
   });
 
   const { data: measurements } = useQuery<ProductMeasurement[]>({
@@ -80,7 +151,6 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
   }, [product.arLink]);
 
   const [activeMaterialId, setActiveMaterialId] = useState<number | null>(null);
-  const [activeModelId, setActiveModelId] = useState<number | null>(null);
   const [isApplyingTexture, setIsApplyingTexture] = useState(false);
   const [isSwappingModel, setIsSwappingModel] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -88,27 +158,6 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
   const [modelLoaded, setModelLoaded] = useState(false);
   const [measurementsOpen, setMeasurementsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-
-  const readOpacity = (key: string): number => {
-    const v = localStorage.getItem(key);
-    if (v === null) return 0.65;
-    const n = parseFloat(v);
-    return isNaN(n) ? 0.65 : Math.min(1, Math.max(0, n));
-  };
-  const readColor = (key: string): string => {
-    const v = localStorage.getItem(key);
-    return v && /^#[0-9a-fA-F]{6}$/.test(v) ? v : "#000000";
-  };
-
-  const [bottomBarOpacity, setBottomBarOpacity] = useState<number>(() => readOpacity("ar_studio_bottom_bar_opacity"));
-  const [bottomBarColor, setBottomBarColor] = useState<string>(() => readColor("ar_studio_bottom_bar_color"));
-  const [sidebarOpacity, setSidebarOpacity] = useState<number>(() => readOpacity("ar_studio_sidebar_opacity"));
-  const [sidebarColor, setSidebarColor] = useState<string>(() => readColor("ar_studio_sidebar_color"));
-
-  const updateBottomBarOpacity = (v: number) => { setBottomBarOpacity(v); localStorage.setItem("ar_studio_bottom_bar_opacity", String(v)); };
-  const updateBottomBarColor  = (v: string) => { setBottomBarColor(v);  localStorage.setItem("ar_studio_bottom_bar_color", v); };
-  const updateSidebarOpacity  = (v: number) => { setSidebarOpacity(v);  localStorage.setItem("ar_studio_sidebar_opacity", String(v)); };
-  const updateSidebarColor    = (v: string) => { setSidebarColor(v);    localStorage.setItem("ar_studio_sidebar_color", v); };
 
   const parseRgb = (hex: string) => ({
     r: parseInt(hex.slice(1, 3), 16),
@@ -133,6 +182,12 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
       WebkitBackdropFilter: "blur(24px)",
     } as const;
   })();
+
+  const glassStyle = {
+    background: `rgba(0,0,0,0.65)`,
+    backdropFilter: "blur(16px)",
+    WebkitBackdropFilter: "blur(16px)",
+  } as const;
 
   const [currentModelSrc, setCurrentModelSrc] = useState<string>(toAbsoluteUrl(product.arLink));
   const currentModelSrcRef = useRef<string>(toAbsoluteUrl(product.arLink));
@@ -244,7 +299,6 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
     if (material.variantModelUrl) {
       const newSrc = toAbsoluteUrl(material.variantModelUrl);
       if (newSrc !== currentModelSrcRef.current) {
-        setActiveModelId(null);
         setIsSwappingModel(true);
         setModelLoaded(false);
         originalMaterialRef.current = null;
@@ -399,15 +453,11 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
   const hasMaterials = materials && materials.length > 0;
   const hasModelConfigs = productModels && productModels.length > 0;
   const hasMeasurements = measurements && measurements.length > 0;
-  const showSidebar = hasMaterials || hasModelConfigs;
+  const showSidebar = hasModelConfigs;
 
   const showModelTab    = !!hasModelConfigs;
-  const showVariantsTab = !!hasMaterials;
-
-  // Grouped variants: materials associated with each model config (by variantModelUrl) + universal ones
-  const universalMaterials  = materials?.filter(m => !m.variantModelUrl) ?? [];
-  const getModelMaterials   = (modelConfig: ProductModel) =>
-    materials?.filter(m => m.variantModelUrl && toAbsoluteUrl(m.variantModelUrl) === toAbsoluteUrl(modelConfig.modelUrl)) ?? [];
+  // Materials tab is always visible when there are model configs (shows prompt if no model selected)
+  const showVariantsTab = !!hasModelConfigs;
 
   const handleTabClick = (tab: "models" | "variants") => {
     if (!sidebarOpen) {
@@ -423,12 +473,13 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
   const SIDEBAR_W = "min(184px, 42vw)";
   const TAB_W     = "36px";
 
-  // Shared card style helper
   const cardStyle = (active: boolean) => ({
     borderRadius: "14px",
     border: active ? "1px solid rgba(202,138,4,0.6)" : "1px solid transparent",
     boxShadow: active ? "0 0 10px rgba(202,138,4,0.2), 0 0 0 1px rgba(202,138,4,0.15)" : undefined,
   });
+
+  const currencySymbol = studioSettings?.currencySymbol ?? "$";
 
   return (
     <div
@@ -702,13 +753,23 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
                   </>
                 )}
 
-                {/* ── VARIANTS TAB ── */}
-                {activeTab === "variants" && hasMaterials && (
+                {/* ── MATERIALS TAB ── */}
+                {activeTab === "variants" && (
                   <>
-                    {hasModelConfigs ? (
+                    {activeModelId === null ? (
+                      <div className="px-3 pt-8 flex flex-col items-center gap-2 text-center">
+                        <Box className="w-8 h-8 text-white/30" />
+                        <p className="text-[11px] text-white/40">Select a model first to see its materials</p>
+                      </div>
+                    ) : (
                       <>
-                        {/* Default reset card — always at the top */}
-                        <div className="px-2 pt-4">
+                        <div className="px-3 pt-4 pb-2 shrink-0">
+                          <p className="text-[8px] uppercase tracking-widest text-white/50 font-semibold">
+                            {tab2Icon} {tab2Label}
+                          </p>
+                        </div>
+                        <div className="px-2 space-y-2">
+                          {/* Default reset card */}
                           <button
                             onClick={resetToDefault}
                             data-testid="button-material-default"
@@ -721,43 +782,25 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
                             </div>
                             <span className="text-[11px] text-white/80 font-medium leading-tight text-center">Default</span>
                           </button>
-                        </div>
 
-                        {/* One group per model config — each shows universal + linked materials */}
-                        {productModels!.map((modelConfig) => {
-                          const linked = getModelMaterials(modelConfig);
-                          const groupItems = [...universalMaterials, ...linked];
-                          return (
-                            <div key={modelConfig.id}>
-                              <div className="px-3 pt-3 pb-1 shrink-0">
-                                <p className="text-[8px] uppercase tracking-widest text-white/40 font-semibold">{modelConfig.name}</p>
-                              </div>
-                              <div className="px-2 space-y-2">
-                                {groupItems.map(mat => (
-                                  <MaterialCard key={mat.id} mat={mat} activeMaterialId={activeMaterialId} onApply={applyMaterialById} isApplyingTexture={isApplyingTexture} isSwappingModel={isSwappingModel} cardStyle={cardStyle} toAbsoluteUrl={toAbsoluteUrl} />
-                                ))}
-                                {groupItems.length === 0 && (
-                                  <p className="text-[10px] text-white/30 text-center py-2">No variants</p>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })}
+                          {hasMaterials ? (
+                            materials!.map(mat => (
+                              <MaterialCard
+                                key={mat.id}
+                                mat={mat}
+                                activeMaterialId={activeMaterialId}
+                                onApply={applyMaterialById}
+                                isApplyingTexture={isApplyingTexture}
+                                isSwappingModel={isSwappingModel}
+                                cardStyle={cardStyle}
+                                toAbsoluteUrl={toAbsoluteUrl}
+                              />
+                            ))
+                          ) : (
+                            <p className="text-[10px] text-white/30 text-center py-2">No materials for this model</p>
+                          )}
+                        </div>
                       </>
-                    ) : (
-                      /* Flat list — no model configs */
-                      <div className="px-2 pt-4 space-y-2">
-                        <button onClick={resetToDefault} data-testid="button-material-default"
-                          className={cn("w-full p-2 flex flex-col items-center gap-1.5 transition-all duration-150",
-                            activeMaterialId === null ? "bg-white/10" : "bg-white/5 hover:bg-white/10")}
-                          style={cardStyle(activeMaterialId === null)}>
-                          <div className="w-12 h-12 bg-gradient-to-br from-white/20 to-white/5 border border-white/20 flex items-center justify-center" style={{ borderRadius: "10px" }}>
-                            <span className="text-white/80 text-xs font-medium">GLB</span>
-                          </div>
-                          <span className="text-[11px] text-white/80 font-medium leading-tight text-center">Default</span>
-                        </button>
-                        {materials!.map(mat => <MaterialCard key={mat.id} mat={mat} activeMaterialId={activeMaterialId} onApply={applyMaterialById} isApplyingTexture={isApplyingTexture} isSwappingModel={isSwappingModel} cardStyle={cardStyle} toAbsoluteUrl={toAbsoluteUrl} />)}
-                      </div>
                     )}
                   </>
                 )}
@@ -778,7 +821,7 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
             {product.name}
           </p>
           <p className="text-sm text-white/60 font-medium" data-testid="text-product-price">
-            ${Math.round(product.price / 100).toLocaleString()}
+            {currencySymbol}{Math.round(product.price / 100).toLocaleString()}
           </p>
         </div>
         <button

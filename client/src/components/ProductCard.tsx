@@ -2,8 +2,11 @@ import { Link } from "wouter";
 import { type Product } from "@shared/schema";
 import { motion } from "framer-motion";
 import { Plus } from "lucide-react";
+import { useSettings } from "@/hooks/use-settings";
 
 export function ProductCard({ product }: { product: Product }) {
+  const { data: settings } = useSettings();
+  const currencySymbol = settings?.currencySymbol ?? "$";
   const mainImage = product.images?.[0] || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&q=80"; // Fallback sofa image
 
   return (
@@ -34,7 +37,7 @@ export function ProductCard({ product }: { product: Product }) {
           {product.name}
         </h3>
         <p className="text-sm sm:text-base font-semibold text-foreground">
-          ${Math.round(product.price / 100).toLocaleString()}
+          {currencySymbol}{Math.round(product.price / 100).toLocaleString()}
         </p>
       </div>
     </Link>

@@ -326,9 +326,17 @@ export async function registerRoutes(
     res.json(image);
   });
 
-  // Product Materials
+  // Product Materials (flat — supports optional ?modelId= filter)
   app.get("/api/products/:id/materials", async (req, res) => {
-    const materials = await storage.getProductMaterials(Number(req.params.id));
+    const productId = Number(req.params.id);
+    const modelIdParam = req.query.modelId;
+    let modelId: number | null | undefined;
+    if (modelIdParam === "null") {
+      modelId = null;
+    } else if (modelIdParam !== undefined) {
+      modelId = Number(modelIdParam);
+    }
+    const materials = await storage.getProductMaterials(productId, modelId);
     res.json(materials);
   });
 
@@ -352,6 +360,56 @@ export async function registerRoutes(
   app.delete("/api/products/materials/:id", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     await storage.deleteProductMaterial(Number(req.params.id));
+    res.sendStatus(204);
+  });
+
+  // Nested material routes under a specific model
+  app.get("/api/products/:id/models/:modelId/materials", async (req, res) => {
+    const productId = Number(req.params.id);
+    const modelId = Number(req.params.modelId);
+    const materials = await storage.getProductMaterials(productId, modelId);
+    res.json(materials);
+  });
+
+  app.post("/api/products/:id/models/:modelId/materials", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const input = insertProductMaterialSchema.parse({
+      ...req.body,
+      productId: Number(req.params.id),
+      modelId: Number(req.params.modelId),
+    });
+    const material = await storage.createProductMaterial(input);
+    res.status(201).json(material);
+  });
+
+  app.put("/api/products/:id/models/:modelId/materials/:materialId", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const productId = Number(req.params.id);
+    const modelId = Number(req.params.modelId);
+    const materialId = Number(req.params.materialId);
+    // Verify the material belongs to this product + model
+    const existing = await storage.getProductMaterials(productId, modelId);
+    if (!existing.find(m => m.id === materialId)) {
+      return res.status(404).json({ message: "Material not found for this model" });
+    }
+    // Strip ownership fields from body to prevent rebinding
+    const { productId: _pid, modelId: _mid, ...rest } = req.body;
+    const input = insertProductMaterialSchema.partial().parse(rest);
+    const material = await storage.updateProductMaterial(materialId, input);
+    res.json(material);
+  });
+
+  app.delete("/api/products/:id/models/:modelId/materials/:materialId", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const productId = Number(req.params.id);
+    const modelId = Number(req.params.modelId);
+    const materialId = Number(req.params.materialId);
+    // Verify the material belongs to this product + model
+    const existing = await storage.getProductMaterials(productId, modelId);
+    if (!existing.find(m => m.id === materialId)) {
+      return res.status(404).json({ message: "Material not found for this model" });
+    }
+    await storage.deleteProductMaterial(materialId);
     res.sendStatus(204);
   });
 

@@ -103,6 +103,11 @@ export default function AdminSettings() {
         arStudioTab1Icon: settings.arStudioTab1Icon ?? "",
         arStudioTab2Label: settings.arStudioTab2Label ?? "Variants",
         arStudioTab2Icon: settings.arStudioTab2Icon ?? "",
+        studioSidebarOpacity: settings.studioSidebarOpacity ?? 0.65,
+        studioSidebarColor: settings.studioSidebarColor ?? "#000000",
+        studioBottomBarOpacity: settings.studioBottomBarOpacity ?? 0.65,
+        studioBottomBarColor: settings.studioBottomBarColor ?? "#000000",
+        currencySymbol: settings.currencySymbol ?? "$",
       });
     }
   }, [settings, form]);
@@ -559,6 +564,111 @@ export default function AdminSettings() {
                     />
                   </div>
                 </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>3D Studio Appearance</CardTitle>
+              <CardDescription>
+                Default opacity and colour for the sidebar and bottom bar in the 3D viewer. These are shared across all users.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <p className="text-sm font-medium">Sidebar</p>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-4">
+                    <Label className="w-24 shrink-0">Opacity</Label>
+                    <input
+                      type="range" min={0} max={1} step={0.01}
+                      data-testid="slider-admin-sidebar-opacity"
+                      value={form.watch("studioSidebarOpacity") ?? 0.65}
+                      onChange={(e) => form.setValue("studioSidebarOpacity", parseFloat(e.target.value))}
+                      className="flex-1 accent-primary"
+                    />
+                    <span className="text-sm text-muted-foreground w-10 text-right">
+                      {Math.round((form.watch("studioSidebarOpacity") ?? 0.65) * 100)}%
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <Label className="w-24 shrink-0">Colour</Label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        data-testid="color-admin-sidebar"
+                        value={form.watch("studioSidebarColor") ?? "#000000"}
+                        onChange={(e) => form.setValue("studioSidebarColor", e.target.value)}
+                        className="w-9 h-9 rounded border cursor-pointer"
+                        style={{ padding: "2px" }}
+                      />
+                      <Input
+                        {...form.register("studioSidebarColor")}
+                        className="w-28 font-mono"
+                        data-testid="input-admin-sidebar-color"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <p className="text-sm font-medium">Bottom Bar</p>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-4">
+                    <Label className="w-24 shrink-0">Opacity</Label>
+                    <input
+                      type="range" min={0} max={1} step={0.01}
+                      data-testid="slider-admin-bottom-bar-opacity"
+                      value={form.watch("studioBottomBarOpacity") ?? 0.65}
+                      onChange={(e) => form.setValue("studioBottomBarOpacity", parseFloat(e.target.value))}
+                      className="flex-1 accent-primary"
+                    />
+                    <span className="text-sm text-muted-foreground w-10 text-right">
+                      {Math.round((form.watch("studioBottomBarOpacity") ?? 0.65) * 100)}%
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <Label className="w-24 shrink-0">Colour</Label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        data-testid="color-admin-bottom-bar"
+                        value={form.watch("studioBottomBarColor") ?? "#000000"}
+                        onChange={(e) => form.setValue("studioBottomBarColor", e.target.value)}
+                        className="w-9 h-9 rounded border cursor-pointer"
+                        style={{ padding: "2px" }}
+                      />
+                      <Input
+                        {...form.register("studioBottomBarColor")}
+                        className="w-28 font-mono"
+                        data-testid="input-admin-bottom-bar-color"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Currency</CardTitle>
+              <CardDescription>The symbol displayed next to prices across the store and in the 3D Studio.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Label htmlFor="currencySymbol">Currency Symbol</Label>
+                <Input
+                  id="currencySymbol"
+                  placeholder="$"
+                  maxLength={4}
+                  className="w-24"
+                  data-testid="input-currency-symbol"
+                  {...form.register("currencySymbol")}
+                />
+                <p className="text-xs text-muted-foreground">E.g. $, €, £, ¥</p>
               </div>
             </CardContent>
           </Card>

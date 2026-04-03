@@ -34,7 +34,7 @@ import {
   type InsertPageView,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, asc, gt, countDistinct } from "drizzle-orm";
+import { eq, asc, gt, countDistinct, isNull, and } from "drizzle-orm";
 
 export interface IStorage {
   // Categories
@@ -79,7 +79,7 @@ export interface IStorage {
   setActiveHeroImage(id: number): Promise<HeroImage>;
 
   // Product Materials
-  getProductMaterials(productId: number): Promise<ProductMaterial[]>;
+  getProductMaterials(productId: number, modelId?: number | null): Promise<ProductMaterial[]>;
   createProductMaterial(material: InsertProductMaterial): Promise<ProductMaterial>;
   updateProductMaterial(id: number, material: Partial<InsertProductMaterial>): Promise<ProductMaterial>;
   deleteProductMaterial(id: number): Promise<void>;
@@ -281,7 +281,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Product Materials
-  async getProductMaterials(productId: number): Promise<ProductMaterial[]> {
+  async getProductMaterials(productId: number, modelId?: number | null): Promise<ProductMaterial[]> {
+    if (modelId !== undefined) {
+      const condition = modelId === null
+        ? and(eq(productMaterials.productId, productId), isNull(productMaterials.modelId))
+        : and(eq(productMaterials.productId, productId), eq(productMaterials.modelId, modelId));
+      return await db
+        .select()
+        .from(productMaterials)
+        .where(condition)
+        .orderBy(asc(productMaterials.sortOrder));
+    }
     return await db
       .select()
       .from(productMaterials)

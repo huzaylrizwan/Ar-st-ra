@@ -9,12 +9,15 @@ import { Box, Check, ChevronRight } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import { cn } from "@/lib/utils";
 import { ARStudio } from "@/components/ARStudio";
+import { useSettings } from "@/hooks/use-settings";
 
 export default function ProductDetails() {
   const [match, params] = useRoute("/products/:id");
   const id = params ? parseInt(params.id) : 0;
   const { data: product, isLoading } = useProduct(id);
   const { data: category } = useCategory(product?.categoryId || 0);
+  const { data: settings } = useSettings();
+  const currencySymbol = settings?.currencySymbol ?? "$";
   
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -102,7 +105,7 @@ export default function ProductDetails() {
               )}
               <h1 className="font-serif text-2xl sm:text-4xl lg:text-5xl font-medium text-foreground">{product.name}</h1>
               <div className="text-xl sm:text-2xl font-semibold text-foreground">
-                ${Math.round(product.price / 100).toLocaleString()}
+                {currencySymbol}{Math.round(product.price / 100).toLocaleString()}
               </div>
             </div>
 
