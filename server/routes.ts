@@ -3,9 +3,9 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { setupAuth, registerAuthRoutes } from "./auth";
-import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
+import { registerObjectStorageRoutes } from "./replit_integrations/object_storage/routes";
 import { insertProductMaterialSchema, insertProductModelSchema, insertProductMeasurementSchema, insertSupervisorSchema } from "@shared/schema";
 import type { Request, Response, NextFunction } from "express";
 
