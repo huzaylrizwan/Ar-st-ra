@@ -15,17 +15,19 @@ export default function AdminSupervisors() {
   const { toast } = useToast();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
+  const [password, setPassword] = useState("");
 
   const { data: supervisors, isLoading } = useQuery<Supervisor[]>({
     queryKey: ["/api/supervisors"],
   });
 
   const addMutation = useMutation({
-    mutationFn: () => apiRequest("POST", "/api/supervisors", { email, name: name || null }),
+    mutationFn: () => apiRequest("POST", "/api/supervisors", { email, name: name || null, password }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/supervisors"] });
       setEmail("");
       setName("");
+      setPassword("");
       toast({ title: "Supervisor added", description: `${email} can now access the supervisor portal.` });
     },
     onError: (error: any) => {
@@ -70,7 +72,7 @@ export default function AdminSupervisors() {
               Add Supervisor
             </CardTitle>
             <CardDescription>
-              Users with these emails can log in via Replit Auth and access the /supervisor portal
+              Add users who can log in with their email and password to access the /supervisor portal
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -89,6 +91,15 @@ export default function AdminSupervisors() {
                 onChange={(e) => setName(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleAdd()}
                 data-testid="input-supervisor-name"
+                className="flex-1"
+              />
+              <Input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+                data-testid="input-supervisor-password"
                 className="flex-1"
               />
               <Button

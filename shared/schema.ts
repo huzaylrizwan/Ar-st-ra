@@ -123,6 +123,7 @@ export const supervisors = pgTable("supervisors", {
   id: serial("id").primaryKey(),
   email: text("email").notNull().unique(),
   name: text("name"),
+  passwordHash: text("password_hash"),
   addedAt: timestamp("added_at").defaultNow().notNull(),
 });
 

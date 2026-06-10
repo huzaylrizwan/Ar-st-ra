@@ -1,86 +1,35 @@
 import type { Express } from "express";
-import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
+import multer from "multer";
+import { v2 as cloudinary } from "cloudinary";
 
-/**
- * Register object storage routes for file uploads.
- *
- * This provides example routes for the presigned URL upload flow:
- * 1. POST /api/uploads/request-url - Get a presigned URL for uploading
- * 2. The client then uploads directly to the presigned URL
- *
- * IMPORTANT: These are example routes. Customize based on your use case:
- * - Add authentication middleware for protected uploads
- * - Add file metadata storage (save to database after upload)
- * - Add ACL policies for access control
- */
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
+
 export function registerObjectStorageRoutes(app: Express): void {
-  const objectStorageService = new ObjectStorageService();
-
-  /**
-   * Request a presigned URL for file upload.
-   *
-   * Request body (JSON):
-   * {
-   *   "name": "filename.jpg",
-   *   "size": 12345,
-   *   "contentType": "image/jpeg"
-   * }
-   *
-   * Response:
-   * {
-   *   "uploadURL": "https://storage.googleapis.com/...",
-   *   "objectPath": "/objects/uploads/uuid"
-   * }
-   *
-   * IMPORTANT: The client should NOT send the file to this endpoint.
-   * Send JSON metadata only, then upload the file directly to uploadURL.
-   */
-  app.post("/api/uploads/request-url", async (req, res) => {
+  app.post("/api/uploads", upload.single("file"), async (req, res) => {
     try {
-      const { name, size, contentType } = req.body;
+      if (!req.file) return res.status(400).json({ error: "No file provided" });
 
-      if (!name) {
-        return res.status(400).json({
-          error: "Missing required field: name",
-        });
-      }
-
-      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
-
-      // Extract object path from the presigned URL for later reference
-      const objectPath = objectStorageService.normalizeObjectEntityPath(uploadURL);
-
-      res.json({
-        uploadURL,
-        objectPath,
-        // Echo back the metadata for client convenience
-        metadata: { name, size, contentType },
+      const result = await new Promise<{ secure_url: string }>((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "luxe-interiors", resource_type: "auto" },
+          (error, result) => {
+            if (error || !result) return reject(error || new Error("Upload failed"));
+            resolve(result as { secure_url: string });
+          }
+        );
+        stream.end(req.file!.buffer);
       });
-    } catch (error) {
-      console.error("Error generating upload URL:", error);
-      res.status(500).json({ error: "Failed to generate upload URL" });
-    }
-  });
 
-  /**
-   * Serve uploaded objects.
-   *
-   * GET /objects/*
-   *
-   * This serves files from object storage. For public files, no auth needed.
-   * For protected files, add authentication middleware and ACL checks.
-   */
-  app.get(/^\/objects\/.*/, async (req, res) => {
-    try {
-      const objectFile = await objectStorageService.getObjectEntityFile(req.path);
-      await objectStorageService.downloadObject(objectFile, res);
+      res.json({ url: result.secure_url });
     } catch (error) {
-      console.error("Error serving object:", error);
-      if (error instanceof ObjectNotFoundError) {
-        return res.status(404).json({ error: "Object not found" });
-      }
-      return res.status(500).json({ error: "Failed to serve object" });
+      console.error("Upload error:", error);
+      res.status(500).json({ error: "Upload failed" });
     }
   });
 }
-

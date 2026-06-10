@@ -4,3 +4,8 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+.replit
+.local
+.agents
+.config
+attached_assets

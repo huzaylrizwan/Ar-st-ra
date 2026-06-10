@@ -3,7 +3,8 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
-import { setupAuth, registerAuthRoutes } from "./replit_integrations/auth";
+import bcrypt from "bcrypt";
+import { setupAuth, registerAuthRoutes } from "./auth";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage";
 import { insertProductMaterialSchema, insertProductModelSchema, insertProductMeasurementSchema, insertSupervisorSchema } from "@shared/schema";
 import type { Request, Response, NextFunction } from "express";
@@ -127,7 +128,7 @@ async function seedDatabase() {
 async function requireSupervisor(req: Request, res: Response, next: NextFunction) {
   if (!req.isAuthenticated()) return res.sendStatus(403);
   const user = req.user as any;
-  const email = user?.claims?.email || user?.email;
+  const email = user?.email;
   if (!email) return res.sendStatus(403);
   const supervisor = await storage.getSupervisorByEmail(email);
   if (!supervisor) return res.sendStatus(403);
@@ -480,8 +481,17 @@ export async function registerRoutes(
 
   app.post("/api/supervisors", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    const input = insertSupervisorSchema.parse(req.body);
-    const supervisor = await storage.createSupervisor(input);
+    const body = z.object({
+      email: z.string().email(),
+      name: z.string().optional().nullable(),
+      password: z.string().min(6).optional(),
+    }).parse(req.body);
+    const passwordHash = body.password ? await bcrypt.hash(body.password, 10) : undefined;
+    const supervisor = await storage.createSupervisor({
+      email: body.email,
+      name: body.name ?? null,
+      passwordHash: passwordHash ?? null,
+    });
     res.status(201).json(supervisor);
   });
 

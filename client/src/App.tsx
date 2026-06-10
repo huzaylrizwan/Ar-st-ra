@@ -64,6 +64,7 @@ import AdminSupervisors from "@/pages/admin/Supervisors";
 import SupervisorDashboard from "@/pages/supervisor/SupervisorDashboard";
 import SupervisorContact from "@/pages/supervisor/SupervisorContact";
 import SupervisorProducts from "@/pages/supervisor/SupervisorProducts";
+import Login from "@/pages/Login";
 import NotFound from "@/pages/not-found";
 
 // Redirect component for auth protection
@@ -72,7 +73,7 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
 
   useEffect(() => {
     if (!isLoading && !user) {
-      window.location.href = "/api/login";
+      window.location.href = "/login";
     }
   }, [user, isLoading]);
 
@@ -89,7 +90,7 @@ function SupervisorRoute({ component: Component }: { component: React.ComponentT
     if (!authLoading && !user) {
       const currentPath = window.location.pathname + window.location.search;
       localStorage.setItem("supervisor_redirect", currentPath);
-      window.location.href = `/api/login?redirect=${encodeURIComponent(currentPath)}`;
+      window.location.href = "/login";
     }
   }, [user, authLoading]);
 
@@ -148,6 +149,7 @@ function Router() {
     <Switch>
       {/* Public Routes */}
       <Route path="/" component={Home} />
+      <Route path="/login" component={Login} />
       <Route path="/categories" component={CategoryPage} />
       <Route path="/products/:id" component={ProductDetails} />
       <Route path="/contact" component={Contact} />

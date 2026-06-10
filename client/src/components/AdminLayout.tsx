@@ -25,7 +25,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-muted/20">Loading...</div>;
 
   if (!isAuthenticated) {
-    window.location.href = "/api/login";
+    window.location.href = "/login";
     return null;
   }
 
