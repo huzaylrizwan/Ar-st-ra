@@ -9,6 +9,9 @@ import { supervisors } from "@shared/schema";
 import { eq } from "drizzle-orm";
 
 export function getSession() {
+  if (!process.env.SESSION_SECRET) {
+    throw new Error("SESSION_SECRET environment variable is not set. Add it in your Render dashboard.");
+  }
   const sessionTtl = 7 * 24 * 60 * 60 * 1000;
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
