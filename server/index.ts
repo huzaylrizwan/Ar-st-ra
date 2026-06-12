@@ -2,9 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
-import { migrate } from "drizzle-orm/node-postgres/migrator";
-import { db } from "./db";
-import path from "path";
+import crypto from "crypto";
 
 const app = express();
 const httpServer = createServer(app);
@@ -62,15 +60,14 @@ app.use((req, res, next) => {
   next();
 });
 
-(async () => {
-  // Run DB migrations automatically on startup
-  try {
-    await migrate(db, { migrationsFolder: path.resolve("migrations") });
-    log("Database migrations applied");
-  } catch (err) {
-    log(`Migration warning: ${err}`);
-  }
+// Ensure SESSION_SECRET is always set — use a random one per boot if missing
+if (!process.env.SESSION_SECRET) {
+  const generated = crypto.randomBytes(32).toString("hex");
+  process.env.SESSION_SECRET = generated;
+  log("WARNING: SESSION_SECRET not set in environment. Using a random secret (sessions will reset on restart). Set SESSION_SECRET in Render environment variables.");
+}
 
+(async () => {
   await registerRoutes(httpServer, app);
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
@@ -86,9 +83,6 @@ app.use((req, res, next) => {
     return res.status(status).json({ message });
   });
 
-  // importantly only setup vite in development and after
-  // setting up all the other routes so the catch-all route
-  // doesn't interfere with the other routes
   if (process.env.NODE_ENV === "production") {
     serveStatic(app);
   } else {
@@ -96,19 +90,9 @@ app.use((req, res, next) => {
     await setupVite(httpServer, app);
   }
 
-  // ALWAYS serve the app on the port specified in the environment variable PORT
-  // Other ports are firewalled. Default to 5000 if not specified.
-  // this serves both the API and the client.
-  // It is the only port that is not firewalled.
   const port = parseInt(process.env.PORT || "5000", 10);
   httpServer.listen(
-    {
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    },
-    () => {
-      log(`serving on port ${port}`);
-    },
+    { port, host: "0.0.0.0", reusePort: true },
+    () => { log(`serving on port ${port}`); },
   );
 })();
