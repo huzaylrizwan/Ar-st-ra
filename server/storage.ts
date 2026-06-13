@@ -38,14 +38,14 @@ import { eq, asc, gt, countDistinct, isNull, and } from "drizzle-orm";
 
 export interface IStorage {
   // Categories
-  getCategories(): Promise<Category[]>;
+  getCategories(includeHidden?: boolean): Promise<Category[]>;
   getCategory(id: number): Promise<Category | undefined>;
   createCategory(category: InsertCategory): Promise<Category>;
   updateCategory(id: number, category: Partial<InsertCategory>): Promise<Category>;
   deleteCategory(id: number): Promise<void>;
 
   // Products
-  getProducts(categoryId?: number): Promise<Product[]>;
+  getProducts(categoryId?: number, includeHidden?: boolean): Promise<Product[]>;
   getProduct(id: number): Promise<Product | undefined>;
   createProduct(product: InsertProduct): Promise<Product>;
   updateProduct(id: number, product: Partial<InsertProduct>): Promise<Product>;
@@ -109,7 +109,8 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   // Categories
-  async getCategories(): Promise<Category[]> {
+  async getCategories(includeHidden = false): Promise<Category[]> {
+    if (includeHidden) return await db.select().from(categories);
     return await db.select().from(categories).where(eq(categories.isHidden, false));
   }
 
@@ -137,13 +138,14 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Products
-  async getProducts(categoryId?: number): Promise<Product[]> {
-    let query = db.select().from(products).where(eq(products.isHidden, false));
-    if (categoryId) {
-      // @ts-ignore - unexpected type mismatch in where clause, but it works
-      query = query.where(eq(products.categoryId, categoryId));
-    }
-    return await query;
+  async getProducts(categoryId?: number, includeHidden = false): Promise<Product[]> {
+    const conditions = [];
+    if (!includeHidden) conditions.push(eq(products.isHidden, false));
+    if (categoryId) conditions.push(eq(products.categoryId, categoryId));
+    const base = db.select().from(products);
+    if (conditions.length === 0) return await base;
+    if (conditions.length === 1) return await base.where(conditions[0]);
+    return await base.where(and(...conditions));
   }
 
   async getProduct(id: number): Promise<Product | undefined> {

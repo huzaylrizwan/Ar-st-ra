@@ -13,7 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ObjectUploader } from "@/components/ObjectUploader";
+import { ImageUploader } from "@/components/ImageUploader";
 import {
   ArrowLeft, Plus, Pencil, Trash2, Image as ImageIcon, X, Box, Upload, Palette, Ruler,
   ChevronDown, ChevronRight, Check
@@ -56,14 +56,6 @@ interface PendingMeasurement {
   id?: number;
 }
 
-function getUploadUrl(file: { name: string; size: number; type: string }) {
-  return fetch("/api/uploads/request-url", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name: file.name, size: file.size, contentType: file.type }),
-  }).then((r) => r.json());
-}
-
 export default function AdminProductEditor() {
   const params = useParams<{ id: string }>();
   const [location, navigate] = useLocation();
@@ -80,16 +72,11 @@ export default function AdminProductEditor() {
   const createMutation = useCreateProduct();
   const updateMutation = useUpdateProduct();
 
-  const pendingObjectPathsRef = useRef<Map<string, string>>(new Map());
-  const pendingArModelPathRef = useRef<string | null>(null);
-
   const [pendingMeasurements, setPendingMeasurements] = useState<PendingMeasurement[]>([]);
   const [deletedMeasurementIds, setDeletedMeasurementIds] = useState<number[]>([]);
 
   const [pendingModels, setPendingModels] = useState<PendingModel[]>([]);
   const [deletedModelIds, setDeletedModelIds] = useState<number[]>([]);
-  const pendingModelGlbPathsRef = useRef<Map<string, string>>(new Map());
-  const pendingModelThumbnailPathsRef = useRef<Map<string, string>>(new Map());
 
   const [isDataLoaded, setIsDataLoaded] = useState(() => isNew);
   const [isSavingForm, setIsSavingForm] = useState(false);
@@ -602,22 +589,12 @@ export default function AdminProductEditor() {
                       </button>
                     </div>
                   ))}
-                  <ObjectUploader
-                    maxNumberOfFiles={5}
-                    onGetUploadParameters={async (file) => {
-                      const { uploadURL, objectPath } = await getUploadUrl({ name: file.name, size: file.size ?? 0, type: file.type ?? "" });
-                      pendingObjectPathsRef.current.set(file.id, objectPath);
-                      return { method: "PUT", url: uploadURL, headers: { "Content-Type": file.type } };
-                    }}
-                    onComplete={(result) => {
-                      if ((result.successful?.length ?? 0) > 0) {
-                        const newImages = (result.successful ?? []).map((f: any) => pendingObjectPathsRef.current.get(f.id)).filter(Boolean) as string[];
-                        if (newImages.length > 0) {
-                          const current = form.getValues("images") || [];
-                          form.setValue("images", [...current, ...newImages], { shouldDirty: true });
-                          pendingObjectPathsRef.current = new Map();
-                        }
-                      }
+                  <ImageUploader
+                    accept="image/*"
+                    className="p-0 h-auto bg-transparent border-0 hover:bg-transparent shadow-none"
+                    onUpload={(url) => {
+                      const current = form.getValues("images") || [];
+                      form.setValue("images", [...current, url], { shouldDirty: true });
                     }}
                   >
                     <div
@@ -627,7 +604,7 @@ export default function AdminProductEditor() {
                       <ImageIcon className="w-5 h-5 text-muted-foreground" />
                       <span className="text-[10px] text-muted-foreground">Add photo</span>
                     </div>
-                  </ObjectUploader>
+                  </ImageUploader>
                 </div>
               </div>
 
@@ -647,28 +624,16 @@ export default function AdminProductEditor() {
                     </button>
                   </div>
                 ) : null}
-                <ObjectUploader
-                  maxNumberOfFiles={1}
-                  maxFileSize={104857600}
-                  allowedFileTypes={[".glb", ".gltf"]}
-                  onGetUploadParameters={async (file) => {
-                    const { uploadURL, objectPath } = await getUploadUrl({ name: file.name, size: file.size ?? 0, type: file.type || "model/gltf-binary" });
-                    pendingArModelPathRef.current = objectPath;
-                    return { method: "PUT", url: uploadURL, headers: { "Content-Type": file.type || "model/gltf-binary" } };
-                  }}
-                  onComplete={(result) => {
-                    if ((result.successful?.length ?? 0) > 0 && pendingArModelPathRef.current) {
-                      form.setValue("arLink", pendingArModelPathRef.current, { shouldValidate: true, shouldDirty: true });
-                      pendingArModelPathRef.current = null;
-                    }
-                  }}
-                  buttonClassName="h-9"
+                <ImageUploader
+                  accept=".glb,.gltf"
+                  className="h-9"
+                  onUpload={(url) => form.setValue("arLink", url, { shouldValidate: true, shouldDirty: true })}
                 >
                   <div className="flex items-center gap-2" data-testid="button-upload-ar-model">
                     <Upload className="w-4 h-4" />
                     {arLink ? "Replace AR Model" : "Upload AR Model (.glb)"}
                   </div>
-                </ObjectUploader>
+                </ImageUploader>
               </div>
 
               {/* Measurements */}
@@ -799,8 +764,6 @@ export default function AdminProductEditor() {
                     onRemoveMaterial={(matTempId) => removeMaterialFromModel(mod.tempId, matTempId)}
                     onUpdateMaterial={(matTempId, field, value) => updateMaterialInModel(mod.tempId, matTempId, field, value)}
                     onSetMaterialDefault={(matTempId) => setMaterialDefaultInModel(mod.tempId, matTempId)}
-                    pendingModelGlbPathsRef={pendingModelGlbPathsRef}
-                    pendingModelThumbnailPathsRef={pendingModelThumbnailPathsRef}
                   />
                 ))}
               </div>
@@ -822,8 +785,6 @@ interface ModelCardProps {
   onRemoveMaterial: (matTempId: string) => void;
   onUpdateMaterial: (matTempId: string, field: keyof PendingMaterial, value: string | boolean) => void;
   onSetMaterialDefault: (matTempId: string) => void;
-  pendingModelGlbPathsRef: React.MutableRefObject<Map<string, string>>;
-  pendingModelThumbnailPathsRef: React.MutableRefObject<Map<string, string>>;
 }
 
 function ModelCard({
@@ -836,11 +797,7 @@ function ModelCard({
   onRemoveMaterial,
   onUpdateMaterial,
   onSetMaterialDefault,
-  pendingModelGlbPathsRef,
-  pendingModelThumbnailPathsRef,
 }: ModelCardProps) {
-  const pendingMatTextureRef = useRef<Map<string, string>>(new Map());
-  const pendingMatGlbRef = useRef<Map<string, string>>(new Map());
 
   return (
     <div className="border border-border rounded-xl bg-card overflow-hidden" data-testid={`model-card-${mod.tempId}`}>
@@ -885,55 +842,27 @@ function ModelCard({
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
-          <ObjectUploader
-            maxNumberOfFiles={1}
-            allowedFileTypes={[".glb", ".gltf"]}
-            onGetUploadParameters={async (file) => {
-              const { uploadURL, objectPath } = await getUploadUrl({ name: file.name, size: file.size ?? 0, type: file.type || "model/gltf-binary" });
-              pendingModelGlbPathsRef.current.set(mod.tempId, objectPath);
-              return { method: "PUT", url: uploadURL, headers: { "Content-Type": file.type || "model/gltf-binary" } };
-            }}
-            onComplete={(result) => {
-              if ((result.successful?.length ?? 0) > 0) {
-                const path = pendingModelGlbPathsRef.current.get(mod.tempId);
-                if (path) {
-                  onUpdateField("modelUrl", path);
-                  pendingModelGlbPathsRef.current.delete(mod.tempId);
-                }
-              }
-            }}
-            buttonClassName="h-8 text-xs px-2"
+          <ImageUploader
+            accept=".glb,.gltf"
+            className="h-8 text-xs px-2"
+            onUpload={(url) => onUpdateField("modelUrl", url)}
           >
             <span data-testid={`button-upload-model-glb-${mod.tempId}`} className="flex items-center gap-1">
               <Upload className="w-3 h-3" />
               {mod.modelUrl ? "GLB" : "Upload GLB"}
             </span>
-          </ObjectUploader>
+          </ImageUploader>
 
-          <ObjectUploader
-            maxNumberOfFiles={1}
-            allowedFileTypes={[".png", ".jpg", ".jpeg", ".webp"]}
-            onGetUploadParameters={async (file) => {
-              const { uploadURL, objectPath } = await getUploadUrl({ name: file.name, size: file.size ?? 0, type: file.type ?? "" });
-              pendingModelThumbnailPathsRef.current.set(mod.tempId, objectPath);
-              return { method: "PUT", url: uploadURL, headers: { "Content-Type": file.type } };
-            }}
-            onComplete={(result) => {
-              if ((result.successful?.length ?? 0) > 0) {
-                const path = pendingModelThumbnailPathsRef.current.get(mod.tempId);
-                if (path) {
-                  onUpdateField("thumbnailUrl", path);
-                  pendingModelThumbnailPathsRef.current.delete(mod.tempId);
-                }
-              }
-            }}
-            buttonClassName="h-8 text-xs px-2"
+          <ImageUploader
+            accept="image/*"
+            className="h-8 text-xs px-2"
+            onUpload={(url) => onUpdateField("thumbnailUrl", url)}
           >
             <span data-testid={`button-upload-model-thumbnail-${mod.tempId}`} className="flex items-center gap-1">
               <ImageIcon className="w-3 h-3" />
               Thumb
             </span>
-          </ObjectUploader>
+          </ImageUploader>
 
           <button
             type="button"
@@ -988,8 +917,6 @@ function ModelCard({
                   onSetDefault={() => onSetMaterialDefault(mat.tempId)}
                   onUpdate={(field, value) => onUpdateMaterial(mat.tempId, field, value)}
                   onRemove={() => onRemoveMaterial(mat.tempId)}
-                  pendingMatTextureRef={pendingMatTextureRef}
-                  pendingMatGlbRef={pendingMatGlbRef}
                 />
               ))}
             </div>
@@ -1005,11 +932,9 @@ interface MaterialCardProps {
   onSetDefault: () => void;
   onUpdate: (field: keyof PendingMaterial, value: string | boolean) => void;
   onRemove: () => void;
-  pendingMatTextureRef: React.MutableRefObject<Map<string, string>>;
-  pendingMatGlbRef: React.MutableRefObject<Map<string, string>>;
 }
 
-function MaterialCard({ mat, onSetDefault, onUpdate, onRemove, pendingMatTextureRef, pendingMatGlbRef }: MaterialCardProps) {
+function MaterialCard({ mat, onSetDefault, onUpdate, onRemove }: MaterialCardProps) {
   return (
     <div
       className="border border-border rounded-lg bg-card p-3 space-y-2 relative"
@@ -1065,55 +990,27 @@ function MaterialCard({ mat, onSetDefault, onUpdate, onRemove, pendingMatTexture
       </div>
 
       <div className="flex gap-1.5">
-        <ObjectUploader
-          maxNumberOfFiles={1}
-          allowedFileTypes={[".png"]}
-          onGetUploadParameters={async (file) => {
-            const { uploadURL, objectPath } = await getUploadUrl({ name: file.name, size: file.size ?? 0, type: file.type ?? "" });
-            pendingMatTextureRef.current.set(mat.tempId, objectPath);
-            return { method: "PUT", url: uploadURL, headers: { "Content-Type": file.type } };
-          }}
-          onComplete={(result) => {
-            if ((result.successful?.length ?? 0) > 0) {
-              const path = pendingMatTextureRef.current.get(mat.tempId);
-              if (path) {
-                onUpdate("textureUrl", path);
-                pendingMatTextureRef.current.delete(mat.tempId);
-              }
-            }
-          }}
-          buttonClassName="h-7 text-xs flex-1 px-2"
+        <ImageUploader
+          accept=".png,image/*"
+          className="h-7 text-xs flex-1 px-2"
+          onUpload={(url) => onUpdate("textureUrl", url)}
         >
           <span data-testid={`button-upload-texture-${mat.tempId}`} className="flex items-center gap-1">
             <ImageIcon className="w-3 h-3" />
             {mat.textureUrl ? "PNG" : "Texture"}
           </span>
-        </ObjectUploader>
+        </ImageUploader>
 
-        <ObjectUploader
-          maxNumberOfFiles={1}
-          allowedFileTypes={[".glb", ".gltf"]}
-          onGetUploadParameters={async (file) => {
-            const { uploadURL, objectPath } = await getUploadUrl({ name: file.name, size: file.size ?? 0, type: file.type || "model/gltf-binary" });
-            pendingMatGlbRef.current.set(mat.tempId, objectPath);
-            return { method: "PUT", url: uploadURL, headers: { "Content-Type": file.type || "model/gltf-binary" } };
-          }}
-          onComplete={(result) => {
-            if ((result.successful?.length ?? 0) > 0) {
-              const path = pendingMatGlbRef.current.get(mat.tempId);
-              if (path) {
-                onUpdate("variantModelUrl", path);
-                pendingMatGlbRef.current.delete(mat.tempId);
-              }
-            }
-          }}
-          buttonClassName="h-7 text-xs flex-1 px-2"
+        <ImageUploader
+          accept=".glb,.gltf"
+          className="h-7 text-xs flex-1 px-2"
+          onUpload={(url) => onUpdate("variantModelUrl", url)}
         >
           <span data-testid={`button-upload-material-glb-${mat.tempId}`} className="flex items-center gap-1">
             <Box className="w-3 h-3" />
             {mat.variantModelUrl ? "GLB" : "Model"}
           </span>
-        </ObjectUploader>
+        </ImageUploader>
       </div>
 
       {(mat.isDefault) && (

@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from "@/hooks/use-categories";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { ObjectUploader } from "@/components/ObjectUploader";
+import { ImageUploader } from "@/components/ImageUploader";
 import { Plus, Pencil, Trash2, Image as ImageIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,8 +23,6 @@ export default function AdminCategories() {
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  // Store object path during upload process (using ref for immediate access)
-  const pendingObjectPathRef = useRef<string>("");
 
   const form = useForm<InsertCategory>({
     resolver: zodResolver(insertCategorySchema),
@@ -77,14 +75,6 @@ export default function AdminCategories() {
     }
   };
 
-  const handleImageUpload = (result: any) => {
-    if (result.successful && result.successful.length > 0 && pendingObjectPathRef.current) {
-      form.setValue("imageUrl", pendingObjectPathRef.current, { shouldDirty: true, shouldValidate: true });
-      toast({ title: "Image Uploaded", description: "Image successfully attached." });
-      pendingObjectPathRef.current = "";
-    }
-  };
-
   return (
     <AdminLayout>
       <div className="flex justify-between items-center mb-8">
@@ -121,30 +111,11 @@ export default function AdminCategories() {
                   {form.watch("imageUrl") && (
                     <img src={form.watch("imageUrl")} alt="Preview" className="w-16 h-16 object-cover rounded-sm border" />
                   )}
-                  <ObjectUploader
-                    onGetUploadParameters={async (file) => {
-                      const res = await fetch("/api/uploads/request-url", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          name: file.name,
-                          size: file.size,
-                          contentType: file.type,
-                        }),
-                      });
-                      const { uploadURL, objectPath } = await res.json();
-                      // Store the objectPath immediately in ref for use after upload completes
-                      pendingObjectPathRef.current = objectPath;
-                      return {
-                        method: "PUT",
-                        url: uploadURL,
-                        headers: { "Content-Type": file.type },
-                      };
-                    }}
-                    onComplete={handleImageUpload}
+                  <ImageUploader
+                    onUpload={(url) => form.setValue("imageUrl", url, { shouldDirty: true, shouldValidate: true })}
                   >
                     <span className="flex items-center gap-2"><ImageIcon className="w-4 h-4" /> Upload Image</span>
-                  </ObjectUploader>
+                  </ImageUploader>
                 </div>
                 <Input type="hidden" {...form.register("imageUrl")} />
                 {form.formState.errors.imageUrl && <p className="text-sm text-destructive">Image is required</p>}

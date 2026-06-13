@@ -11,7 +11,7 @@ import { useEffect } from "react";
 import { InsertThemeSettings, HeroImage } from "@shared/schema";
 import { HexColorPicker } from "react-colorful";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ObjectUploader } from "@/components/ObjectUploader";
+import { ImageUploader } from "@/components/ImageUploader";
 import { Image as ImageIcon, Check, Upload, Instagram, Facebook, Phone, MapPin, Map } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, buildUrl } from "@shared/routes";
@@ -116,20 +116,6 @@ export default function AdminSettings() {
     updateMutation.mutate(data);
   };
 
-  const handleLogoUpload = (result: any) => {
-    if (result.successful && result.successful.length > 0) {
-      const url = result.successful[0].uploadURL;
-      form.setValue("logoUrl", url);
-    }
-  };
-
-  const handleHeroImageUpload = (result: any) => {
-    if (result.successful && result.successful.length > 0) {
-      const url = result.successful[0].uploadURL;
-      createHeroImageMutation.mutate({ url, name: "Custom Hero Image" });
-    }
-  };
-
   const handlePresetClick = (preset: typeof THEME_PRESETS[number]) => {
     form.setValue("primaryColor", preset.primaryColor);
     form.setValue("activeThemePreset", preset.id);
@@ -170,30 +156,11 @@ export default function AdminSettings() {
                       <img src={form.watch("logoUrl")!} alt="Logo" className="h-8 w-auto" />
                     </div>
                   )}
-                  <ObjectUploader
-                    onGetUploadParameters={async (file) => {
-                      const res = await fetch("/api/uploads/request-url", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({
-                          name: file.name,
-                          size: file.size,
-                          contentType: file.type,
-                        }),
-                      });
-                      const { uploadURL } = await res.json();
-                      return {
-                        method: "PUT",
-                        url: uploadURL,
-                        headers: { "Content-Type": file.type },
-                      };
-                    }}
-                    onComplete={handleLogoUpload}
-                  >
+                  <ImageUploader onUpload={(url) => form.setValue("logoUrl", url)}>
                     <span className="flex items-center gap-2" data-testid="button-upload-logo">
                       <ImageIcon className="w-4 h-4" /> Upload Logo
                     </span>
-                  </ObjectUploader>
+                  </ImageUploader>
                 </div>
               </div>
             </CardContent>
@@ -325,30 +292,11 @@ export default function AdminSettings() {
                 </div>
               )}
               <div className="pt-2">
-                <ObjectUploader
-                  onGetUploadParameters={async (file) => {
-                    const res = await fetch("/api/uploads/request-url", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        name: file.name,
-                        size: file.size,
-                        contentType: file.type,
-                      }),
-                    });
-                    const { uploadURL } = await res.json();
-                    return {
-                      method: "PUT",
-                      url: uploadURL,
-                      headers: { "Content-Type": file.type },
-                    };
-                  }}
-                  onComplete={handleHeroImageUpload}
-                >
+                <ImageUploader onUpload={(url) => createHeroImageMutation.mutate({ url, name: "Custom Hero Image" })}>
                   <span className="flex items-center gap-2" data-testid="button-upload-hero">
                     <Upload className="w-4 h-4" /> Upload Custom Hero
                   </span>
-                </ObjectUploader>
+                </ImageUploader>
               </div>
             </CardContent>
           </Card>

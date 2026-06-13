@@ -161,7 +161,7 @@ export async function registerRoutes(
 
   // Categories
   app.get(api.categories.list.path, async (req, res) => {
-    const categories = await storage.getCategories();
+    const categories = await storage.getCategories(req.isAuthenticated());
     res.json(categories);
   });
 
@@ -194,7 +194,7 @@ export async function registerRoutes(
   // Products
   app.get(api.products.list.path, async (req, res) => {
     const categoryId = req.query.categoryId ? Number(req.query.categoryId) : undefined;
-    const products = await storage.getProducts(categoryId);
+    const products = await storage.getProducts(categoryId, req.isAuthenticated());
     res.json(products);
   });
 
