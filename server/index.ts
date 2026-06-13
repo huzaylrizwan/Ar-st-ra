@@ -3,6 +3,7 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import crypto from "crypto";
+import { globalLimiter } from "./middleware/rateLimiter.js";
 
 const app = express();
 const httpServer = createServer(app);
@@ -59,6 +60,8 @@ app.use((req, res, next) => {
 
   next();
 });
+
+app.use(globalLimiter);
 
 // Ensure SESSION_SECRET is always set — use a random one per boot if missing
 if (!process.env.SESSION_SECRET) {

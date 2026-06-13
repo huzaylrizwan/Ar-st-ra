@@ -7,6 +7,7 @@ import type { Express, RequestHandler } from "express";
 import { db } from "./db";
 import { supervisors } from "@shared/schema";
 import { eq } from "drizzle-orm";
+import { authLimiter } from "./middleware/rateLimiter.js";
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000;
@@ -71,7 +72,7 @@ export async function setupAuth(app: Express) {
   passport.serializeUser((user: any, cb) => cb(null, user));
   passport.deserializeUser((user: any, cb) => cb(null, user));
 
-  app.post("/api/login", (req, res, next) => {
+  app.post("/api/login", authLimiter, (req, res, next) => {
     passport.authenticate("local", (err: any, user: any, info: any) => {
       if (err) return next(err);
       if (!user) return res.status(401).json({ message: info?.message || "Invalid credentials" });
