@@ -8,6 +8,7 @@ import { setupAuth, registerAuthRoutes } from "./auth";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage/routes";
 import { insertProductMaterialSchema, insertProductModelSchema, insertProductMeasurementSchema, insertSupervisorSchema } from "@shared/schema";
 import type { Request, Response, NextFunction } from "express";
+import { validateArLink } from "./arLinkValidator.js";
 
 // Seed function
 async function seedDatabase() {
@@ -122,6 +123,14 @@ async function seedDatabase() {
       await storage.createFaqItem(faq);
     }
   }
+}
+
+// Admin middleware
+function requireAdmin(req: Request, res: Response, next: NextFunction) {
+  if (!req.isAuthenticated()) return res.sendStatus(401);
+  const user = req.user as any;
+  if (user?.role !== "admin") return res.sendStatus(403);
+  next();
 }
 
 // Supervisor middleware
@@ -325,6 +334,13 @@ export async function registerRoutes(
     if (!req.isAuthenticated()) return res.sendStatus(401);
     const image = await storage.setActiveHeroImage(Number(req.params.id));
     res.json(image);
+  });
+
+  // AR Link Validation
+  app.post("/api/validate-ar-link", requireAdmin, async (req, res) => {
+    const { url } = z.object({ url: z.string().url() }).parse(req.body);
+    const result = await validateArLink(url);
+    res.json(result);
   });
 
   // Product Materials (flat — supports optional ?modelId= filter)
