@@ -43,7 +43,10 @@ export async function setupAuth(app: Express) {
         const adminPassword = process.env.ADMIN_PASSWORD || "";
 
         if (email === adminEmail && adminPassword) {
-          const valid = await bcrypt.compare(password, adminPassword).catch(() => password === adminPassword);
+          const isBcryptHash = adminPassword.startsWith("$2b$") || adminPassword.startsWith("$2a$");
+          const valid = isBcryptHash
+            ? await bcrypt.compare(password, adminPassword)
+            : password === adminPassword;
           if (valid) return done(null, { email, role: "admin", firstName: "Admin" });
           return done(null, false, { message: "Invalid credentials" });
         }
