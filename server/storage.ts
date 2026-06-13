@@ -34,7 +34,7 @@ import {
   type InsertPageView,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, asc, gt, countDistinct, isNull, and } from "drizzle-orm";
+import { eq, asc, gt, countDistinct, isNull, and, lt } from "drizzle-orm";
 
 export interface IStorage {
   // Categories
@@ -105,6 +105,7 @@ export interface IStorage {
   // Page Views
   recordPageView(view: InsertPageView): Promise<PageView>;
   getLiveVisitorCount(): Promise<number>;
+  cleanupOldPageViews(): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -458,6 +459,11 @@ export class DatabaseStorage implements IStorage {
       .from(pageViews)
       .where(gt(pageViews.viewedAt, tenMinutesAgo));
     return result[0]?.count ?? 0;
+  }
+
+  async cleanupOldPageViews(): Promise<void> {
+    const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    await db.delete(pageViews).where(lt(pageViews.viewedAt, cutoff));
   }
 }
 
