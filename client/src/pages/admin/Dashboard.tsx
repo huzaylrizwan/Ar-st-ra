@@ -23,9 +23,9 @@ export default function Dashboard() {
     },
     {
       title: "Total Value",
-      value: `$${products?.reduce((acc, p) => acc + p.price, 0).toLocaleString() || 0}`,
+      value: `$${((products?.reduce((acc, p) => acc + p.price, 0) ?? 0) / 100).toLocaleString()}`,
       icon: DollarSign,
-      description: "Inventory value (cents)"
+      description: "Inventory value"
     },
     {
       title: "AR Enabled",
