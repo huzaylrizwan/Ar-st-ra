@@ -127,7 +127,7 @@ async function seedDatabase() {
 }
 
 // Admin middleware
-function requireAdmin(req: Request, res: Response, next: NextFunction) {
+export function requireAdmin(req: Request, res: Response, next: NextFunction) {
   if (!req.isAuthenticated()) return res.sendStatus(401);
   const user = req.user as any;
   if (user?.role !== "admin") return res.sendStatus(403);
