@@ -16,7 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ImageUploader } from "@/components/ImageUploader";
 import {
   ArrowLeft, Plus, Pencil, Trash2, Image as ImageIcon, X, Box, Upload, Palette, Ruler,
-  ChevronDown, ChevronRight, Check
+  ChevronDown, ChevronRight, Check, Loader2, AlertCircle
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -80,6 +80,29 @@ export default function AdminProductEditor() {
 
   const [isDataLoaded, setIsDataLoaded] = useState(() => isNew);
   const [isSavingForm, setIsSavingForm] = useState(false);
+  const [arLinkStatus, setArLinkStatus] = useState<{ valid: boolean; message: string } | null>(null);
+  const [isValidatingArLink, setIsValidatingArLink] = useState(false);
+
+  const validateArLinkField = async (url: string) => {
+    if (!url) { setArLinkStatus(null); return; }
+    setIsValidatingArLink(true);
+    setArLinkStatus(null);
+    try {
+      const res = await fetch("/api/validate-ar-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ url }),
+      });
+      if (!res.ok) throw new Error("Validation request failed");
+      const data = await res.json();
+      setArLinkStatus({ valid: data.valid, message: data.message });
+    } catch {
+      setArLinkStatus({ valid: false, message: "Could not reach validation service" });
+    } finally {
+      setIsValidatingArLink(false);
+    }
+  };
 
   const form = useForm<InsertProduct>({
     resolver: zodResolver(insertProductSchema),
@@ -617,7 +640,7 @@ export default function AdminProductEditor() {
                     <span className="text-sm text-blue-700 dark:text-blue-300 flex-1">3D model uploaded</span>
                     <button
                       type="button"
-                      onClick={() => form.setValue("arLink", "", { shouldValidate: true, shouldDirty: true })}
+                      onClick={() => { form.setValue("arLink", "", { shouldValidate: true, shouldDirty: true }); setArLinkStatus(null); }}
                       className="text-destructive hover:text-destructive/70"
                     >
                       <X className="w-4 h-4" />
@@ -627,13 +650,34 @@ export default function AdminProductEditor() {
                 <ImageUploader
                   accept=".glb,.gltf"
                   className="h-9"
-                  onUpload={(url) => form.setValue("arLink", url, { shouldValidate: true, shouldDirty: true })}
+                  onUpload={(url) => {
+                    form.setValue("arLink", url, { shouldValidate: true, shouldDirty: true });
+                    validateArLinkField(url);
+                  }}
                 >
                   <div className="flex items-center gap-2" data-testid="button-upload-ar-model">
                     <Upload className="w-4 h-4" />
                     {arLink ? "Replace AR Model" : "Upload AR Model (.glb)"}
                   </div>
                 </ImageUploader>
+                <Input
+                  placeholder="Or paste a .glb URL directly"
+                  value={arLink || ""}
+                  onChange={(e) => form.setValue("arLink", e.target.value, { shouldValidate: true, shouldDirty: true })}
+                  onBlur={(e) => validateArLinkField(e.target.value)}
+                  className="text-xs h-8"
+                />
+                {isValidatingArLink && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Loader2 className="w-3 h-3 animate-spin" /> Validating link…
+                  </p>
+                )}
+                {arLinkStatus && !isValidatingArLink && (
+                  <p className={`text-xs flex items-center gap-1 ${arLinkStatus.valid ? "text-green-600" : "text-red-500"}`}>
+                    {arLinkStatus.valid ? <Check className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+                    {arLinkStatus.message}
+                  </p>
+                )}
               </div>
 
               {/* Measurements */}
