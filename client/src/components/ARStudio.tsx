@@ -272,7 +272,9 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
     if (!mv) return;
     const model = mv.model;
     if (!model || !model.materials || model.materials.length === 0) return;
-    const mat = model.materials[0];
+    const slotIndex = material.materialSlotIndex ?? 0;
+    const mat = model.materials[slotIndex];
+    if (!mat) return;
     const pbr = mat.pbrMetallicRoughness;
 
     if (material.textureUrl) {
@@ -280,7 +282,8 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
         const texture = await mv.createTexture(toAbsoluteUrl(material.textureUrl));
         if (texture) {
           pbr.baseColorTexture.setTexture(texture);
-          texture.sampler.setScale({ u: 8, v: 8 });
+          const scale = material.uvScale ?? 8;
+          texture.sampler.setScale({ u: scale, v: scale });
           pbr.setBaseColorFactor([1, 1, 1, 1]);
         }
       } else {
