@@ -109,6 +109,8 @@ export const productMaterials = pgTable("product_materials", {
   variantModelUrl: text("variant_model_url"),
   sortOrder: integer("sort_order").default(0).notNull(),
   isDefault: boolean("is_default").default(false).notNull(),
+  materialSlotIndex: integer("material_slot_index").default(0).notNull(),
+  uvScale: real("uv_scale").default(8.0).notNull(),
 });
 
 // Product Measurements
