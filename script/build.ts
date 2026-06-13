@@ -7,7 +7,6 @@ import { rm, readFile } from "fs/promises";
 const allowlist = [
   "bcryptjs",
   "cloudinary",
-  "connect-pg-simple",
   "date-fns",
   "drizzle-orm",
   "drizzle-zod",
