@@ -5,7 +5,7 @@ const configSchema = z.object({
   SESSION_SECRET: z.string().min(32, "SESSION_SECRET must be at least 32 characters"),
   STORAGE_PROVIDER: z.enum(["replit", "local"]).default("local"),
   REPLIT_AUTH_ENABLED: z.string().transform(v => v === "true").default("false"),
-  PORT: z.string().transform(Number).default("5000"),
+  PORT: z.string().transform(Number).pipe(z.number().int().min(1).max(65535)).default("5000"),
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   UPLOAD_DIR: z.string().default("./uploads"),
 });

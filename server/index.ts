@@ -1,6 +1,5 @@
 import "dotenv/config";
-import "./config.js"; // validates env on startup — crashes with clear message if invalid
-import { config } from "./config.js";
+import { config } from "./config.js"; // validates env on startup — crashes with clear message if invalid
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
@@ -114,7 +113,7 @@ async function ensureSchema() {
     return res.status(status).json({ message });
   });
 
-  if (process.env.NODE_ENV === "production") {
+  if (config.NODE_ENV === "production") {
     serveStatic(app);
   } else {
     const { setupVite } = await import("./vite");

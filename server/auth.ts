@@ -8,6 +8,7 @@ import { db } from "./db";
 import { supervisors } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { authLimiter } from "./middleware/rateLimiter.js";
+import { config } from "./config.js";
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000;
@@ -19,13 +20,13 @@ export function getSession() {
     tableName: "sessions",
   });
   return session({
-    secret: process.env.SESSION_SECRET!,
+    secret: config.SESSION_SECRET,
     store: sessionStore,
     resave: false,
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: config.NODE_ENV === "production",
       maxAge: sessionTtl,
     },
   });
