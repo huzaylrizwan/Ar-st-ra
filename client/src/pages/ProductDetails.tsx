@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { ARStudio } from "@/components/ARStudio";
 import { useSettings } from "@/hooks/use-settings";
 import { ProductInquirySheet } from "@/components/ProductInquirySheet";
-import QRCode from "qrcode.react";
+import { QRCodeSVG } from "qrcode.react";
 
 export default function ProductDetails() {
   const [match, params] = useRoute("/products/:id");
@@ -189,7 +189,7 @@ export default function ProductDetails() {
                   {product.arLink ? (
                     arSupported === false ? (
                       <div className="flex flex-col items-center gap-3 p-4 border border-border rounded-xl sm:rounded-sm bg-muted/30">
-                        <QRCode value={typeof window !== "undefined" ? window.location.href : ""} size={120} />
+                        <QRCodeSVG value={typeof window !== "undefined" ? window.location.href : ""} size={120} data-testid="qrcode" />
                         <p className="text-xs text-center text-muted-foreground">
                           Scan on your phone to view in your space
                         </p>

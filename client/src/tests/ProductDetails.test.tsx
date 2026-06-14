@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 vi.mock("wouter", () => ({
   useRoute: () => [true, { id: "1" }],
@@ -53,17 +53,20 @@ vi.mock("embla-carousel-react", () => ({
 }));
 
 vi.mock("qrcode.react", () => ({
-  default: ({ value }: { value: string }) => <div data-testid="qrcode" data-value={value} />,
+  QRCodeSVG: ({ value }: { value: string }) => <div data-testid="qrcode" data-value={value} />,
 }));
 
 describe("ProductDetails", () => {
-  it("shows AR button or QR code when arLink is set", async () => {
+  it("shows AR view element when arLink is set", async () => {
     const { default: ProductDetails } = await import("@/pages/ProductDetails");
     render(<ProductDetails />);
-    // In jsdom, AR is not supported so QR code shows; on real devices the button shows.
-    const hasArButton = !!screen.queryByTestId("button-ar-view");
-    const hasQrCode = !!screen.queryByTestId("qrcode");
-    expect(hasArButton || hasQrCode).toBe(true);
+    // jsdom doesn't support AR, so QR code shows as fallback
+    // Either the button (while detecting) or QR code (after detection) should appear
+    await waitFor(() => {
+      const hasArButton = !!screen.queryByTestId("button-ar-view");
+      const hasQrCode = !!screen.queryByTestId("qrcode");
+      expect(hasArButton || hasQrCode).toBe(true);
+    });
   });
 
   it("highlights selected color swatch on click", async () => {
