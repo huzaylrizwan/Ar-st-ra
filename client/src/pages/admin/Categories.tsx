@@ -151,10 +151,12 @@ export default function AdminCategories() {
                     <span className="flex items-center gap-2"><ImageIcon className="w-4 h-4" /> Upload Image</span>
                   </ImageUploader>
                 </div>
-                <Input type="hidden" {...form.register("imageUrl")} />
-                {form.formState.errors.imageUrl && (
-                  <p className="text-sm text-destructive">Image is required</p>
-                )}
+                <Input
+                  placeholder="Or paste an image URL directly..."
+                  value={form.watch("imageUrl") || ""}
+                  onChange={(e) => form.setValue("imageUrl", e.target.value, { shouldDirty: true, shouldValidate: true })}
+                />
+                {form.formState.errors.imageUrl && <p className="text-sm text-destructive">Image is required</p>}
               </div>
               <div className="flex items-center justify-between space-x-2">
                 <Label htmlFor="isHidden">Hide from Store</Label>

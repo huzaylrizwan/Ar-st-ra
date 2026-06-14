@@ -17,6 +17,11 @@ import { useToast } from "@/hooks/use-toast";
 function HeroImagesManager() {
   const { toast } = useToast();
   const qc = useQueryClient();
+  const [addOpen, setAddOpen] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [name, setName] = useState("");
+  const [uploading, setUploading] = useState(false);
 
   const { data: heroImages, isLoading } = useQuery<HeroImage[]>({
     queryKey: ["/api/hero-images"],
@@ -43,30 +48,149 @@ function HeroImagesManager() {
     onError: () => toast({ title: "Error", description: "Failed to update hero image.", variant: "destructive" }),
   });
 
-  if (isLoading) return <div className="text-sm text-muted-foreground">Loading…</div>;
-  if (!heroImages || heroImages.length === 0) return (
-    <div className="text-sm text-muted-foreground border border-dashed border-border rounded-lg p-6 text-center">
-      No hero images yet. Upload images via the image uploader or add a URL.
-    </div>
-  );
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/hero-images/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to delete");
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/hero-images"] });
+      qc.invalidateQueries({ queryKey: ["/api/hero-images/active-all"] });
+      toast({ title: "Deleted", description: "Hero image removed." });
+    },
+    onError: () => toast({ title: "Error", description: "Failed to delete hero image.", variant: "destructive" }),
+  });
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0] ?? null;
+    setFile(f);
+    if (f) {
+      setPreview(URL.createObjectURL(f));
+      if (!name) setName(f.name.replace(/\.[^.]+$/, ""));
+    } else {
+      setPreview(null);
+    }
+  };
+
+  const handleAdd = async () => {
+    if (!file || !name.trim()) return;
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const uploadRes = await fetch("/api/uploads", {
+        method: "POST",
+        credentials: "include",
+        body: form,
+      });
+      if (!uploadRes.ok) throw new Error("Upload failed");
+      const { url } = await uploadRes.json();
+
+      const createRes = await fetch("/api/hero-images", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, name: name.trim(), isActive: false, isPreset: false }),
+      });
+      if (!createRes.ok) throw new Error("Failed to save");
+
+      qc.invalidateQueries({ queryKey: ["/api/hero-images"] });
+      qc.invalidateQueries({ queryKey: ["/api/hero-images/active-all"] });
+      setAddOpen(false);
+      setFile(null);
+      setPreview(null);
+      setName("");
+      toast({ title: "Success", description: "Hero image added." });
+    } catch {
+      toast({ title: "Error", description: "Failed to upload image.", variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-      {heroImages.map(img => (
-        <div key={img.id} className={`relative rounded-lg overflow-hidden border-2 transition-colors ${
-          img.isActive ? "border-primary" : "border-border"
-        }`}>
-          <img src={img.url} alt={img.name} className="w-full aspect-video object-cover" />
-          <div className="p-2 flex items-center justify-between bg-card">
-            <span className="text-xs font-medium truncate max-w-[80px]">{img.name}</span>
-            <Switch
-              checked={img.isActive}
-              onCheckedChange={() => toggleMutation.mutate(img.id)}
-              disabled={toggleMutation.isPending}
-            />
-          </div>
+    <div>
+      <div className="flex justify-end mb-4">
+        <Dialog open={addOpen} onOpenChange={(open) => {
+          setAddOpen(open);
+          if (!open) { setFile(null); setPreview(null); setName(""); }
+        }}>
+          <DialogTrigger asChild>
+            <Button size="sm" className="gap-2"><Plus className="w-4 h-4" /> Add Hero Image</Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[420px]">
+            <DialogHeader>
+              <DialogTitle>Add Hero Image</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 pt-2">
+              <div className="space-y-2">
+                <Label>Image</Label>
+                <label className={`flex flex-col items-center justify-center w-full aspect-video rounded-lg border-2 border-dashed cursor-pointer transition-colors overflow-hidden ${preview ? "border-primary" : "border-border hover:border-muted-foreground"}`}>
+                  {preview ? (
+                    <img src={preview} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="flex flex-col items-center gap-2 text-muted-foreground text-sm">
+                      <Plus className="w-6 h-6" />
+                      <span>Click to choose an image</span>
+                    </div>
+                  )}
+                  <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                </label>
+              </div>
+              <div className="space-y-2">
+                <Label>Name</Label>
+                <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Summer Campaign" />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
+                <Button onClick={handleAdd} disabled={uploading || !file || !name.trim()}>
+                  {uploading ? "Uploading…" : "Add"}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {isLoading ? (
+        <div className="text-sm text-muted-foreground">Loading…</div>
+      ) : !heroImages || heroImages.length === 0 ? (
+        <div className="text-sm text-muted-foreground border border-dashed border-border rounded-lg p-6 text-center">
+          No hero images yet. Click "Add Hero Image" to add one.
         </div>
-      ))}
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          {heroImages.map(img => (
+            <div key={img.id} className={`relative rounded-lg overflow-hidden border-2 transition-colors ${
+              img.isActive ? "border-primary" : "border-border"
+            }`}>
+              <img src={img.url} alt={img.name} className="w-full aspect-video object-cover" />
+              <div className="p-2 flex items-center justify-between bg-card gap-1">
+                <span className="text-xs font-medium truncate flex-1">{img.name}</span>
+                <Switch
+                  checked={img.isActive}
+                  onCheckedChange={() => toggleMutation.mutate(img.id)}
+                  disabled={toggleMutation.isPending}
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-destructive hover:text-destructive shrink-0"
+                  onClick={() => {
+                    if (confirm(`Delete "${img.name}"?`)) deleteMutation.mutate(img.id);
+                  }}
+                  disabled={deleteMutation.isPending}
+                >
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -83,6 +207,9 @@ export default function AdminBanners() {
       queryClient.invalidateQueries({ queryKey: ["/api/banners"] });
       toast({ title: "Success", description: "Banner created successfully." });
     },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message || "Failed to create banner.", variant: "destructive" });
+    },
   });
 
   const updateMutation = useMutation({
@@ -92,6 +219,9 @@ export default function AdminBanners() {
       queryClient.invalidateQueries({ queryKey: ["/api/banners"] });
       toast({ title: "Success", description: "Banner updated successfully." });
     },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message || "Failed to update banner.", variant: "destructive" });
+    },
   });
 
   const deleteMutation = useMutation({
@@ -99,6 +229,9 @@ export default function AdminBanners() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/banners"] });
       toast({ title: "Success", description: "Banner deleted successfully." });
+    },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message || "Failed to delete banner.", variant: "destructive" });
     },
   });
 

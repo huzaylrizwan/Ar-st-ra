@@ -28,7 +28,7 @@ export function CollectionsFilter({
   priceMin, priceMax, selectedColors, onColorToggle, sort, onSortChange,
   onClear, hasActiveFilters,
 }: CollectionsFilterProps) {
-  const allColors = [...new Set(products.flatMap(p => p.colors))];
+  const allColors = Array.from(new Set(products.flatMap(p => p.colors)));
 
   return (
     <div className="flex flex-wrap items-center gap-3 py-4 border-b border-border mb-6">

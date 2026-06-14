@@ -16,6 +16,7 @@ import { insertFaqItemSchema, type InsertFaqItem, type FaqItem } from "@shared/s
 import { useToast } from "@/hooks/use-toast";
 
 export default function AdminFAQ() {
+  const { toast } = useToast();
   const { data: faqItems, isLoading } = useQuery<FaqItem[]>({
     queryKey: ["/api/faq"],
   });
@@ -26,6 +27,9 @@ export default function AdminFAQ() {
       queryClient.invalidateQueries({ queryKey: ["/api/faq"] });
       toast({ title: "Success", description: "FAQ item created successfully." });
     },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message || "Failed to create FAQ item.", variant: "destructive" });
+    },
   });
 
   const updateMutation = useMutation({
@@ -35,6 +39,9 @@ export default function AdminFAQ() {
       queryClient.invalidateQueries({ queryKey: ["/api/faq"] });
       toast({ title: "Success", description: "FAQ item updated successfully." });
     },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message || "Failed to update FAQ item.", variant: "destructive" });
+    },
   });
 
   const deleteMutation = useMutation({
@@ -43,9 +50,11 @@ export default function AdminFAQ() {
       queryClient.invalidateQueries({ queryKey: ["/api/faq"] });
       toast({ title: "Success", description: "FAQ item deleted successfully." });
     },
+    onError: (err: any) => {
+      toast({ title: "Error", description: err.message || "Failed to delete FAQ item.", variant: "destructive" });
+    },
   });
 
-  const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingFaq, setEditingFaq] = useState<FaqItem | null>(null);
 

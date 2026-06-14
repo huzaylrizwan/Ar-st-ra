@@ -80,6 +80,19 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   }, [user, isLoading]);
 
   if (isLoading || !user) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+
+  if (user.role !== "admin") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-muted/10">
+        <div className="text-center space-y-4 max-w-md p-8">
+          <h1 className="text-2xl font-bold text-destructive">Access Denied</h1>
+          <p className="text-muted-foreground">This area is for administrators only.</p>
+          <a href="/supervisor" className="text-primary hover:underline text-sm">Go to Supervisor Portal →</a>
+        </div>
+      </div>
+    );
+  }
+
   return <Component />;
 }
 

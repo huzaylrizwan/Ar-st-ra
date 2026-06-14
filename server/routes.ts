@@ -160,10 +160,7 @@ export async function registerRoutes(
     res.json(settings || {});
   });
 
-  app.put(api.settings.update.path, async (req, res) => {
-    // Check auth
-    if (!req.isAuthenticated()) return res.sendStatus(401);
-    
+  app.put(api.settings.update.path, requireAdmin, async (req, res) => {
     const input = api.settings.update.input.parse(req.body);
     const settings = await storage.updateThemeSettings(input);
     res.json(settings);
@@ -181,22 +178,19 @@ export async function registerRoutes(
     res.json(category);
   });
 
-  app.post(api.categories.create.path, async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.post(api.categories.create.path, requireAdmin, async (req, res) => {
     const input = api.categories.create.input.parse(req.body);
     const category = await storage.createCategory(input);
     res.status(201).json(category);
   });
 
-  app.put(api.categories.update.path, async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.put(api.categories.update.path, requireAdmin, async (req, res) => {
     const input = api.categories.update.input.parse(req.body);
     const category = await storage.updateCategory(Number(req.params.id), input);
     res.json(category);
   });
 
-  app.delete(api.categories.delete.path, async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.delete(api.categories.delete.path, requireAdmin, async (req, res) => {
     await storage.deleteCategory(Number(req.params.id));
     res.sendStatus(204);
   });
@@ -214,8 +208,7 @@ export async function registerRoutes(
     res.json(product);
   });
 
-  app.post(api.products.create.path, async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.post(api.products.create.path, requireAdmin, async (req, res) => {
     const input = api.products.create.input.parse(req.body);
     const product = await storage.createProduct({
       ...input,
@@ -225,15 +218,13 @@ export async function registerRoutes(
     res.status(201).json(product);
   });
 
-  app.put(api.products.update.path, async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.put(api.products.update.path, requireAdmin, async (req, res) => {
     const input = api.products.update.input.parse(req.body);
     const product = await storage.updateProduct(Number(req.params.id), input);
     res.json(product);
   });
 
-  app.delete(api.products.delete.path, async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.delete(api.products.delete.path, requireAdmin, async (req, res) => {
     await storage.deleteProduct(Number(req.params.id));
     res.sendStatus(204);
   });
@@ -249,22 +240,19 @@ export async function registerRoutes(
     res.json(banners);
   });
 
-  app.post(api.banners.create.path, async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.post(api.banners.create.path, requireAdmin, async (req, res) => {
     const input = api.banners.create.input.parse(req.body);
     const banner = await storage.createBanner(input);
     res.status(201).json(banner);
   });
 
-  app.put(api.banners.update.path, async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.put(api.banners.update.path, requireAdmin, async (req, res) => {
     const input = api.banners.update.input.parse(req.body);
     const banner = await storage.updateBanner(Number(req.params.id), input);
     res.json(banner);
   });
 
-  app.delete(api.banners.delete.path, async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.delete(api.banners.delete.path, requireAdmin, async (req, res) => {
     await storage.deleteBanner(Number(req.params.id));
     res.sendStatus(204);
   });
@@ -280,22 +268,19 @@ export async function registerRoutes(
     res.json(items);
   });
 
-  app.post(api.faq.create.path, async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.post(api.faq.create.path, requireAdmin, async (req, res) => {
     const input = api.faq.create.input.parse(req.body);
     const item = await storage.createFaqItem(input);
     res.status(201).json(item);
   });
 
-  app.put(api.faq.update.path, async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.put(api.faq.update.path, requireAdmin, async (req, res) => {
     const input = api.faq.update.input.parse(req.body);
     const item = await storage.updateFaqItem(Number(req.params.id), input);
     res.json(item);
   });
 
-  app.delete(api.faq.delete.path, async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.delete(api.faq.delete.path, requireAdmin, async (req, res) => {
     await storage.deleteFaqItem(Number(req.params.id));
     res.sendStatus(204);
   });
@@ -323,28 +308,24 @@ export async function registerRoutes(
     res.json(updated);
   });
 
-  app.post(api.heroImages.create.path, async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.post(api.heroImages.create.path, requireAdmin, async (req, res) => {
     const input = api.heroImages.create.input.parse(req.body);
     const image = await storage.createHeroImage(input);
     res.status(201).json(image);
   });
 
-  app.put(api.heroImages.update.path, async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.put(api.heroImages.update.path, requireAdmin, async (req, res) => {
     const input = api.heroImages.update.input.parse(req.body);
     const image = await storage.updateHeroImage(Number(req.params.id), input);
     res.json(image);
   });
 
-  app.delete(api.heroImages.delete.path, async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.delete(api.heroImages.delete.path, requireAdmin, async (req, res) => {
     await storage.deleteHeroImage(Number(req.params.id));
     res.sendStatus(204);
   });
 
-  app.put(api.heroImages.activate.path, async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.put(api.heroImages.activate.path, requireAdmin, async (req, res) => {
     const image = await storage.setActiveHeroImage(Number(req.params.id));
     res.json(image);
   });
@@ -370,8 +351,7 @@ export async function registerRoutes(
     res.json(materials);
   });
 
-  app.post("/api/products/:id/materials", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.post("/api/products/:id/materials", requireAdmin, async (req, res) => {
     const input = insertProductMaterialSchema.parse({
       ...req.body,
       productId: Number(req.params.id),
@@ -380,15 +360,13 @@ export async function registerRoutes(
     res.status(201).json(material);
   });
 
-  app.put("/api/products/materials/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.put("/api/products/materials/:id", requireAdmin, async (req, res) => {
     const input = insertProductMaterialSchema.partial().parse(req.body);
     const material = await storage.updateProductMaterial(Number(req.params.id), input);
     res.json(material);
   });
 
-  app.delete("/api/products/materials/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.delete("/api/products/materials/:id", requireAdmin, async (req, res) => {
     await storage.deleteProductMaterial(Number(req.params.id));
     res.sendStatus(204);
   });
@@ -401,8 +379,7 @@ export async function registerRoutes(
     res.json(materials);
   });
 
-  app.post("/api/products/:id/models/:modelId/materials", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.post("/api/products/:id/models/:modelId/materials", requireAdmin, async (req, res) => {
     const input = insertProductMaterialSchema.parse({
       ...req.body,
       productId: Number(req.params.id),
@@ -412,8 +389,7 @@ export async function registerRoutes(
     res.status(201).json(material);
   });
 
-  app.put("/api/products/:id/models/:modelId/materials/:materialId", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.put("/api/products/:id/models/:modelId/materials/:materialId", requireAdmin, async (req, res) => {
     const productId = Number(req.params.id);
     const modelId = Number(req.params.modelId);
     const materialId = Number(req.params.materialId);
@@ -429,8 +405,7 @@ export async function registerRoutes(
     res.json(material);
   });
 
-  app.delete("/api/products/:id/models/:modelId/materials/:materialId", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.delete("/api/products/:id/models/:modelId/materials/:materialId", requireAdmin, async (req, res) => {
     const productId = Number(req.params.id);
     const modelId = Number(req.params.modelId);
     const materialId = Number(req.params.materialId);
@@ -449,8 +424,7 @@ export async function registerRoutes(
     res.json(models);
   });
 
-  app.post("/api/products/:id/models", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.post("/api/products/:id/models", requireAdmin, async (req, res) => {
     const input = insertProductModelSchema.parse({
       ...req.body,
       productId: Number(req.params.id),
@@ -459,15 +433,13 @@ export async function registerRoutes(
     res.status(201).json(model);
   });
 
-  app.put("/api/products/models/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.put("/api/products/models/:id", requireAdmin, async (req, res) => {
     const input = insertProductModelSchema.partial().parse(req.body);
     const model = await storage.updateProductModel(Number(req.params.id), input);
     res.json(model);
   });
 
-  app.delete("/api/products/models/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.delete("/api/products/models/:id", requireAdmin, async (req, res) => {
     await storage.deleteProductModel(Number(req.params.id));
     res.sendStatus(204);
   });
@@ -478,8 +450,7 @@ export async function registerRoutes(
     res.json(measurements);
   });
 
-  app.post("/api/products/:id/measurements", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.post("/api/products/:id/measurements", requireAdmin, async (req, res) => {
     const input = insertProductMeasurementSchema.parse({
       ...req.body,
       productId: Number(req.params.id),
@@ -488,28 +459,24 @@ export async function registerRoutes(
     res.status(201).json(measurement);
   });
 
-  app.put("/api/products/measurements/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.put("/api/products/measurements/:id", requireAdmin, async (req, res) => {
     const input = insertProductMeasurementSchema.partial().parse(req.body);
     const measurement = await storage.updateProductMeasurement(Number(req.params.id), input);
     res.json(measurement);
   });
 
-  app.delete("/api/products/measurements/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.delete("/api/products/measurements/:id", requireAdmin, async (req, res) => {
     await storage.deleteProductMeasurement(Number(req.params.id));
     res.sendStatus(204);
   });
 
   // Supervisor management (admin only)
-  app.get("/api/supervisors", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.get("/api/supervisors", requireAdmin, async (req, res) => {
     const supervisorList = await storage.getSupervisors();
     res.json(supervisorList);
   });
 
-  app.post("/api/supervisors", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.post("/api/supervisors", requireAdmin, async (req, res) => {
     const body = z.object({
       email: z.string().email(),
       name: z.string().optional().nullable(),
@@ -524,8 +491,7 @@ export async function registerRoutes(
     res.status(201).json(supervisor);
   });
 
-  app.delete("/api/supervisors/:id", async (req, res) => {
-    if (!req.isAuthenticated()) return res.sendStatus(401);
+  app.delete("/api/supervisors/:id", requireAdmin, async (req, res) => {
     await storage.deleteSupervisor(Number(req.params.id));
     res.sendStatus(204);
   });
@@ -550,7 +516,7 @@ export async function registerRoutes(
   });
 
   app.get("/api/supervisor/products", requireSupervisor, async (req, res) => {
-    const productList = await storage.getProducts();
+    const productList = await storage.getProducts(undefined, true);
     res.json(productList);
   });
 
@@ -596,8 +562,9 @@ export async function registerRoutes(
     res.sendStatus(204);
   });
 
-  // Live visitor analytics (supervisor)
-  app.get("/api/analytics/live-visitors", requireSupervisor, async (req, res) => {
+  // Live visitor analytics (any authenticated user)
+  app.get("/api/analytics/live-visitors", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
     const count = await storage.getLiveVisitorCount();
     res.json({ count });
   });

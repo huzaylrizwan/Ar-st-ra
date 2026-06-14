@@ -34,6 +34,8 @@ export default function Login() {
       if (stored?.startsWith("/supervisor")) {
         localStorage.removeItem("supervisor_redirect");
         navigate(stored);
+      } else if (user.role === "supervisor") {
+        navigate("/supervisor");
       } else {
         navigate("/admin");
       }

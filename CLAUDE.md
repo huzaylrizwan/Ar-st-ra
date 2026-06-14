@@ -147,41 +147,41 @@ A full 4-phase overhaul was designed and planned. See:
 - **Phase 3 plan:** `docs/superpowers/plans/2026-06-13-phase3-admin-features.md`
 - **Phase 4 plan:** `docs/superpowers/plans/2026-06-13-phase4-production-readiness.md`
 
-### Phase 1 — Bug Fixes & Security ⬜ NOT STARTED
-- [ ] Task 1: Install deps + Vitest test infrastructure
-- [ ] Task 2: Fix Dashboard cents bug (TDD)
-- [ ] Task 3: Schema — categoryId nullable + sortOrder on products
-- [ ] Task 4: Schema — materialSlotIndex + uvScale on productMaterials
-- [ ] Task 5: Fix ARStudio multi-material + UV scale
-- [ ] Task 6: AR link validation backend (TDD)
-- [ ] Task 7: AR link validation UI in AdminProductEditor
-- [ ] Task 8: Rate limiting middleware
-- [ ] Task 9: Security headers (helmet) + body size limit
-- [ ] Task 10: PageViews TTL cleanup
-- [ ] Task 11: Audit object storage auth
-- [ ] Task 12: Auth middleware tests
+### Phase 1 — Bug Fixes & Security ✅ COMPLETE
+- [x] Task 1: Install deps + Vitest test infrastructure
+- [x] Task 2: Fix Dashboard cents bug (TDD)
+- [x] Task 3: Schema — categoryId nullable + sortOrder on products
+- [x] Task 4: Schema — materialSlotIndex + uvScale on productMaterials
+- [x] Task 5: Fix ARStudio multi-material + UV scale
+- [x] Task 6: AR link validation backend (TDD)
+- [x] Task 7: AR link validation UI in AdminProductEditor
+- [x] Task 8: Rate limiting middleware
+- [x] Task 9: Security headers (helmet) + body size limit
+- [x] Task 10: PageViews TTL cleanup
+- [x] Task 11: Audit object storage auth
+- [x] Task 12: Auth middleware tests
 
-### Phase 2 — UX Enhancements ⬜ NOT STARTED
-- [ ] Task 1: Schema — themeSettings new fields + stockStatus
-- [ ] Task 2: Inquiries table + backend routes
-- [ ] Task 3: ProductInquirySheet component
-- [ ] Task 4: Color & size selection state + inquiry button in ProductDetails
-- [ ] Task 5: Stock status on ProductDetails + ProductCard + admin editor
-- [ ] Task 6: Collections page search & filter
-- [ ] Task 7: Footer dynamic categories + broken links fix
-- [ ] Task 8: AR device capability check + QR code fallback
-- [ ] Task 9: AR loading progress bar
+### Phase 2 — UX Enhancements ✅ COMPLETE
+- [x] Task 1: Schema — themeSettings new fields + stockStatus
+- [x] Task 2: Inquiries table + backend routes
+- [x] Task 3: ProductInquirySheet component
+- [x] Task 4: Color & size selection state + inquiry button in ProductDetails
+- [x] Task 5: Stock status on ProductDetails + ProductCard + admin editor
+- [x] Task 6: Collections page search & filter
+- [x] Task 7: Footer dynamic categories + broken links fix
+- [x] Task 8: AR device capability check + QR code fallback
+- [x] Task 9: AR loading progress bar
 
-### Phase 3 — Admin Power Features ⬜ NOT STARTED
-- [ ] Task 1: Schema — heroSlideInterval + analytics storage methods
-- [ ] Task 2: Analytics API routes
-- [ ] Task 3: Analytics dashboard page (recharts)
-- [ ] Task 4: Drag-to-reorder products (dnd-kit)
-- [ ] Task 5: Drag-to-reorder categories
-- [ ] Task 6: Inquiry log admin page + unread badge
-- [ ] Task 7: Hero image slideshow (multi-active)
-- [ ] Task 8: Settings page tabbed layout
-- [ ] Task 9: Product editor — image reorder + materialSlotIndex/uvScale/colorName fields
+### Phase 3 — Admin Power Features ✅ COMPLETE
+- [x] Task 1: Schema — heroSlideInterval + analytics storage methods
+- [x] Task 2: Analytics API routes
+- [x] Task 3: Analytics dashboard page (recharts)
+- [x] Task 4: Drag-to-reorder products (dnd-kit)
+- [x] Task 5: Drag-to-reorder categories
+- [x] Task 6: Inquiry log admin page + unread badge
+- [x] Task 7: Hero image slideshow (multi-active)
+- [x] Task 8: Settings page tabbed layout
+- [x] Task 9: Product editor — image reorder + materialSlotIndex/uvScale/colorName fields
 
 ### Phase 4 — Production Readiness ⬜ NOT STARTED
 - [ ] Task 1: Validated environment config (server/config.ts)

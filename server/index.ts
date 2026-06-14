@@ -1,3 +1,4 @@
+import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
@@ -6,6 +7,8 @@ import crypto from "crypto";
 import helmet from "helmet";
 import { globalLimiter } from "./middleware/rateLimiter.js";
 import { storage } from "./storage.js";
+import { execSync } from "child_process";
+import { pool } from "./db";
 
 const app = express();
 const httpServer = createServer(app);
@@ -69,7 +72,24 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use(globalLimiter);
+app.use("/api", globalLimiter);
+
+// Auto-push schema if database tables are missing
+async function ensureSchema() {
+  try {
+    await pool.query("SELECT 1 FROM categories LIMIT 1");
+  } catch (err: any) {
+    if (err.code === "42P01") {
+      log("Database tables not found — running schema push...");
+      try {
+        execSync("npm run db:push", { stdio: "inherit", env: process.env, cwd: process.cwd() });
+        log("Schema push complete");
+      } catch (pushErr: any) {
+        log("Schema push failed: " + (pushErr?.message || "unknown error"));
+      }
+    }
+  }
+}
 
 // Ensure SESSION_SECRET is always set — use a random one per boot if missing
 if (!process.env.SESSION_SECRET) {
@@ -79,6 +99,7 @@ if (!process.env.SESSION_SECRET) {
 }
 
 (async () => {
+  await ensureSchema();
   await registerRoutes(httpServer, app);
 
   const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
@@ -106,8 +127,7 @@ if (!process.env.SESSION_SECRET) {
   }
 
   const port = parseInt(process.env.PORT || "5000", 10);
-  httpServer.listen(
-    { port, host: "0.0.0.0", reusePort: true },
-    () => { log(`serving on port ${port}`); },
-  );
+  httpServer.listen(port, "0.0.0.0", () => {
+    log(`serving on port ${port}`);
+  });
 })();
