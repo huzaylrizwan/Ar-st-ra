@@ -8,6 +8,7 @@ import helmet from "helmet";
 import { globalLimiter } from "./middleware/rateLimiter.js";
 import { storage } from "./storage.js";
 import { execSync } from "child_process";
+import path from "path";
 import { pool } from "./db";
 
 const app = express();
@@ -73,6 +74,11 @@ app.use((req, res, next) => {
 });
 
 app.use("/api", globalLimiter);
+
+// Serve uploaded files from local disk when not using Replit Object Storage
+if (config.STORAGE_PROVIDER === "local") {
+  app.use("/uploads", express.static(path.resolve(process.cwd(), config.UPLOAD_DIR)));
+}
 
 // Auto-push schema if database tables are missing
 async function ensureSchema() {
