@@ -9,6 +9,7 @@ import { supervisors } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { authLimiter } from "./middleware/rateLimiter.js";
 import { config } from "./config.js";
+import { registerLocalAuthRoutes } from "./localAuth.js";
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000;
@@ -72,6 +73,9 @@ export async function setupAuth(app: Express) {
 
   passport.serializeUser((user: any, cb) => cb(null, user));
   passport.deserializeUser((user: any, cb) => cb(null, user));
+
+  // Register new local auth routes (/api/auth/login, /api/auth/logout, /api/auth/me, /api/auth/setup)
+  registerLocalAuthRoutes(app);
 
   app.post("/api/login", authLimiter, (req, res, next) => {
     passport.authenticate("local", (err: any, user: any, info: any) => {

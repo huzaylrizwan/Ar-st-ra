@@ -9,6 +9,7 @@ import {
   productModels,
   productMeasurements,
   supervisors,
+  users,
   pageViews,
   inquiries,
   type Category,
@@ -31,6 +32,7 @@ import {
   type InsertProductMeasurement,
   type Supervisor,
   type InsertSupervisor,
+  type User,
   type PageView,
   type InsertPageView,
   type Inquiry,
@@ -138,6 +140,11 @@ export interface IStorage {
   reorderProducts(items: { id: number; sortOrder: number }[]): Promise<void>;
   reorderCategories(items: { id: number; sortOrder: number }[]): Promise<void>;
   bulkUpdateProducts(ids: number[], action: "hide" | "show" | "delete"): Promise<void>;
+
+  // Users (local auth)
+  getUserByEmail(email: string): Promise<User | null>;
+  getAdminUser(): Promise<User | null>;
+  createUser(data: { email: string; passwordHash: string; name: string | null; role: string }): Promise<User>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -633,6 +640,22 @@ export class DatabaseStorage implements IStorage {
         .set({ isHidden: action === "hide" })
         .where(inArray(products.id, ids));
     }
+  }
+
+  // Users (local auth)
+  async getUserByEmail(email: string): Promise<User | null> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user ?? null;
+  }
+
+  async getAdminUser(): Promise<User | null> {
+    const [user] = await db.select().from(users).where(eq(users.role, "admin"));
+    return user ?? null;
+  }
+
+  async createUser(data: { email: string; passwordHash: string; name: string | null; role: string }): Promise<User> {
+    const [user] = await db.insert(users).values(data).returning();
+    return user;
   }
 }
 
