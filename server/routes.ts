@@ -6,10 +6,10 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { setupAuth, registerAuthRoutes } from "./auth";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage/routes";
-import { insertProductMaterialSchema, insertProductModelSchema, insertProductMeasurementSchema, insertSupervisorSchema } from "@shared/schema";
+import { insertProductMaterialSchema, insertProductModelSchema, insertProductMeasurementSchema, insertSupervisorSchema, insertInquirySchema, type InsertInquiry } from "@shared/schema";
 import type { Request, Response, NextFunction } from "express";
 import { validateArLink } from "./arLinkValidator.js";
-import { pageViewLimiter, authLimiter, arLinkLimiter } from "./middleware/rateLimiter.js";
+import { pageViewLimiter, authLimiter, arLinkLimiter, inquiryLimiter } from "./middleware/rateLimiter.js";
 
 // Seed function
 async function seedDatabase() {
@@ -598,6 +598,33 @@ export async function registerRoutes(
     if (!email) return res.json({ isSupervisor: false });
     const supervisor = await storage.getSupervisorByEmail(email);
     res.json({ isSupervisor: !!supervisor });
+  });
+
+  // Inquiries
+  app.post("/api/inquiries", inquiryLimiter, async (req, res) => {
+    const input = insertInquirySchema.parse(req.body);
+    const inquiry = await storage.createInquiry(input);
+    res.status(201).json(inquiry);
+  });
+
+  app.get("/api/inquiries", requireAdmin, async (req, res) => {
+    const list = await storage.getInquiries();
+    res.json(list);
+  });
+
+  app.get("/api/inquiries/unread-count", requireAdmin, async (req, res) => {
+    const count = await storage.getUnreadInquiryCount();
+    res.json({ count });
+  });
+
+  app.patch("/api/inquiries/:id/read", requireAdmin, async (req, res) => {
+    await storage.markInquiryRead(Number(req.params.id));
+    res.sendStatus(204);
+  });
+
+  app.delete("/api/inquiries/:id", requireAdmin, async (req, res) => {
+    await storage.deleteInquiry(Number(req.params.id));
+    res.sendStatus(204);
   });
 
   // Run seed

@@ -10,6 +10,7 @@ import {
   productMeasurements,
   supervisors,
   pageViews,
+  inquiries,
   type Category,
   type InsertCategory,
   type Product,
@@ -32,9 +33,11 @@ import {
   type InsertSupervisor,
   type PageView,
   type InsertPageView,
+  type Inquiry,
+  type InsertInquiry,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, asc, gt, countDistinct, isNull, and, lt } from "drizzle-orm";
+import { eq, asc, gt, countDistinct, isNull, and, lt, desc, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Categories
@@ -106,6 +109,13 @@ export interface IStorage {
   recordPageView(view: InsertPageView): Promise<PageView>;
   getLiveVisitorCount(): Promise<number>;
   cleanupOldPageViews(): Promise<void>;
+
+  // Inquiries
+  createInquiry(data: InsertInquiry): Promise<Inquiry>;
+  getInquiries(): Promise<Inquiry[]>;
+  getUnreadInquiryCount(): Promise<number>;
+  markInquiryRead(id: number): Promise<void>;
+  deleteInquiry(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -464,6 +474,32 @@ export class DatabaseStorage implements IStorage {
   async cleanupOldPageViews(): Promise<void> {
     const cutoff = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     await db.delete(pageViews).where(lt(pageViews.viewedAt, cutoff));
+  }
+
+  // Inquiries
+  async createInquiry(data: InsertInquiry): Promise<Inquiry> {
+    const [inquiry] = await db.insert(inquiries).values(data).returning();
+    return inquiry;
+  }
+
+  async getInquiries(): Promise<Inquiry[]> {
+    return db.select().from(inquiries).orderBy(desc(inquiries.createdAt));
+  }
+
+  async getUnreadInquiryCount(): Promise<number> {
+    const result = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(inquiries)
+      .where(eq(inquiries.isRead, false));
+    return result[0]?.count ?? 0;
+  }
+
+  async markInquiryRead(id: number): Promise<void> {
+    await db.update(inquiries).set({ isRead: true }).where(eq(inquiries.id, id));
+  }
+
+  async deleteInquiry(id: number): Promise<void> {
+    await db.delete(inquiries).where(eq(inquiries.id, id));
   }
 }
 

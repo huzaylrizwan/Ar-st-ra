@@ -144,6 +144,20 @@ export const pageViews = pgTable("page_views", {
   viewedAt: timestamp("viewed_at").defaultNow().notNull(),
 });
 
+// Customer inquiries
+export const inquiries = pgTable("inquiries", {
+  id: serial("id").primaryKey(),
+  productId: integer("product_id").references(() => products.id, { onDelete: "set null" }),
+  productName: text("product_name").notNull(),
+  customerName: text("customer_name").notNull(),
+  contact: text("contact").notNull(),
+  message: text("message"),
+  selectedColor: text("selected_color"),
+  selectedSize: text("selected_size"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  isRead: boolean("is_read").default(false).notNull(),
+});
+
 // Schemas
 export const insertCategorySchema = createInsertSchema(categories).omit({ id: true });
 export const insertProductSchema = createInsertSchema(products).omit({ id: true });
@@ -156,6 +170,7 @@ export const insertProductModelSchema = createInsertSchema(productModels).omit({
 export const insertProductMeasurementSchema = createInsertSchema(productMeasurements).omit({ id: true });
 export const insertSupervisorSchema = createInsertSchema(supervisors).omit({ id: true, addedAt: true });
 export const insertPageViewSchema = createInsertSchema(pageViews).omit({ id: true, viewedAt: true });
+export const insertInquirySchema = createInsertSchema(inquiries).omit({ id: true, createdAt: true });
 
 // Types
 export type Category = typeof categories.$inferSelect;
@@ -180,3 +195,5 @@ export type Supervisor = typeof supervisors.$inferSelect;
 export type InsertSupervisor = z.infer<typeof insertSupervisorSchema>;
 export type PageView = typeof pageViews.$inferSelect;
 export type InsertPageView = z.infer<typeof insertPageViewSchema>;
+export type Inquiry = typeof inquiries.$inferSelect;
+export type InsertInquiry = z.infer<typeof insertInquirySchema>;

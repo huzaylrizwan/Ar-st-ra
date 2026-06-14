@@ -29,3 +29,11 @@ export const arLinkLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+export const inquiryLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many inquiries submitted. Please try again in a minute." },
+});
