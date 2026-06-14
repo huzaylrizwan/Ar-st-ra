@@ -13,7 +13,7 @@ export const categories = pgTable("categories", {
 
 export const products = pgTable("products", {
   id: serial("id").primaryKey(),
-  categoryId: integer("category_id").references(() => categories.id).notNull(),
+  categoryId: integer("category_id").references(() => categories.id, { onDelete: "set null" }),
   name: text("name").notNull(),
   description: text("description").notNull(),
   price: integer("price").notNull(), // in cents
@@ -22,6 +22,8 @@ export const products = pgTable("products", {
   sizes: text("sizes").array().notNull(),   // e.g. ["S", "M", "L"]
   images: text("images").array().notNull(), // array of image URLs
   isHidden: boolean("is_hidden").default(false).notNull(),
+  stockStatus: text("stock_status").default("in_stock").notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(),
 });
 
 export const themeSettings = pgTable("theme_settings", {
@@ -107,6 +109,8 @@ export const productMaterials = pgTable("product_materials", {
   variantModelUrl: text("variant_model_url"),
   sortOrder: integer("sort_order").default(0).notNull(),
   isDefault: boolean("is_default").default(false).notNull(),
+  materialSlotIndex: integer("material_slot_index").default(0).notNull(),
+  uvScale: real("uv_scale").default(8.0).notNull(),
 });
 
 // Product Measurements

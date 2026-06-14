@@ -80,6 +80,29 @@ export default function AdminProductEditor() {
 
   const [isDataLoaded, setIsDataLoaded] = useState(() => isNew);
   const [isSavingForm, setIsSavingForm] = useState(false);
+  const [arLinkStatus, setArLinkStatus] = useState<{ valid: boolean; message: string } | null>(null);
+  const [isValidatingArLink, setIsValidatingArLink] = useState(false);
+
+  const validateArLinkField = async (url: string) => {
+    if (!url) { setArLinkStatus(null); return; }
+    setIsValidatingArLink(true);
+    setArLinkStatus(null);
+    try {
+      const res = await fetch("/api/validate-ar-link", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ url }),
+      });
+      if (!res.ok) throw new Error("Validation request failed");
+      const data = await res.json();
+      setArLinkStatus({ valid: data.valid, message: data.message });
+    } catch {
+      setArLinkStatus({ valid: false, message: "Could not reach validation service" });
+    } finally {
+      setIsValidatingArLink(false);
+    }
+  };
 
   const [arLinkStatus, setArLinkStatus] = useState<{ valid: boolean; message: string } | null>(null);
   const [isValidatingArLink, setIsValidatingArLink] = useState(false);

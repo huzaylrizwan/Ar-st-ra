@@ -3,6 +3,9 @@ import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 import crypto from "crypto";
+import helmet from "helmet";
+import { globalLimiter } from "./middleware/rateLimiter.js";
+import { storage } from "./storage.js";
 
 const app = express();
 const httpServer = createServer(app);
@@ -13,8 +16,14 @@ declare module "http" {
   }
 }
 
+app.use(helmet({
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: false,
+}));
+
 app.use(
   express.json({
+    limit: "2mb",
     verify: (req, _res, buf) => {
       req.rawBody = buf;
     },
@@ -60,6 +69,8 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use(globalLimiter);
+
 // Ensure SESSION_SECRET is always set — use a random one per boot if missing
 if (!process.env.SESSION_SECRET) {
   const generated = crypto.randomBytes(32).toString("hex");
@@ -69,6 +80,10 @@ if (!process.env.SESSION_SECRET) {
 
 (async () => {
   await registerRoutes(httpServer, app);
+
+  const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+  storage.cleanupOldPageViews().catch(console.error);
+  setInterval(() => storage.cleanupOldPageViews().catch(console.error), TWENTY_FOUR_HOURS);
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

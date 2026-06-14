@@ -50,7 +50,7 @@ function ProductFormDialog({
           name: product.name,
           description: product.description,
           price: product.price / 100,
-          categoryId: product.categoryId,
+          categoryId: product.categoryId ?? 0,
           arLink: product.arLink || "",
           images: (product.images || []).join(", "),
           isHidden: product.isHidden,
