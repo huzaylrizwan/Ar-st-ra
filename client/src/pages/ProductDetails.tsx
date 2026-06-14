@@ -5,7 +5,7 @@ import { useCategory } from "@/hooks/use-categories";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
-import { Box, Check, ChevronRight } from "lucide-react";
+import { Box, Check, ChevronRight, Clock, X } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import { cn } from "@/lib/utils";
 import { ARStudio } from "@/components/ARStudio";
@@ -165,30 +165,46 @@ export default function ProductDetails() {
 
             {/* Actions - Rounded on mobile */}
             <div className="pt-4 sm:pt-8 space-y-3 sm:space-y-4">
-              {product.arLink ? (
-                <Button
-                  size="lg"
-                  className="w-full h-12 sm:h-14 text-sm sm:text-base tracking-widest uppercase font-bold gap-2 sm:gap-3 rounded-full sm:rounded-none shadow-xl shadow-primary/10"
-                  onClick={() => setArViewerOpen(true)}
-                  data-testid="button-ar-view"
-                >
-                  <Box className="w-4 h-4 sm:w-5 sm:h-5" /> View in Reality
-                </Button>
-              ) : (
-                <div className="p-3 sm:p-4 bg-muted/50 text-xs sm:text-sm text-center text-muted-foreground rounded-xl sm:rounded-sm">
-                  AR View not available for this item
+              {product.stockStatus !== "out_of_stock" ? (
+                <>
+                  {product.arLink ? (
+                    <Button
+                      size="lg"
+                      className="w-full h-12 sm:h-14 text-sm sm:text-base tracking-widest uppercase font-bold gap-2 sm:gap-3 rounded-full sm:rounded-none shadow-xl shadow-primary/10"
+                      onClick={() => setArViewerOpen(true)}
+                      data-testid="button-ar-view"
+                    >
+                      <Box className="w-4 h-4 sm:w-5 sm:h-5" /> View in Reality
+                    </Button>
+                  ) : (
+                    <div className="p-3 sm:p-4 bg-muted/50 text-xs sm:text-sm text-center text-muted-foreground rounded-xl sm:rounded-sm">
+                      AR View not available for this item
+                    </div>
+                  )}
+
+                  <ProductInquirySheet
+                    product={product}
+                    selectedColor={selectedColor}
+                    selectedSize={selectedSize}
+                  />
+                </>
+              ) : null}
+
+              {product.stockStatus === "in_stock" && (
+                <div className="flex items-center justify-center gap-2 text-[10px] sm:text-xs text-muted-foreground uppercase tracking-widest pt-1 sm:pt-2">
+                  <Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" /> In Stock & Ready to Ship
                 </div>
               )}
-
-              <ProductInquirySheet
-                product={product}
-                selectedColor={selectedColor}
-                selectedSize={selectedSize}
-              />
-
-              <div className="flex items-center justify-center gap-2 text-[10px] sm:text-xs text-muted-foreground uppercase tracking-widest pt-1 sm:pt-2">
-                <Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" /> In Stock & Ready to Ship
-              </div>
+              {product.stockStatus === "made_to_order" && (
+                <div className="flex items-center justify-center gap-2 text-[10px] sm:text-xs text-amber-600 uppercase tracking-widest pt-1 sm:pt-2">
+                  <Clock className="w-3 h-3 sm:w-4 sm:h-4" /> Made to Order — 6–8 Weeks
+                </div>
+              )}
+              {product.stockStatus === "out_of_stock" && (
+                <div className="flex items-center justify-center gap-2 text-[10px] sm:text-xs text-red-500 uppercase tracking-widest pt-1 sm:pt-2">
+                  <X className="w-3 h-3 sm:w-4 sm:h-4" /> Currently Unavailable
+                </div>
+              )}
             </div>
           </div>
         </div>

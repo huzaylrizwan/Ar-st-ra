@@ -140,6 +140,7 @@ export default function AdminProductEditor() {
       sizes: [],
       images: [],
       isHidden: false,
+      stockStatus: "in_stock",
     },
   });
 
@@ -159,6 +160,7 @@ export default function AdminProductEditor() {
         sizes: product.sizes,
         images: product.images,
         isHidden: product.isHidden,
+        stockStatus: product.stockStatus ?? "in_stock",
       });
 
       Promise.all([
@@ -613,6 +615,23 @@ export default function AdminProductEditor() {
                   onCheckedChange={(checked) => form.setValue("isHidden", checked, { shouldDirty: true })}
                   data-testid="switch-hide-product"
                 />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Stock Status</Label>
+                <Select
+                  value={form.watch("stockStatus") ?? "in_stock"}
+                  onValueChange={(val) => form.setValue("stockStatus", val as "in_stock" | "made_to_order" | "out_of_stock", { shouldDirty: true })}
+                >
+                  <SelectTrigger data-testid="select-stock-status">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="in_stock">In Stock</SelectItem>
+                    <SelectItem value="made_to_order">Made to Order</SelectItem>
+                    <SelectItem value="out_of_stock">Out of Stock</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
