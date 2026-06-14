@@ -1,9 +1,10 @@
 import "dotenv/config";
+import "./config.js"; // validates env on startup — crashes with clear message if invalid
+import { config } from "./config.js";
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
-import crypto from "crypto";
 import helmet from "helmet";
 import { globalLimiter } from "./middleware/rateLimiter.js";
 import { storage } from "./storage.js";
@@ -91,12 +92,6 @@ async function ensureSchema() {
   }
 }
 
-// Ensure SESSION_SECRET is always set — use a random one per boot if missing
-if (!process.env.SESSION_SECRET) {
-  const generated = crypto.randomBytes(32).toString("hex");
-  process.env.SESSION_SECRET = generated;
-  log("WARNING: SESSION_SECRET not set in environment. Using a random secret (sessions will reset on restart). Set SESSION_SECRET in Render environment variables.");
-}
 
 (async () => {
   await ensureSchema();
@@ -126,7 +121,7 @@ if (!process.env.SESSION_SECRET) {
     await setupVite(httpServer, app);
   }
 
-  const port = parseInt(process.env.PORT || "5000", 10);
+  const port = config.PORT;
   httpServer.listen(port, "0.0.0.0", () => {
     log(`serving on port ${port}`);
   });
