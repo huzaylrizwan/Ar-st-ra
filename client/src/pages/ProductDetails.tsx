@@ -10,6 +10,7 @@ import useEmblaCarousel from "embla-carousel-react";
 import { cn } from "@/lib/utils";
 import { ARStudio } from "@/components/ARStudio";
 import { useSettings } from "@/hooks/use-settings";
+import { ProductInquirySheet } from "@/components/ProductInquirySheet";
 
 export default function ProductDetails() {
   const [match, params] = useRoute("/products/:id");
@@ -22,6 +23,8 @@ export default function ProductDetails() {
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [arViewerOpen, setArViewerOpen] = useState(false);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
   // Re-sync index when embla changes
   if (emblaApi) {
@@ -119,14 +122,19 @@ export default function ProductDetails() {
                 <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">Finish</span>
                 <div className="flex gap-2 sm:gap-3">
                   {product.colors.map((color) => (
-                    <div 
-                      key={color} 
-                      className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-border cursor-pointer shadow-sm relative group"
+                    <button
+                      key={color}
+                      onClick={() => setSelectedColor(color === selectedColor ? null : color)}
+                      aria-label={`color ${color}`}
+                      className={cn(
+                        "w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-border shadow-sm relative transition-all",
+                        selectedColor === color
+                          ? "ring-2 ring-primary ring-offset-2 scale-110"
+                          : "hover:scale-105"
+                      )}
                       style={{ backgroundColor: color }}
                       title={color}
-                    >
-                      <div className="absolute inset-0 rounded-full ring-2 ring-primary ring-offset-2 opacity-0 group-hover:opacity-50 transition-opacity" />
-                    </div>
+                    />
                   ))}
                 </div>
               </div>
@@ -138,12 +146,18 @@ export default function ProductDetails() {
                 <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">Size</span>
                 <div className="flex flex-wrap gap-2 sm:gap-3">
                   {product.sizes.map((size) => (
-                    <div 
-                      key={size} 
-                      className="px-3 sm:px-4 py-1.5 sm:py-2 border border-border text-xs sm:text-sm font-medium cursor-pointer hover:border-primary hover:text-primary transition-colors rounded-full sm:rounded-none"
+                    <button
+                      key={size}
+                      onClick={() => setSelectedSize(size === selectedSize ? null : size)}
+                      className={cn(
+                        "px-3 sm:px-4 py-1.5 sm:py-2 border text-xs sm:text-sm font-medium transition-colors rounded-full sm:rounded-none",
+                        selectedSize === size
+                          ? "border-primary text-primary bg-primary/5"
+                          : "border-border hover:border-primary hover:text-primary"
+                      )}
                     >
                       {size}
-                    </div>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -165,7 +179,13 @@ export default function ProductDetails() {
                   AR View not available for this item
                 </div>
               )}
-              
+
+              <ProductInquirySheet
+                product={product}
+                selectedColor={selectedColor}
+                selectedSize={selectedSize}
+              />
+
               <div className="flex items-center justify-center gap-2 text-[10px] sm:text-xs text-muted-foreground uppercase tracking-widest pt-1 sm:pt-2">
                 <Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" /> In Stock & Ready to Ship
               </div>
