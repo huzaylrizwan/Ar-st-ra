@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,8 +11,65 @@ import { Switch } from "@/components/ui/switch";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertBannerSchema, type InsertBanner, type Banner } from "@shared/schema";
+import { insertBannerSchema, type InsertBanner, type Banner, type HeroImage } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
+
+function HeroImagesManager() {
+  const { toast } = useToast();
+  const qc = useQueryClient();
+
+  const { data: heroImages, isLoading } = useQuery<HeroImage[]>({
+    queryKey: ["/api/hero-images"],
+    queryFn: async () => {
+      const res = await fetch("/api/hero-images", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to load");
+      return res.json();
+    },
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/hero-images/${id}/toggle`, {
+        method: "PATCH",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to toggle");
+      return res.json();
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/hero-images"] });
+      qc.invalidateQueries({ queryKey: ["/api/hero-images/active-all"] });
+    },
+    onError: () => toast({ title: "Error", description: "Failed to update hero image.", variant: "destructive" }),
+  });
+
+  if (isLoading) return <div className="text-sm text-muted-foreground">Loading…</div>;
+  if (!heroImages || heroImages.length === 0) return (
+    <div className="text-sm text-muted-foreground border border-dashed border-border rounded-lg p-6 text-center">
+      No hero images yet. Upload images via the image uploader or add a URL.
+    </div>
+  );
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+      {heroImages.map(img => (
+        <div key={img.id} className={`relative rounded-lg overflow-hidden border-2 transition-colors ${
+          img.isActive ? "border-primary" : "border-border"
+        }`}>
+          <img src={img.url} alt={img.name} className="w-full aspect-video object-cover" />
+          <div className="p-2 flex items-center justify-between bg-card">
+            <span className="text-xs font-medium truncate max-w-[80px]">{img.name}</span>
+            <Switch
+              checked={img.isActive}
+              onCheckedChange={() => toggleMutation.mutate(img.id)}
+              disabled={toggleMutation.isPending}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function AdminBanners() {
   const { data: banners, isLoading } = useQuery<Banner[]>({
@@ -239,6 +296,15 @@ export default function AdminBanners() {
             )}
           </TableBody>
         </Table>
+      </div>
+
+      {/* Hero Images Section */}
+      <div className="mt-10">
+        <h2 className="text-xl font-serif font-bold mb-1">Hero Images</h2>
+        <p className="text-muted-foreground text-sm mb-4">
+          Toggle which images appear in the homepage slideshow. Multiple can be active at once.
+        </p>
+        <HeroImagesManager />
       </div>
     </AdminLayout>
   );

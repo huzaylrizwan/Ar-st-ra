@@ -311,6 +311,18 @@ export async function registerRoutes(
     res.json(image || null);
   });
 
+  app.get("/api/hero-images/active-all", async (req, res) => {
+    const images = await storage.getActiveHeroImages();
+    res.json(images);
+  });
+
+  app.patch("/api/hero-images/:id/toggle", requireAdmin, async (req, res) => {
+    const image = await storage.getHeroImage(Number(req.params.id));
+    if (!image) return res.status(404).json({ message: "Not found" });
+    const updated = await storage.updateHeroImage(image.id, { isActive: !image.isActive });
+    res.json(updated);
+  });
+
   app.post(api.heroImages.create.path, async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     const input = api.heroImages.create.input.parse(req.body);

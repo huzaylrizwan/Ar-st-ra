@@ -80,6 +80,8 @@ export interface IStorage {
   updateHeroImage(id: number, image: Partial<InsertHeroImage>): Promise<HeroImage>;
   deleteHeroImage(id: number): Promise<void>;
   setActiveHeroImage(id: number): Promise<HeroImage>;
+  getActiveHeroImages(): Promise<HeroImage[]>;
+  getHeroImage(id: number): Promise<HeroImage | undefined>;
 
   // Product Materials
   getProductMaterials(productId: number, modelId?: number | null): Promise<ProductMaterial[]>;
@@ -318,6 +320,15 @@ export class DatabaseStorage implements IStorage {
     await db.update(heroImages).set({ isActive: false });
     // Then activate the selected one
     const [image] = await db.update(heroImages).set({ isActive: true }).where(eq(heroImages.id, id)).returning();
+    return image;
+  }
+
+  async getActiveHeroImages(): Promise<HeroImage[]> {
+    return await db.select().from(heroImages).where(eq(heroImages.isActive, true));
+  }
+
+  async getHeroImage(id: number): Promise<HeroImage | undefined> {
+    const [image] = await db.select().from(heroImages).where(eq(heroImages.id, id));
     return image;
   }
 
