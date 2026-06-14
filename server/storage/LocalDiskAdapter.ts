@@ -13,7 +13,10 @@ export class LocalDiskAdapter implements StorageAdapter {
   }
 
   async upload(key: string, buffer: Buffer, _contentType: string): Promise<string> {
-    const filePath = path.join(this.uploadDir, key);
+    const filePath = path.resolve(this.uploadDir, key);
+    if (!filePath.startsWith(this.uploadDir + path.sep)) {
+      throw new Error("Invalid key: path outside upload directory");
+    }
     const dir = path.dirname(filePath);
     await fs.mkdir(dir, { recursive: true });
     await fs.writeFile(filePath, buffer);
@@ -21,8 +24,13 @@ export class LocalDiskAdapter implements StorageAdapter {
   }
 
   async delete(key: string): Promise<void> {
-    const filePath = path.join(this.uploadDir, key);
-    await fs.unlink(filePath).catch(() => {});
+    const filePath = path.resolve(this.uploadDir, key);
+    if (!filePath.startsWith(this.uploadDir + path.sep)) {
+      throw new Error("Invalid key: path outside upload directory");
+    }
+    await fs.unlink(filePath).catch((e: NodeJS.ErrnoException) => {
+      if (e.code !== "ENOENT") throw e;
+    });
   }
 
   getUrl(key: string): string {
