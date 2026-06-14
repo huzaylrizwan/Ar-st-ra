@@ -12,6 +12,7 @@ import { insertProductMaterialSchema, insertProductModelSchema, insertProductMea
 import type { Request, Response, NextFunction } from "express";
 import { validateArLink } from "./arLinkValidator.js";
 import { pageViewLimiter, authLimiter, arLinkLimiter, inquiryLimiter } from "./middleware/rateLimiter.js";
+import { logger } from "./logger.js";
 
 const csrfTokens = new Tokens();
 
@@ -659,7 +660,7 @@ export async function registerRoutes(
   });
 
   // Run seed
-  seedDatabase().catch(console.error);
+  seedDatabase().catch((err) => logger.error({ err }, "seedDatabase failed"));
 
   return httpServer;
 }
