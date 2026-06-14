@@ -4,12 +4,24 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
+import Tokens from "csrf";
+import { config } from "./config.js";
 import { setupAuth, registerAuthRoutes } from "./auth";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage/routes";
 import { insertProductMaterialSchema, insertProductModelSchema, insertProductMeasurementSchema, insertSupervisorSchema, insertInquirySchema, type InsertInquiry } from "@shared/schema";
 import type { Request, Response, NextFunction } from "express";
 import { validateArLink } from "./arLinkValidator.js";
 import { pageViewLimiter, authLimiter, arLinkLimiter, inquiryLimiter } from "./middleware/rateLimiter.js";
+
+const csrfTokens = new Tokens();
+
+function validateCsrf(req: Request, res: Response, next: NextFunction) {
+  const token = req.headers["x-csrf-token"] as string;
+  if (!token || !csrfTokens.verify(config.SESSION_SECRET, token)) {
+    return res.status(403).json({ message: "Invalid CSRF token" });
+  }
+  next();
+}
 
 // Seed function
 async function seedDatabase() {
@@ -154,13 +166,19 @@ export async function registerRoutes(
   registerAuthRoutes(app);
   registerObjectStorageRoutes(app);
 
+  // CSRF token endpoint (public — client fetches this to get a valid token)
+  app.get("/api/csrf-token", (req, res) => {
+    const token = csrfTokens.create(config.SESSION_SECRET);
+    res.json({ token });
+  });
+
   // Settings
   app.get(api.settings.get.path, async (req, res) => {
     const settings = await storage.getThemeSettings();
     res.json(settings || {});
   });
 
-  app.put(api.settings.update.path, requireAdmin, async (req, res) => {
+  app.put(api.settings.update.path, requireAdmin, validateCsrf, async (req, res) => {
     const input = api.settings.update.input.parse(req.body);
     const settings = await storage.updateThemeSettings(input);
     res.json(settings);
@@ -178,19 +196,19 @@ export async function registerRoutes(
     res.json(category);
   });
 
-  app.post(api.categories.create.path, requireAdmin, async (req, res) => {
+  app.post(api.categories.create.path, requireAdmin, validateCsrf, async (req, res) => {
     const input = api.categories.create.input.parse(req.body);
     const category = await storage.createCategory(input);
     res.status(201).json(category);
   });
 
-  app.put(api.categories.update.path, requireAdmin, async (req, res) => {
+  app.put(api.categories.update.path, requireAdmin, validateCsrf, async (req, res) => {
     const input = api.categories.update.input.parse(req.body);
     const category = await storage.updateCategory(Number(req.params.id), input);
     res.json(category);
   });
 
-  app.delete(api.categories.delete.path, requireAdmin, async (req, res) => {
+  app.delete(api.categories.delete.path, requireAdmin, validateCsrf, async (req, res) => {
     await storage.deleteCategory(Number(req.params.id));
     res.sendStatus(204);
   });
@@ -208,7 +226,7 @@ export async function registerRoutes(
     res.json(product);
   });
 
-  app.post(api.products.create.path, requireAdmin, async (req, res) => {
+  app.post(api.products.create.path, requireAdmin, validateCsrf, async (req, res) => {
     const input = api.products.create.input.parse(req.body);
     const product = await storage.createProduct({
       ...input,
@@ -218,13 +236,13 @@ export async function registerRoutes(
     res.status(201).json(product);
   });
 
-  app.put(api.products.update.path, requireAdmin, async (req, res) => {
+  app.put(api.products.update.path, requireAdmin, validateCsrf, async (req, res) => {
     const input = api.products.update.input.parse(req.body);
     const product = await storage.updateProduct(Number(req.params.id), input);
     res.json(product);
   });
 
-  app.delete(api.products.delete.path, requireAdmin, async (req, res) => {
+  app.delete(api.products.delete.path, requireAdmin, validateCsrf, async (req, res) => {
     await storage.deleteProduct(Number(req.params.id));
     res.sendStatus(204);
   });
@@ -240,19 +258,19 @@ export async function registerRoutes(
     res.json(banners);
   });
 
-  app.post(api.banners.create.path, requireAdmin, async (req, res) => {
+  app.post(api.banners.create.path, requireAdmin, validateCsrf, async (req, res) => {
     const input = api.banners.create.input.parse(req.body);
     const banner = await storage.createBanner(input);
     res.status(201).json(banner);
   });
 
-  app.put(api.banners.update.path, requireAdmin, async (req, res) => {
+  app.put(api.banners.update.path, requireAdmin, validateCsrf, async (req, res) => {
     const input = api.banners.update.input.parse(req.body);
     const banner = await storage.updateBanner(Number(req.params.id), input);
     res.json(banner);
   });
 
-  app.delete(api.banners.delete.path, requireAdmin, async (req, res) => {
+  app.delete(api.banners.delete.path, requireAdmin, validateCsrf, async (req, res) => {
     await storage.deleteBanner(Number(req.params.id));
     res.sendStatus(204);
   });
@@ -268,19 +286,19 @@ export async function registerRoutes(
     res.json(items);
   });
 
-  app.post(api.faq.create.path, requireAdmin, async (req, res) => {
+  app.post(api.faq.create.path, requireAdmin, validateCsrf, async (req, res) => {
     const input = api.faq.create.input.parse(req.body);
     const item = await storage.createFaqItem(input);
     res.status(201).json(item);
   });
 
-  app.put(api.faq.update.path, requireAdmin, async (req, res) => {
+  app.put(api.faq.update.path, requireAdmin, validateCsrf, async (req, res) => {
     const input = api.faq.update.input.parse(req.body);
     const item = await storage.updateFaqItem(Number(req.params.id), input);
     res.json(item);
   });
 
-  app.delete(api.faq.delete.path, requireAdmin, async (req, res) => {
+  app.delete(api.faq.delete.path, requireAdmin, validateCsrf, async (req, res) => {
     await storage.deleteFaqItem(Number(req.params.id));
     res.sendStatus(204);
   });
@@ -301,37 +319,37 @@ export async function registerRoutes(
     res.json(images);
   });
 
-  app.patch("/api/hero-images/:id/toggle", requireAdmin, async (req, res) => {
+  app.patch("/api/hero-images/:id/toggle", requireAdmin, validateCsrf, async (req, res) => {
     const image = await storage.getHeroImage(Number(req.params.id));
     if (!image) return res.status(404).json({ message: "Not found" });
     const updated = await storage.updateHeroImage(image.id, { isActive: !image.isActive });
     res.json(updated);
   });
 
-  app.post(api.heroImages.create.path, requireAdmin, async (req, res) => {
+  app.post(api.heroImages.create.path, requireAdmin, validateCsrf, async (req, res) => {
     const input = api.heroImages.create.input.parse(req.body);
     const image = await storage.createHeroImage(input);
     res.status(201).json(image);
   });
 
-  app.put(api.heroImages.update.path, requireAdmin, async (req, res) => {
+  app.put(api.heroImages.update.path, requireAdmin, validateCsrf, async (req, res) => {
     const input = api.heroImages.update.input.parse(req.body);
     const image = await storage.updateHeroImage(Number(req.params.id), input);
     res.json(image);
   });
 
-  app.delete(api.heroImages.delete.path, requireAdmin, async (req, res) => {
+  app.delete(api.heroImages.delete.path, requireAdmin, validateCsrf, async (req, res) => {
     await storage.deleteHeroImage(Number(req.params.id));
     res.sendStatus(204);
   });
 
-  app.put(api.heroImages.activate.path, requireAdmin, async (req, res) => {
+  app.put(api.heroImages.activate.path, requireAdmin, validateCsrf, async (req, res) => {
     const image = await storage.setActiveHeroImage(Number(req.params.id));
     res.json(image);
   });
 
   // AR Link Validation
-  app.post("/api/validate-ar-link", arLinkLimiter, requireAdmin, async (req, res) => {
+  app.post("/api/validate-ar-link", arLinkLimiter, requireAdmin, validateCsrf, async (req, res) => {
     const { url } = z.object({ url: z.string().url() }).parse(req.body);
     const result = await validateArLink(url);
     res.json(result);
@@ -351,7 +369,7 @@ export async function registerRoutes(
     res.json(materials);
   });
 
-  app.post("/api/products/:id/materials", requireAdmin, async (req, res) => {
+  app.post("/api/products/:id/materials", requireAdmin, validateCsrf, async (req, res) => {
     const input = insertProductMaterialSchema.parse({
       ...req.body,
       productId: Number(req.params.id),
@@ -360,13 +378,13 @@ export async function registerRoutes(
     res.status(201).json(material);
   });
 
-  app.put("/api/products/materials/:id", requireAdmin, async (req, res) => {
+  app.put("/api/products/materials/:id", requireAdmin, validateCsrf, async (req, res) => {
     const input = insertProductMaterialSchema.partial().parse(req.body);
     const material = await storage.updateProductMaterial(Number(req.params.id), input);
     res.json(material);
   });
 
-  app.delete("/api/products/materials/:id", requireAdmin, async (req, res) => {
+  app.delete("/api/products/materials/:id", requireAdmin, validateCsrf, async (req, res) => {
     await storage.deleteProductMaterial(Number(req.params.id));
     res.sendStatus(204);
   });
@@ -379,7 +397,7 @@ export async function registerRoutes(
     res.json(materials);
   });
 
-  app.post("/api/products/:id/models/:modelId/materials", requireAdmin, async (req, res) => {
+  app.post("/api/products/:id/models/:modelId/materials", requireAdmin, validateCsrf, async (req, res) => {
     const input = insertProductMaterialSchema.parse({
       ...req.body,
       productId: Number(req.params.id),
@@ -389,7 +407,7 @@ export async function registerRoutes(
     res.status(201).json(material);
   });
 
-  app.put("/api/products/:id/models/:modelId/materials/:materialId", requireAdmin, async (req, res) => {
+  app.put("/api/products/:id/models/:modelId/materials/:materialId", requireAdmin, validateCsrf, async (req, res) => {
     const productId = Number(req.params.id);
     const modelId = Number(req.params.modelId);
     const materialId = Number(req.params.materialId);
@@ -405,7 +423,7 @@ export async function registerRoutes(
     res.json(material);
   });
 
-  app.delete("/api/products/:id/models/:modelId/materials/:materialId", requireAdmin, async (req, res) => {
+  app.delete("/api/products/:id/models/:modelId/materials/:materialId", requireAdmin, validateCsrf, async (req, res) => {
     const productId = Number(req.params.id);
     const modelId = Number(req.params.modelId);
     const materialId = Number(req.params.materialId);
@@ -424,7 +442,7 @@ export async function registerRoutes(
     res.json(models);
   });
 
-  app.post("/api/products/:id/models", requireAdmin, async (req, res) => {
+  app.post("/api/products/:id/models", requireAdmin, validateCsrf, async (req, res) => {
     const input = insertProductModelSchema.parse({
       ...req.body,
       productId: Number(req.params.id),
@@ -433,13 +451,13 @@ export async function registerRoutes(
     res.status(201).json(model);
   });
 
-  app.put("/api/products/models/:id", requireAdmin, async (req, res) => {
+  app.put("/api/products/models/:id", requireAdmin, validateCsrf, async (req, res) => {
     const input = insertProductModelSchema.partial().parse(req.body);
     const model = await storage.updateProductModel(Number(req.params.id), input);
     res.json(model);
   });
 
-  app.delete("/api/products/models/:id", requireAdmin, async (req, res) => {
+  app.delete("/api/products/models/:id", requireAdmin, validateCsrf, async (req, res) => {
     await storage.deleteProductModel(Number(req.params.id));
     res.sendStatus(204);
   });
@@ -450,7 +468,7 @@ export async function registerRoutes(
     res.json(measurements);
   });
 
-  app.post("/api/products/:id/measurements", requireAdmin, async (req, res) => {
+  app.post("/api/products/:id/measurements", requireAdmin, validateCsrf, async (req, res) => {
     const input = insertProductMeasurementSchema.parse({
       ...req.body,
       productId: Number(req.params.id),
@@ -459,13 +477,13 @@ export async function registerRoutes(
     res.status(201).json(measurement);
   });
 
-  app.put("/api/products/measurements/:id", requireAdmin, async (req, res) => {
+  app.put("/api/products/measurements/:id", requireAdmin, validateCsrf, async (req, res) => {
     const input = insertProductMeasurementSchema.partial().parse(req.body);
     const measurement = await storage.updateProductMeasurement(Number(req.params.id), input);
     res.json(measurement);
   });
 
-  app.delete("/api/products/measurements/:id", requireAdmin, async (req, res) => {
+  app.delete("/api/products/measurements/:id", requireAdmin, validateCsrf, async (req, res) => {
     await storage.deleteProductMeasurement(Number(req.params.id));
     res.sendStatus(204);
   });
@@ -476,7 +494,7 @@ export async function registerRoutes(
     res.json(supervisorList);
   });
 
-  app.post("/api/supervisors", requireAdmin, async (req, res) => {
+  app.post("/api/supervisors", requireAdmin, validateCsrf, async (req, res) => {
     const body = z.object({
       email: z.string().email(),
       name: z.string().optional().nullable(),
@@ -491,7 +509,7 @@ export async function registerRoutes(
     res.status(201).json(supervisor);
   });
 
-  app.delete("/api/supervisors/:id", requireAdmin, async (req, res) => {
+  app.delete("/api/supervisors/:id", requireAdmin, validateCsrf, async (req, res) => {
     await storage.deleteSupervisor(Number(req.params.id));
     res.sendStatus(204);
   });
@@ -502,7 +520,7 @@ export async function registerRoutes(
     res.json(settings || {});
   });
 
-  app.put("/api/supervisor/contact", requireSupervisor, async (req, res) => {
+  app.put("/api/supervisor/contact", requireSupervisor, validateCsrf, async (req, res) => {
     const contactSchema = z.object({
       whatsappNumber: z.string().optional().nullable(),
       instagramUrl: z.string().optional().nullable(),
@@ -520,7 +538,7 @@ export async function registerRoutes(
     res.json(productList);
   });
 
-  app.post("/api/supervisor/products", requireSupervisor, async (req, res) => {
+  app.post("/api/supervisor/products", requireSupervisor, validateCsrf, async (req, res) => {
     const input = z.object({
       name: z.string(),
       description: z.string(),
@@ -536,7 +554,7 @@ export async function registerRoutes(
     res.status(201).json(product);
   });
 
-  app.put("/api/supervisor/products/:id", requireSupervisor, async (req, res) => {
+  app.put("/api/supervisor/products/:id", requireSupervisor, validateCsrf, async (req, res) => {
     const input = z.object({
       name: z.string().optional(),
       description: z.string().optional(),
@@ -596,12 +614,12 @@ export async function registerRoutes(
     res.json({ count });
   });
 
-  app.patch("/api/inquiries/:id/read", requireAdmin, async (req, res) => {
+  app.patch("/api/inquiries/:id/read", requireAdmin, validateCsrf, async (req, res) => {
     await storage.markInquiryRead(Number(req.params.id));
     res.sendStatus(204);
   });
 
-  app.delete("/api/inquiries/:id", requireAdmin, async (req, res) => {
+  app.delete("/api/inquiries/:id", requireAdmin, validateCsrf, async (req, res) => {
     await storage.deleteInquiry(Number(req.params.id));
     res.sendStatus(204);
   });
@@ -618,20 +636,20 @@ export async function registerRoutes(
   });
 
   // Reorder
-  app.patch("/api/products/reorder", requireAdmin, async (req, res) => {
+  app.patch("/api/products/reorder", requireAdmin, validateCsrf, async (req, res) => {
     const items = z.array(z.object({ id: z.number(), sortOrder: z.number() })).parse(req.body);
     await storage.reorderProducts(items);
     res.sendStatus(204);
   });
 
-  app.patch("/api/categories/reorder", requireAdmin, async (req, res) => {
+  app.patch("/api/categories/reorder", requireAdmin, validateCsrf, async (req, res) => {
     const items = z.array(z.object({ id: z.number(), sortOrder: z.number() })).parse(req.body);
     await storage.reorderCategories(items);
     res.sendStatus(204);
   });
 
   // Bulk product operations
-  app.patch("/api/products/bulk", requireAdmin, async (req, res) => {
+  app.patch("/api/products/bulk", requireAdmin, validateCsrf, async (req, res) => {
     const { ids, action } = z.object({
       ids: z.array(z.number()),
       action: z.enum(["hide", "show", "delete"]),

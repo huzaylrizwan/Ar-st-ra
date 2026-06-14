@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@shared/routes";
 import { useToast } from "@/hooks/use-toast";
+import { fetchWithCsrf } from "@/lib/queryClient";
 import type { InsertThemeSettings } from "@shared/schema";
 import { useEffect } from "react";
 
@@ -28,7 +29,7 @@ export function useSettings() {
   const query = useQuery({
     queryKey: [api.settings.get.path],
     queryFn: async () => {
-      const res = await fetch(api.settings.get.path, { credentials: "include" });
+      const res = await fetchWithCsrf(api.settings.get.path);
       if (!res.ok) throw new Error("Failed to fetch settings");
       return api.settings.get.responses[200].parse(await res.json());
     },
@@ -60,11 +61,10 @@ export function useUpdateSettings() {
 
   return useMutation({
     mutationFn: async (updates: Partial<InsertThemeSettings>) => {
-      const res = await fetch(api.settings.update.path, {
+      const res = await fetchWithCsrf(api.settings.update.path, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updates),
-        credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to update settings");
       return api.settings.update.responses[200].parse(await res.json());

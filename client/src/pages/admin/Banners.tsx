@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { queryClient, apiRequest } from "@/lib/queryClient";
+import { queryClient, apiRequest, fetchWithCsrf } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -26,7 +26,7 @@ function HeroImagesManager() {
   const { data: heroImages, isLoading } = useQuery<HeroImage[]>({
     queryKey: ["/api/hero-images"],
     queryFn: async () => {
-      const res = await fetch("/api/hero-images", { credentials: "include" });
+      const res = await fetchWithCsrf("/api/hero-images");
       if (!res.ok) throw new Error("Failed to load");
       return res.json();
     },
@@ -34,9 +34,8 @@ function HeroImagesManager() {
 
   const toggleMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await fetch(`/api/hero-images/${id}/toggle`, {
+      const res = await fetchWithCsrf(`/api/hero-images/${id}/toggle`, {
         method: "PATCH",
-        credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to toggle");
       return res.json();
@@ -50,9 +49,8 @@ function HeroImagesManager() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await fetch(`/api/hero-images/${id}`, {
+      const res = await fetchWithCsrf(`/api/hero-images/${id}`, {
         method: "DELETE",
-        credentials: "include",
       });
       if (!res.ok) throw new Error("Failed to delete");
     },
@@ -81,17 +79,15 @@ function HeroImagesManager() {
     try {
       const form = new FormData();
       form.append("file", file);
-      const uploadRes = await fetch("/api/uploads", {
+      const uploadRes = await fetchWithCsrf("/api/uploads", {
         method: "POST",
-        credentials: "include",
         body: form,
       });
       if (!uploadRes.ok) throw new Error("Upload failed");
       const { url } = await uploadRes.json();
 
-      const createRes = await fetch("/api/hero-images", {
+      const createRes = await fetchWithCsrf("/api/hero-images", {
         method: "POST",
-        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url, name: name.trim(), isActive: false, isPreset: false }),
       });

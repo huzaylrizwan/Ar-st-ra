@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from "@/hooks/use-categories";
+import { fetchWithCsrf } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -44,10 +45,9 @@ export default function AdminCategories() {
 
   const reorderMutation = useMutation({
     mutationFn: async (items: { id: number; sortOrder: number }[]) => {
-      const res = await fetch("/api/categories/reorder", {
+      const res = await fetchWithCsrf("/api/categories/reorder", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify(items),
       });
       if (!res.ok) throw new Error("Reorder failed");

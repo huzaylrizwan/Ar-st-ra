@@ -6,6 +6,7 @@ import type { Product, ProductMaterial, ProductModel, ProductMeasurement, ThemeS
 import type { ModelViewerElement } from "@google/model-viewer";
 import type { Texture as MVTexture } from "@google/model-viewer/lib/features/scene-graph/texture";
 import { useAuth } from "@/hooks/use-auth";
+import { fetchWithCsrf } from "@/lib/queryClient";
 import "@google/model-viewer";
 
 interface ARStudioProps {
@@ -27,7 +28,7 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
   const { data: studioSettings } = useQuery<ThemeSettings>({
     queryKey: ["/api/settings"],
     queryFn: async () => {
-      const res = await fetch("/api/settings");
+      const res = await fetchWithCsrf("/api/settings");
       if (!res.ok) throw new Error("Failed to fetch settings");
       return res.json();
     },
@@ -63,10 +64,9 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
   // Mutation to persist studio settings back to DB
   const settingsMutation = useMutation({
     mutationFn: async (updates: Partial<ThemeSettings>) => {
-      const res = await fetch("/api/settings", {
+      const res = await fetchWithCsrf("/api/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify(updates),
       });
       if (!res.ok) throw new Error("Failed to update settings");
@@ -109,7 +109,7 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
   const { data: productModels } = useQuery<ProductModel[]>({
     queryKey: ["/api/products", product.id, "models"],
     queryFn: async () => {
-      const res = await fetch(`/api/products/${product.id}/models`, { credentials: "include" });
+      const res = await fetchWithCsrf(`/api/products/${product.id}/models`);
       if (!res.ok) throw new Error("Failed to fetch models");
       return res.json();
     },
@@ -123,9 +123,8 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
     queryKey: ["/api/products", product.id, "models", activeModelId, "materials"],
     queryFn: async () => {
       if (activeModelId === null) return [];
-      const res = await fetch(
-        `/api/products/${product.id}/models/${activeModelId}/materials`,
-        { credentials: "include" }
+      const res = await fetchWithCsrf(
+        `/api/products/${product.id}/models/${activeModelId}/materials`
       );
       if (!res.ok) throw new Error("Failed to fetch materials");
       return res.json();
@@ -136,7 +135,7 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
   const { data: measurements } = useQuery<ProductMeasurement[]>({
     queryKey: ["/api/products", product.id, "measurements"],
     queryFn: async () => {
-      const res = await fetch(`/api/products/${product.id}/measurements`, { credentials: "include" });
+      const res = await fetchWithCsrf(`/api/products/${product.id}/measurements`);
       if (!res.ok) throw new Error("Failed to fetch measurements");
       return res.json();
     },

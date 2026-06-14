@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { fetchWithCsrf } from "@/lib/queryClient";
 
 interface ImageUploaderProps {
   onUpload: (url: string) => void;
@@ -23,9 +24,8 @@ export function ImageUploader({ onUpload, children, accept = "image/*", classNam
       const formData = new FormData();
       formData.append("file", file);
 
-      const res = await fetch("/api/uploads", {
+      const res = await fetchWithCsrf("/api/uploads", {
         method: "POST",
-        credentials: "include",
         body: formData,
       });
 

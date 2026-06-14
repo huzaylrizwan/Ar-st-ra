@@ -7,18 +7,63 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// CSRF token management
+// ---------------------------------------------------------------------------
+
+let csrfToken: string | null = null;
+
+async function getCsrfToken(): Promise<string> {
+  if (csrfToken) return csrfToken;
+  const res = await fetch("/api/csrf-token");
+  const data = await res.json();
+  csrfToken = data.token as string;
+  return csrfToken;
+}
+
+/**
+ * Drop-in replacement for fetch() that automatically attaches the CSRF token
+ * on mutating requests (POST, PUT, PATCH, DELETE) and always sends credentials.
+ */
+export async function fetchWithCsrf(
+  input: RequestInfo,
+  init: RequestInit = {}
+): Promise<Response> {
+  const method = (init.method ?? "GET").toUpperCase();
+  const needsCsrf = ["POST", "PUT", "PATCH", "DELETE"].includes(method);
+
+  const headers = new Headers(init.headers as HeadersInit | undefined);
+
+  if (needsCsrf) {
+    const token = await getCsrfToken();
+    headers.set("X-CSRF-Token", token);
+  }
+
+  return fetch(input, { credentials: "include", ...init, headers });
+}
+
+// ---------------------------------------------------------------------------
+// apiRequest — used by Banners, FAQ, AdminProductEditor and other pages
+// ---------------------------------------------------------------------------
+
 export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
 ): Promise<Response> {
-  const res = await fetch(url, {
-    method,
-    headers: data ? { "Content-Type": "application/json" } : {},
-    body: data ? JSON.stringify(data) : undefined,
-    credentials: "include",
-  });
+  if (data) {
+    // Content-Type header is included via the init object below so it gets
+    // merged by fetchWithCsrf along with the CSRF header.
+    const res = await fetchWithCsrf(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    await throwIfResNotOk(res);
+    return res;
+  }
 
+  const res = await fetchWithCsrf(url, { method });
   await throwIfResNotOk(res);
   return res;
 }
@@ -29,9 +74,7 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const res = await fetch(queryKey.join("/") as string, {
-      credentials: "include",
-    });
+    const res = await fetchWithCsrf(queryKey.join("/") as string);
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {
       return null;

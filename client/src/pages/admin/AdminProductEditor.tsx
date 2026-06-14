@@ -22,7 +22,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertProductSchema, type InsertProduct, type Product, type ProductMaterial, type ProductModel, type ProductMeasurement } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient as globalQueryClient } from "@/lib/queryClient";
+import { apiRequest, fetchWithCsrf, queryClient as globalQueryClient } from "@/lib/queryClient";
 import { DndContext, closestCenter, type DragEndEvent, useSensors, useSensor, PointerSensor } from "@dnd-kit/core";
 import { SortableContext, useSortable, arrayMove, horizontalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -94,10 +94,9 @@ export default function AdminProductEditor() {
     setIsValidatingArLink(true);
     setArLinkStatus(null);
     try {
-      const res = await fetch("/api/validate-ar-link", {
+      const res = await fetchWithCsrf("/api/validate-ar-link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({ url }),
       });
       if (!res.ok) throw new Error("Validation request failed");
@@ -149,7 +148,7 @@ export default function AdminProductEditor() {
         queryClient.fetchQuery<ProductModel[]>({
           queryKey: ["/api/products", product.id, "models"],
           queryFn: async () => {
-            const res = await fetch(`/api/products/${product.id}/models`, { credentials: "include" });
+            const res = await fetchWithCsrf(`/api/products/${product.id}/models`);
             if (!res.ok) return [];
             return res.json();
           },
@@ -158,7 +157,7 @@ export default function AdminProductEditor() {
         queryClient.fetchQuery<ProductMeasurement[]>({
           queryKey: ["/api/products", product.id, "measurements"],
           queryFn: async () => {
-            const res = await fetch(`/api/products/${product.id}/measurements`, { credentials: "include" });
+            const res = await fetchWithCsrf(`/api/products/${product.id}/measurements`);
             if (!res.ok) return [];
             return res.json();
           },
@@ -328,7 +327,7 @@ export default function AdminProductEditor() {
     if (!mod) return;
 
     if (!mod.expanded && !mod.materialsLoaded && mod.id) {
-      const materials = await fetch(`/api/products/${productId}/models/${mod.id}/materials`, { credentials: "include" })
+      const materials = await fetchWithCsrf(`/api/products/${productId}/models/${mod.id}/materials`)
         .then((r) => r.ok ? r.json() : [])
         .catch(() => []);
 
@@ -462,7 +461,7 @@ export default function AdminProductEditor() {
       const refreshedModels = await queryClient.fetchQuery<ProductModel[]>({
         queryKey: ["/api/products", productId, "models"],
         queryFn: async () => {
-          const res = await fetch(`/api/products/${productId}/models`, { credentials: "include" });
+          const res = await fetchWithCsrf(`/api/products/${productId}/models`);
           if (!res.ok) return [];
           return res.json();
         },

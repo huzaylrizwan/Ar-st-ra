@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useProducts } from "@/hooks/use-products";
 import { useCategories } from "@/hooks/use-categories";
+import { fetchWithCsrf } from "@/lib/queryClient";
 import { AdminLayout } from "@/components/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -40,10 +41,9 @@ export default function AdminProducts() {
 
   const reorderMutation = useMutation({
     mutationFn: async (items: { id: number; sortOrder: number }[]) => {
-      const res = await fetch("/api/products/reorder", {
+      const res = await fetchWithCsrf("/api/products/reorder", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify(items),
       });
       if (!res.ok) throw new Error("Reorder failed");
@@ -53,10 +53,9 @@ export default function AdminProducts() {
 
   const bulkMutation = useMutation({
     mutationFn: async ({ ids, action }: { ids: number[]; action: "hide" | "show" | "delete" }) => {
-      const res = await fetch("/api/products/bulk", {
+      const res = await fetchWithCsrf("/api/products/bulk", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({ ids, action }),
       });
       if (!res.ok) throw new Error("Bulk action failed");
