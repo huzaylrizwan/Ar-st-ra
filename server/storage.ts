@@ -141,8 +141,14 @@ export interface IStorage {
 export class DatabaseStorage implements IStorage {
   // Categories
   async getCategories(includeHidden = false): Promise<Category[]> {
-    if (includeHidden) return await db.select().from(categories);
-    return await db.select().from(categories).where(eq(categories.isHidden, false));
+    if (includeHidden) {
+      return await db.select().from(categories).orderBy(asc(categories.sortOrder));
+    }
+    return await db
+      .select()
+      .from(categories)
+      .where(eq(categories.isHidden, false))
+      .orderBy(asc(categories.sortOrder));
   }
 
   async getCategory(id: number): Promise<Category | undefined> {

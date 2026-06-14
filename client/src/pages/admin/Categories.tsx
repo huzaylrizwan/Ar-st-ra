@@ -1,9 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/AdminLayout";
 import { useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory } from "@/hooks/use-categories";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -12,26 +11,65 @@ import { Plus, Pencil, Trash2, Image as ImageIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertCategorySchema, type InsertCategory, type Category } from "@shared/schema";
-import { useToast } from "@/hooks/use-toast";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { SortableContext, verticalListSortingStrategy, arrayMove } from "@dnd-kit/sortable";
+import { SortableCategoryRow } from "@/components/SortableCategoryRow";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function AdminCategories() {
   const { data: categories, isLoading } = useCategories();
   const createMutation = useCreateCategory();
   const updateMutation = useUpdateCategory();
   const deleteMutation = useDeleteCategory();
-  const { toast } = useToast();
-  
+  const queryClient = useQueryClient();
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [localCategories, setLocalCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    if (categories) {
+      setLocalCategories([...categories].sort((a, b) => a.sortOrder - b.sortOrder));
+    }
+  }, [categories]);
+
+  const sensors = useSensors(useSensor(PointerSensor));
+
+  const reorderMutation = useMutation({
+    mutationFn: async (items: { id: number; sortOrder: number }[]) => {
+      const res = await fetch("/api/categories/reorder", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(items),
+      });
+      if (!res.ok) throw new Error("Reorder failed");
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["/api/categories"] }),
+  });
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = localCategories.findIndex(c => c.id === active.id);
+    const newIndex = localCategories.findIndex(c => c.id === over.id);
+    const reordered = arrayMove(localCategories, oldIndex, newIndex);
+
+    setLocalCategories(reordered);
+    reorderMutation.mutate(reordered.map((c, i) => ({ id: c.id, sortOrder: i })));
+  };
 
   const form = useForm<InsertCategory>({
     resolver: zodResolver(insertCategorySchema),
-    defaultValues: {
-      name: "",
-      slug: "",
-      imageUrl: "",
-      isHidden: false
-    }
+    defaultValues: { name: "", slug: "", imageUrl: "", isHidden: false, sortOrder: 0 },
   });
 
   const onSubmit = async (data: InsertCategory) => {
@@ -50,12 +88,7 @@ export default function AdminCategories() {
 
   const resetForm = () => {
     setEditingCategory(null);
-    form.reset({
-      name: "",
-      slug: "",
-      imageUrl: "",
-      isHidden: false
-    });
+    form.reset({ name: "", slug: "", imageUrl: "", isHidden: false, sortOrder: 0 });
   };
 
   const handleEdit = (category: Category) => {
@@ -64,7 +97,8 @@ export default function AdminCategories() {
       name: category.name,
       slug: category.slug,
       imageUrl: category.imageUrl,
-      isHidden: category.isHidden
+      isHidden: category.isHidden,
+      sortOrder: category.sortOrder,
     });
     setIsDialogOpen(true);
   };
@@ -97,14 +131,14 @@ export default function AdminCategories() {
               <div className="space-y-2">
                 <Label htmlFor="name">Name</Label>
                 <Input id="name" {...form.register("name")} placeholder="Living Room" />
-                {form.formState.errors.name && <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>}
+                {form.formState.errors.name && (
+                  <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>
+                )}
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="slug">Slug (URL)</Label>
                 <Input id="slug" {...form.register("slug")} placeholder="living-room" />
               </div>
-
               <div className="space-y-2">
                 <Label>Cover Image</Label>
                 <div className="flex items-center gap-4">
@@ -118,24 +152,21 @@ export default function AdminCategories() {
                   </ImageUploader>
                 </div>
                 <Input type="hidden" {...form.register("imageUrl")} />
-                {form.formState.errors.imageUrl && <p className="text-sm text-destructive">Image is required</p>}
+                {form.formState.errors.imageUrl && (
+                  <p className="text-sm text-destructive">Image is required</p>
+                )}
               </div>
-
               <div className="flex items-center justify-between space-x-2">
                 <Label htmlFor="isHidden">Hide from Store</Label>
-                <Switch 
-                  id="isHidden" 
+                <Switch
+                  id="isHidden"
                   checked={form.watch("isHidden")}
                   onCheckedChange={(checked) => form.setValue("isHidden", checked)}
                 />
               </div>
-
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-                <Button 
-                  type="submit"
-                  disabled={createMutation.isPending || updateMutation.isPending}
-                >
+                <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
                   {editingCategory ? "Update" : "Create"}
                 </Button>
               </div>
@@ -144,54 +175,69 @@ export default function AdminCategories() {
         </Dialog>
       </div>
 
-      <div className="bg-card rounded-lg border shadow-sm">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[100px]">Image</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Slug</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-8">Loading...</TableCell>
-              </TableRow>
-            ) : categories?.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">No categories found.</TableCell>
-              </TableRow>
-            ) : (
-              categories?.map((category) => (
-                <TableRow key={category.id}>
-                  <TableCell>
-                    <img src={category.imageUrl} className="w-12 h-12 rounded-sm object-cover" alt={category.name} />
-                  </TableCell>
-                  <TableCell className="font-medium">{category.name}</TableCell>
-                  <TableCell className="text-muted-foreground">{category.slug}</TableCell>
-                  <TableCell>
-                    {category.isHidden ? (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground">Hidden</span>
-                    ) : (
-                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Active</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => handleEdit(category)}>
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive" onClick={() => handleDelete(category.id)}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+      <div className="border border-border rounded-lg overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center gap-3 px-4 py-2 bg-muted/50 border-b border-border text-xs font-medium text-muted-foreground">
+          <div className="w-4" />
+          <div className="w-12">Image</div>
+          <span className="flex-1">Name</span>
+          <span className="w-32 hidden sm:block">Slug</span>
+          <span className="w-20">Status</span>
+          <span className="w-20 text-right">Actions</span>
+        </div>
+
+        {isLoading ? (
+          <div className="p-8 text-center text-muted-foreground text-sm">Loading…</div>
+        ) : localCategories.length === 0 ? (
+          <div className="p-8 text-center text-muted-foreground text-sm">No categories found.</div>
+        ) : (
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={localCategories.map(c => c.id)} strategy={verticalListSortingStrategy}>
+              {localCategories.map((category) => (
+                <SortableCategoryRow key={category.id} category={category}>
+                  {(dragHandle) => (
+                    <div className="flex items-center gap-3 px-4 py-3 border-b border-border last:border-0 hover:bg-muted/20 transition-colors">
+                      {dragHandle}
+                      <div className="w-12 flex-shrink-0">
+                        <img
+                          src={category.imageUrl}
+                          alt={category.name}
+                          className="w-10 h-10 rounded-md object-cover border border-border"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{category.name}</p>
+                      </div>
+                      <div className="w-32 hidden sm:block flex-shrink-0">
+                        <p className="text-xs text-muted-foreground truncate">{category.slug}</p>
+                      </div>
+                      <div className="w-20 flex-shrink-0">
+                        {category.isHidden ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-muted text-muted-foreground">Hidden</span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">Active</span>
+                        )}
+                      </div>
+                      <div className="w-20 flex justify-end gap-1 flex-shrink-0">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(category)}>
+                          <Pencil className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => handleDelete(category.id)}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </SortableCategoryRow>
+              ))}
+            </SortableContext>
+          </DndContext>
+        )}
       </div>
     </AdminLayout>
   );
