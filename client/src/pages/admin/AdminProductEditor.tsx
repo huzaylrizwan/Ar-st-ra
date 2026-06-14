@@ -23,7 +23,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertProductSchema, type InsertProduct, type Product, type ProductMaterial, type ProductModel, type ProductMeasurement } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient as globalQueryClient } from "@/lib/queryClient";
-import { DndContext, closestCenter, type DragEndEvent } from "@dnd-kit/core";
+import { DndContext, closestCenter, type DragEndEvent, useSensors, useSensor, PointerSensor } from "@dnd-kit/core";
 import { SortableContext, useSortable, arrayMove, horizontalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
@@ -342,7 +342,7 @@ export default function AdminProductEditor() {
               tempId: String(mat.id),
               name: mat.name,
               colorHex: mat.colorHex,
-              colorName: (mat as ProductMaterial & { colorName?: string }).colorName ?? "",
+              colorName: mat.colorName ?? "",
               textureUrl: mat.textureUrl || "",
               variantModelUrl: mat.variantModelUrl || "",
               materialSlotIndex: mat.materialSlotIndex ?? 0,
@@ -506,11 +506,16 @@ export default function AdminProductEditor() {
   const arLink = form.watch("arLink");
   const isHidden = form.watch("isHidden");
 
+  const imageDndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
+
   const handleImageDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
     const oldIndex = images.indexOf(String(active.id));
     const newIndex = images.indexOf(String(over.id));
+    if (oldIndex === -1 || newIndex === -1) return;
     const reordered = arrayMove(images, oldIndex, newIndex);
     form.setValue("images", reordered, { shouldDirty: true });
   };
@@ -644,7 +649,7 @@ export default function AdminProductEditor() {
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Product Images</Label>
                 <p className="text-xs text-muted-foreground">First image used as thumbnail. Upload up to 5 photos.</p>
-                <DndContext collisionDetection={closestCenter} onDragEnd={handleImageDragEnd}>
+                <DndContext sensors={imageDndSensors} collisionDetection={closestCenter} onDragEnd={handleImageDragEnd}>
                   <SortableContext items={images} strategy={horizontalListSortingStrategy}>
                     <div className="flex flex-wrap gap-3">
                       {images.map((url, i) => (

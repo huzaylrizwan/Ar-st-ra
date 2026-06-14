@@ -112,6 +112,7 @@ export const productMaterials = pgTable("product_materials", {
   modelId: integer("model_id").references(() => productModels.id, { onDelete: "set null" }),
   name: text("name").notNull(),
   colorHex: text("color_hex").notNull(),
+  colorName: text("color_name"),
   textureUrl: text("texture_url"),
   variantModelUrl: text("variant_model_url"),
   sortOrder: integer("sort_order").default(0).notNull(),
