@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { X, Box, Loader2, Ruler, Settings } from "lucide-react";
+import { X, Box, Ruler, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Product, ProductMaterial, ProductModel, ProductMeasurement, ThemeSettings } from "@shared/schema";
 import type { ModelViewerElement } from "@google/model-viewer";
@@ -156,6 +156,7 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"models" | "variants">("models");
   const [modelLoaded, setModelLoaded] = useState(false);
+  const [loadProgress, setLoadProgress] = useState(0);
   const [measurementsOpen, setMeasurementsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
 
@@ -195,6 +196,7 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
   const updateModelSrc = useCallback((newSrc: string) => {
     currentModelSrcRef.current = newSrc;
     setCurrentModelSrc(newSrc);
+    setLoadProgress(0); // reset progress for new model
   }, []);
 
   const originalMaterialRef = useRef<{
@@ -421,8 +423,19 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
       }
     };
 
+    const handleProgress = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.totalProgress !== undefined) {
+        setLoadProgress(detail.totalProgress);
+      }
+    };
+
     mv.addEventListener("load", handleLoad);
-    return () => mv.removeEventListener("load", handleLoad);
+    mv.addEventListener("progress", handleProgress);
+    return () => {
+      mv.removeEventListener("load", handleLoad);
+      mv.removeEventListener("progress", handleProgress);
+    };
   }, [captureOriginalMaterial, applyTextureOrColor, updateModelSrc]);
 
   useEffect(() => {
@@ -590,14 +603,15 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
           style={{ width: "100%", height: "100%", background: "transparent" }}
         />
 
-        {/* Model swap loading overlay */}
-        {isSwappingModel && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/20 backdrop-blur-sm z-10 pointer-events-none">
-            <div className="flex flex-col items-center gap-2">
-              <Loader2 className="w-8 h-8 text-white animate-spin" />
-              <span className="text-white/90 text-sm font-medium">Loading variant…</span>
-            </div>
-          </div>
+        {/* AR loading progress bar */}
+        {(!modelLoaded || isSwappingModel) && (
+          <div
+            className="absolute top-0 left-0 h-[3px] z-20 transition-all duration-200 pointer-events-none"
+            style={{
+              width: `${Math.round(loadProgress * 100)}%`,
+              background: "linear-gradient(90deg, #c8a84b, #e8c96a)",
+            }}
+          />
         )}
 
         {/* Measurements button + panel (bottom-left) */}
@@ -840,7 +854,9 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
           }}
         >
           <Box className="w-4 h-4" />
-          {modelLoaded && !isSwappingModel ? "View in AR" : "Loading…"}
+          {modelLoaded && !isSwappingModel
+            ? "View in AR"
+            : `Loading… ${Math.round(loadProgress * 100)}%`}
         </button>
       </div>
     </div>
