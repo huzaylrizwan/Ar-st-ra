@@ -193,6 +193,24 @@ A full 4-phase overhaul was designed and planned. See:
 - [x] Task 7: Integration tests — Products CRUD
 - [x] Task 8: Final test suite verification
 
+### Phase 5 — Supervisor Portal Expansion ⬜ NOT STARTED
+
+**Approach:** Extend existing `/supervisor/` portal (Approach A). Fix broken supervisor creation first.
+
+- [ ] Task 1: Fix supervisor creation/login bug (investigate why admin can't add supervisors)
+- [ ] Task 2: Analytics page — read-only footprint charts (reuse admin recharts components)
+- [ ] Task 3: Banners page — edit/delete with confirmation dialog guard
+- [ ] Task 4: FAQ page — edit/delete with confirmation dialog guard
+- [ ] Task 5: Inquiries page — view, mark read, delete with confirmation dialog
+- [ ] Task 6: Stock status toggle on supervisor Products page (In Stock / Out of Stock)
+- [ ] Task 7: Expand supervisor sidebar nav (Analytics, Banners, FAQ, Inquiries)
+
+**Permissions summary:**
+- ✅ Can: Analytics (read-only), Products (add/edit/stock status), Contact Info (edit), Banners (edit/delete), FAQ (edit/delete), Inquiries (view/mark-read/delete)
+- ❌ Cannot: Settings (branding/homepage/AR studio), Categories, Hero images, Supervisors list, any schema/config changes
+
+**Safety:** All delete actions require a confirmation dialog — prevents accidental deletion.
+
 ---
 
 ## How to Update Progress
