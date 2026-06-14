@@ -6,7 +6,7 @@ import { CategoryCard } from "@/components/CategoryCard";
 import { ProductCard } from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Box, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Dialog,
@@ -148,16 +148,27 @@ export default function Home() {
   const { data: settings } = useSettings();
   const [showARTutorial, setShowARTutorial] = useState(false);
 
-  const { data: activeHeroImage, isLoading: isHeroImageLoading } = useQuery<HeroImage | null>({
-    queryKey: [api.heroImages.active.path],
+  const { data: activeHeroImages, isLoading: isHeroImageLoading } = useQuery<HeroImage[]>({
+    queryKey: ["/api/hero-images/active-all"],
     queryFn: async () => {
-      const res = await fetch(api.heroImages.active.path, { credentials: "include" });
-      if (!res.ok) return null;
+      const res = await fetch("/api/hero-images/active-all", { credentials: "include" });
+      if (!res.ok) return [];
       return res.json();
     },
   });
 
-  const heroImageUrl = activeHeroImage?.url || FALLBACK_HERO_IMAGE;
+  const slideInterval = ((settings?.heroSlideInterval ?? 5)) * 1000;
+  const [slideIndex, setSlideIndex] = useState(0);
+
+  useEffect(() => {
+    if (!activeHeroImages || activeHeroImages.length <= 1) return;
+    const timer = setInterval(() => {
+      setSlideIndex(i => (i + 1) % activeHeroImages.length);
+    }, slideInterval);
+    return () => clearInterval(timer);
+  }, [activeHeroImages, slideInterval]);
+
+  const heroImageUrl = activeHeroImages?.[slideIndex]?.url ?? FALLBACK_HERO_IMAGE;
 
   const showCollections = settings?.showCollections !== false;
   const showNewArrivals = settings?.showNewArrivals !== false;
@@ -211,11 +222,18 @@ export default function Home() {
         {isHeroImageLoading ? (
           <div className="absolute inset-0 w-full h-full bg-muted animate-pulse" />
         ) : (
-          <img 
-            src={heroImageUrl} 
-            alt="Luxury Interior" 
-            className="absolute inset-0 w-full h-full object-cover"
-          />
+          <AnimatePresence mode="sync">
+            <motion.img
+              key={heroImageUrl}
+              src={heroImageUrl}
+              alt="Luxury Interior"
+              className="absolute inset-0 w-full h-full object-cover"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.8 }}
+            />
+          </AnimatePresence>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-black/10" />
         
@@ -241,6 +259,22 @@ export default function Home() {
             </div>
           </motion.div>
         </div>
+        {/* Slideshow dot indicators */}
+        {activeHeroImages && activeHeroImages.length > 1 && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+            {activeHeroImages.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setSlideIndex(i)}
+                className={`w-2 h-2 rounded-full transition-all ${
+                  i === slideIndex ? "bg-white scale-125" : "bg-white/50 hover:bg-white/80"
+                }`}
+                aria-label={`Go to slide ${i + 1}`}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Featured Categories - Horizontal Carousel */}

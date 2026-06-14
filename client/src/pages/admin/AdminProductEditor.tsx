@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useParams, useLocation } from "wouter";
 import { AdminLayout } from "@/components/AdminLayout";
 import { useProduct, useCreateProduct, useUpdateProduct } from "@/hooks/use-products";
@@ -23,13 +23,19 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertProductSchema, type InsertProduct, type Product, type ProductMaterial, type ProductModel, type ProductMeasurement } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient as globalQueryClient } from "@/lib/queryClient";
+import { DndContext, closestCenter, type DragEndEvent, useSensors, useSensor, PointerSensor } from "@dnd-kit/core";
+import { SortableContext, useSortable, arrayMove, horizontalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface PendingMaterial {
   tempId: string;
   name: string;
   colorHex: string;
+  colorName: string;
   textureUrl: string;
   variantModelUrl: string;
+  materialSlotIndex: number;
+  uvScale: number;
   isNew: boolean;
   isDefault: boolean;
   id?: number;
@@ -80,30 +86,6 @@ export default function AdminProductEditor() {
 
   const [isDataLoaded, setIsDataLoaded] = useState(() => isNew);
   const [isSavingForm, setIsSavingForm] = useState(false);
-  const [arLinkStatus, setArLinkStatus] = useState<{ valid: boolean; message: string } | null>(null);
-  const [isValidatingArLink, setIsValidatingArLink] = useState(false);
-
-  const validateArLinkField = async (url: string) => {
-    if (!url) { setArLinkStatus(null); return; }
-    setIsValidatingArLink(true);
-    setArLinkStatus(null);
-    try {
-      const res = await fetch("/api/validate-ar-link", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ url }),
-      });
-      if (!res.ok) throw new Error("Validation request failed");
-      const data = await res.json();
-      setArLinkStatus({ valid: data.valid, message: data.message });
-    } catch {
-      setArLinkStatus({ valid: false, message: "Could not reach validation service" });
-    } finally {
-      setIsValidatingArLink(false);
-    }
-  };
-
   const [arLinkStatus, setArLinkStatus] = useState<{ valid: boolean; message: string } | null>(null);
   const [isValidatingArLink, setIsValidatingArLink] = useState(false);
 
@@ -360,8 +342,11 @@ export default function AdminProductEditor() {
               tempId: String(mat.id),
               name: mat.name,
               colorHex: mat.colorHex,
+              colorName: mat.colorName ?? "",
               textureUrl: mat.textureUrl || "",
               variantModelUrl: mat.variantModelUrl || "",
+              materialSlotIndex: mat.materialSlotIndex ?? 0,
+              uvScale: mat.uvScale ?? 8,
               isNew: false,
               isDefault: mat.isDefault,
               id: mat.id,
@@ -385,8 +370,11 @@ export default function AdminProductEditor() {
             tempId: `new-${Date.now()}`,
             name: "",
             colorHex: "#888888",
+            colorName: "",
             textureUrl: "",
             variantModelUrl: "",
+            materialSlotIndex: 0,
+            uvScale: 8,
             isNew: true,
             isDefault: false,
           }],
@@ -395,7 +383,7 @@ export default function AdminProductEditor() {
     ));
   };
 
-  const updateMaterialInModel = (modelTempId: string, matTempId: string, field: keyof PendingMaterial, value: string | boolean) => {
+  const updateMaterialInModel = (modelTempId: string, matTempId: string, field: keyof PendingMaterial, value: string | boolean | number) => {
     setPendingModels((prev) => prev.map((m) =>
       m.tempId === modelTempId
         ? { ...m, materials: (m.materials || []).map((mat) => mat.tempId === matTempId ? { ...mat, [field]: value } : mat) }
@@ -431,8 +419,11 @@ export default function AdminProductEditor() {
         await apiRequest("POST", `/api/products/${productId}/models/${modelId}/materials`, {
           name: mat.name,
           colorHex: mat.colorHex,
+          colorName: mat.colorName || null,
           textureUrl: mat.textureUrl || null,
           variantModelUrl: mat.variantModelUrl || null,
+          materialSlotIndex: mat.materialSlotIndex,
+          uvScale: mat.uvScale,
           sortOrder: materials.indexOf(mat),
           isDefault: mat.isDefault,
         });
@@ -440,8 +431,11 @@ export default function AdminProductEditor() {
         await apiRequest("PUT", `/api/products/${productId}/models/${modelId}/materials/${mat.id}`, {
           name: mat.name,
           colorHex: mat.colorHex,
+          colorName: mat.colorName || null,
           textureUrl: mat.textureUrl || null,
           variantModelUrl: mat.variantModelUrl || null,
+          materialSlotIndex: mat.materialSlotIndex,
+          uvScale: mat.uvScale,
           sortOrder: materials.indexOf(mat),
           isDefault: mat.isDefault,
         });
@@ -511,6 +505,20 @@ export default function AdminProductEditor() {
   const images = form.watch("images") || [];
   const arLink = form.watch("arLink");
   const isHidden = form.watch("isHidden");
+
+  const imageDndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
+
+  const handleImageDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = images.indexOf(String(active.id));
+    const newIndex = images.indexOf(String(over.id));
+    if (oldIndex === -1 || newIndex === -1) return;
+    const reordered = arrayMove(images, oldIndex, newIndex);
+    form.setValue("images", reordered, { shouldDirty: true });
+  };
 
   return (
     <AdminLayout>
@@ -641,37 +649,31 @@ export default function AdminProductEditor() {
               <div className="space-y-2">
                 <Label className="text-sm font-medium">Product Images</Label>
                 <p className="text-xs text-muted-foreground">First image used as thumbnail. Upload up to 5 photos.</p>
-                <div className="flex flex-wrap gap-3">
-                  {images.map((url, i) => (
-                    <div key={i} className="relative group w-20 h-20">
-                      <img src={url} alt="" className="w-full h-full object-cover rounded-lg border border-border" />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(i)}
-                        className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
-                        data-testid={`button-remove-image-${i}`}
+                <DndContext sensors={imageDndSensors} collisionDetection={closestCenter} onDragEnd={handleImageDragEnd}>
+                  <SortableContext items={images} strategy={horizontalListSortingStrategy}>
+                    <div className="flex flex-wrap gap-3">
+                      {images.map((url, i) => (
+                        <SortableImage key={url} url={url} index={i} onRemove={() => removeImage(i)} />
+                      ))}
+                      <ImageUploader
+                        accept="image/*"
+                        className="p-0 h-auto bg-transparent border-0 hover:bg-transparent shadow-none"
+                        onUpload={(url) => {
+                          const current = form.getValues("images") || [];
+                          form.setValue("images", [...current, url], { shouldDirty: true });
+                        }}
                       >
-                        <X className="w-3 h-3" />
-                      </button>
+                        <div
+                          className="w-20 h-20 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors gap-1"
+                          data-testid="button-upload-images"
+                        >
+                          <ImageIcon className="w-5 h-5 text-muted-foreground" />
+                          <span className="text-[10px] text-muted-foreground">Add photo</span>
+                        </div>
+                      </ImageUploader>
                     </div>
-                  ))}
-                  <ImageUploader
-                    accept="image/*"
-                    className="p-0 h-auto bg-transparent border-0 hover:bg-transparent shadow-none"
-                    onUpload={(url) => {
-                      const current = form.getValues("images") || [];
-                      form.setValue("images", [...current, url], { shouldDirty: true });
-                    }}
-                  >
-                    <div
-                      className="w-20 h-20 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors gap-1"
-                      data-testid="button-upload-images"
-                    >
-                      <ImageIcon className="w-5 h-5 text-muted-foreground" />
-                      <span className="text-[10px] text-muted-foreground">Add photo</span>
-                    </div>
-                  </ImageUploader>
-                </div>
+                  </SortableContext>
+                </DndContext>
               </div>
 
               {/* AR Model */}
@@ -870,7 +872,7 @@ interface ModelCardProps {
   onRemove: () => void;
   onAddMaterial: () => void;
   onRemoveMaterial: (matTempId: string) => void;
-  onUpdateMaterial: (matTempId: string, field: keyof PendingMaterial, value: string | boolean) => void;
+  onUpdateMaterial: (matTempId: string, field: keyof PendingMaterial, value: string | boolean | number) => void;
   onSetMaterialDefault: (matTempId: string) => void;
 }
 
@@ -1017,7 +1019,7 @@ function ModelCard({
 interface MaterialCardProps {
   mat: PendingMaterial;
   onSetDefault: () => void;
-  onUpdate: (field: keyof PendingMaterial, value: string | boolean) => void;
+  onUpdate: (field: keyof PendingMaterial, value: string | boolean | number) => void;
   onRemove: () => void;
 }
 
@@ -1100,8 +1102,85 @@ function MaterialCard({ mat, onSetDefault, onUpdate, onRemove }: MaterialCardPro
         </ImageUploader>
       </div>
 
+      {/* New fields row */}
+      <div className="space-y-1.5">
+        <Input
+          value={mat.colorName}
+          onChange={(e) => onUpdate("colorName", e.target.value)}
+          placeholder="Color name (e.g. Ivory)"
+          className="h-7 text-xs"
+          data-testid={`input-material-color-name-${mat.tempId}`}
+        />
+        <div className="flex gap-1.5">
+          <div className="flex-1 space-y-0.5">
+            <label className="text-[10px] text-muted-foreground">Slot</label>
+            <Input
+              type="number"
+              min={0}
+              value={mat.materialSlotIndex}
+              onChange={(e) => onUpdate("materialSlotIndex", Number(e.target.value))}
+              className="h-7 text-xs"
+              data-testid={`input-material-slot-${mat.tempId}`}
+            />
+          </div>
+          <div className="flex-1 space-y-0.5">
+            <label className="text-[10px] text-muted-foreground">UV Scale</label>
+            <Input
+              type="number"
+              min={0.1}
+              step={0.1}
+              value={mat.uvScale}
+              onChange={(e) => onUpdate("uvScale", Number(e.target.value))}
+              className="h-7 text-xs"
+              data-testid={`input-material-uv-scale-${mat.tempId}`}
+            />
+          </div>
+        </div>
+      </div>
+
       {(mat.isDefault) && (
         <Badge className="text-[9px] bg-primary/10 text-primary border border-primary/30 h-4 px-1">Default</Badge>
+      )}
+    </div>
+  );
+}
+
+interface SortableImageProps {
+  url: string;
+  index: number;
+  onRemove: () => void;
+}
+
+function SortableImage({ url, index, onRemove }: SortableImageProps) {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: url });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="relative group w-20 h-20"
+      data-testid={`image-tile-${index}`}
+    >
+      <img src={url} alt="" className="w-full h-full object-cover rounded-lg border border-border" />
+      <button
+        type="button"
+        onClick={onRemove}
+        className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+        data-testid={`button-remove-image-${index}`}
+      >
+        <X className="w-3 h-3" />
+      </button>
+      {index === 0 && (
+        <span className="absolute bottom-0 left-0 right-0 text-center text-[9px] bg-black/50 text-white rounded-b-lg py-0.5">
+          Cover
+        </span>
       )}
     </div>
   );

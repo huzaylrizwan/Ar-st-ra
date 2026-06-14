@@ -1,16 +1,19 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useSettings } from "@/hooks/use-settings";
-import { 
-  LayoutDashboard, 
-  Package, 
-  FolderTree, 
-  Settings, 
+import { useUnreadInquiryCount } from "@/hooks/use-inquiries";
+import {
+  LayoutDashboard,
+  Package,
+  FolderTree,
+  Settings,
   LogOut,
   Menu,
   Flag,
   HelpCircle,
-  Users
+  Users,
+  TrendingUp,
+  MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -21,6 +24,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, logout, isAuthenticated, isLoading } = useAuth();
   const { data: settings } = useSettings();
   const [location] = useLocation();
+  const { data: unreadData } = useUnreadInquiryCount();
+  const unreadCount = unreadData?.count ?? 0;
 
   if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-muted/20">Loading...</div>;
 
@@ -29,17 +34,22 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     return null;
   }
 
-  const NavItem = ({ href, icon: Icon, label }: { href: string; icon: any; label: string }) => {
+  const NavItem = ({ href, icon: Icon, label, badge }: { href: string; icon: any; label: string; badge?: number }) => {
     const isActive = href === "/admin" ? location === href : location.startsWith(href);
     return (
       <Link href={href} className={`
         flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors
-        ${isActive 
-          ? "bg-primary/10 text-primary" 
+        ${isActive
+          ? "bg-primary/10 text-primary"
           : "text-muted-foreground hover:bg-muted hover:text-foreground"}
       `}>
         <Icon className="w-4 h-4" />
         {label}
+        {badge != null && badge > 0 && (
+          <span className="ml-auto bg-primary text-primary-foreground text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center leading-none">
+            {badge > 99 ? "99+" : badge}
+          </span>
+        )}
       </Link>
     );
   };
@@ -54,10 +64,12 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       </div>
       <div className="flex-1 px-4 py-4 space-y-1">
         <NavItem href="/admin" icon={LayoutDashboard} label="Dashboard" />
+        <NavItem href="/admin/analytics" icon={TrendingUp} label="Analytics" />
         <NavItem href="/admin/products" icon={Package} label="Products" />
         <NavItem href="/admin/categories" icon={FolderTree} label="Categories" />
         <NavItem href="/admin/banners" icon={Flag} label="Banners" />
         <NavItem href="/admin/faq-manage" icon={HelpCircle} label="FAQ" />
+        <NavItem href="/admin/inquiries" icon={MessageSquare} label="Inquiries" badge={unreadCount} />
         <NavItem href="/admin/supervisors" icon={Users} label="Supervisors" />
         <NavItem href="/admin/settings" icon={Settings} label="Settings" />
       </div>
