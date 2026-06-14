@@ -36,7 +36,7 @@ function InquiryForm({
 
   const onSubmit = async (values: FormValues) => {
     try {
-      await fetch("/api/inquiries", {
+      const res = await fetch("/api/inquiries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -49,6 +49,7 @@ function InquiryForm({
           selectedSize: selectedSize || null,
         }),
       });
+      if (!res.ok) throw new Error("Inquiry submission failed");
 
       const text = encodeURIComponent(
         `Inquiry for: ${product.name}\nFinish: ${selectedColor || "N/A"}\nSize: ${selectedSize || "N/A"}\nName: ${values.customerName}\nContact: ${values.contact}\nMessage: ${values.message || ""}`
