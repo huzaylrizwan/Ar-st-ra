@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useSettings } from "@/hooks/use-settings";
+import { useCategories } from "@/hooks/use-categories";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Menu, ShieldCheck, Instagram, Facebook, MessageCircle, MapPin, ExternalLink } from "lucide-react";
@@ -13,6 +14,7 @@ import { FloatingContactButton } from "@/components/FloatingContactButton";
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const { data: settings } = useSettings();
+  const { data: categories } = useCategories();
   const [location] = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -189,14 +191,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
               )}
             </div>
 
-            {/* Collections - Hidden on mobile */}
+            {/* Collections - Dynamic */}
             <div className="hidden md:block">
               <h4 className="text-sm font-bold uppercase tracking-widest mb-4">Collections</h4>
               <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/categories" className="hover:text-primary transition-colors">Living Room</Link></li>
-                <li><Link href="/categories" className="hover:text-primary transition-colors">Dining</Link></li>
-                <li><Link href="/categories" className="hover:text-primary transition-colors">Bedroom</Link></li>
-                <li><Link href="/categories" className="hover:text-primary transition-colors">Office</Link></li>
+                {(categories?.filter(c => !c.isHidden).slice(0, 5) ?? []).map(cat => (
+                  <li key={cat.id}>
+                    <Link href={`/categories?id=${cat.id}`} className="hover:text-primary transition-colors">
+                      {cat.name}
+                    </Link>
+                  </li>
+                ))}
+                {(!categories || categories.filter(c => !c.isHidden).length === 0) && (
+                  <li><Link href="/categories" className="hover:text-primary transition-colors">View All</Link></li>
+                )}
               </ul>
             </div>
 
@@ -237,15 +245,29 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <>
                   <h4 className="text-sm font-bold uppercase tracking-widest mb-4">Newsletter</h4>
                   <p className="text-xs text-muted-foreground mb-4">Subscribe to receive exclusive offers and design inspiration.</p>
-                  <div className="flex gap-2">
-                    <input 
-                      type="email" 
-                      placeholder="Email Address" 
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const emailInput = e.currentTarget.elements.namedItem("newsletter-email") as HTMLInputElement;
+                      const email = emailInput?.value;
+                      if (!email) return;
+                      if (settings?.whatsappNumber) {
+                        window.open(`https://wa.me/${settings.whatsappNumber.replace(/\D/g, "")}?text=Newsletter+subscription:+${encodeURIComponent(email)}`, "_blank");
+                      } else if (settings?.contactEmail) {
+                        window.open(`mailto:${settings.contactEmail}?subject=Newsletter+Subscription&body=Email:+${encodeURIComponent(email)}`, "_blank");
+                      }
+                    }}
+                    className="flex gap-2"
+                  >
+                    <input
+                      name="newsletter-email"
+                      type="email"
+                      placeholder="Email Address"
                       className="bg-background border border-input rounded-sm px-3 py-2 text-sm w-full focus:outline-none focus:ring-1 focus:ring-primary"
                       data-testid="input-newsletter-email"
                     />
-                    <Button variant="default" size="sm" className="rounded-sm" data-testid="button-newsletter-join">Join</Button>
-                  </div>
+                    <Button type="submit" variant="default" size="sm" className="rounded-sm" data-testid="button-newsletter-join">Join</Button>
+                  </form>
                 </>
               )}
             </div>
@@ -271,8 +293,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground">
             <p>&copy; {new Date().getFullYear()} {settings?.brandName || "Luxury Furniture"}. All rights reserved.</p>
             <div className="flex gap-6">
-              <a href="#" className="hover:text-foreground" data-testid="link-privacy">Privacy Policy</a>
-              <a href="#" className="hover:text-foreground" data-testid="link-terms">Terms of Service</a>
+              {settings?.privacyPolicyUrl && (
+                <a href={settings.privacyPolicyUrl} target="_blank" rel="noopener noreferrer" className="hover:text-foreground" data-testid="link-privacy">
+                  Privacy Policy
+                </a>
+              )}
+              {settings?.termsUrl && (
+                <a href={settings.termsUrl} target="_blank" rel="noopener noreferrer" className="hover:text-foreground" data-testid="link-terms">
+                  Terms of Service
+                </a>
+              )}
             </div>
           </div>
         </div>

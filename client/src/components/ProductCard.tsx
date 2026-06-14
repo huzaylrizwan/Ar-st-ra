@@ -19,6 +19,18 @@ export function ProductCard({ product }: { product: Product }) {
           className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
         />
         
+        {/* Stock Status Badges */}
+        {product.stockStatus === "out_of_stock" && (
+          <div className="absolute top-2 right-2 bg-red-500 text-white text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-full font-bold z-10">
+            Unavailable
+          </div>
+        )}
+        {product.stockStatus === "made_to_order" && (
+          <div className="absolute top-2 right-2 bg-amber-500 text-white text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-full font-bold z-10">
+            Made to Order
+          </div>
+        )}
+
         {/* Quick Add Button - Mobile friendly */}
         <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300">
           <button 

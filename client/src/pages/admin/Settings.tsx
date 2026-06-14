@@ -108,6 +108,10 @@ export default function AdminSettings() {
         studioBottomBarOpacity: settings.studioBottomBarOpacity ?? 0.65,
         studioBottomBarColor: settings.studioBottomBarColor ?? "#000000",
         currencySymbol: settings.currencySymbol ?? "$",
+        contactEmail: settings.contactEmail ?? "",
+        privacyPolicyUrl: settings.privacyPolicyUrl ?? "",
+        termsUrl: settings.termsUrl ?? "",
+        aboutUrl: settings.aboutUrl ?? "",
       });
     }
   }, [settings, form]);
@@ -433,15 +437,60 @@ export default function AdminSettings() {
                 <Label htmlFor="mapEmbedUrl" className="flex items-center gap-2">
                   <Map className="w-4 h-4" /> Google Maps Embed URL
                 </Label>
-                <Input 
-                  id="mapEmbedUrl" 
+                <Input
+                  id="mapEmbedUrl"
                   placeholder="https://www.google.com/maps/embed?..."
                   data-testid="input-map-embed-url"
-                  {...form.register("mapEmbedUrl")} 
+                  {...form.register("mapEmbedUrl")}
                 />
                 <p className="text-xs text-muted-foreground">
                   Paste the embed URL from Google Maps to show a map on your contact page.
                 </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="contactEmail">Contact Email</Label>
+                <Input
+                  id="contactEmail"
+                  type="email"
+                  placeholder="hello@yourstore.com"
+                  data-testid="input-contact-email"
+                  {...form.register("contactEmail")}
+                />
+                <p className="text-xs text-muted-foreground">Used for newsletter subscriptions when WhatsApp is not set.</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="privacyPolicyUrl">Privacy Policy URL</Label>
+                <Input
+                  id="privacyPolicyUrl"
+                  placeholder="https://yourstore.com/privacy"
+                  data-testid="input-privacy-policy-url"
+                  {...form.register("privacyPolicyUrl")}
+                />
+                <p className="text-xs text-muted-foreground">When set, a Privacy Policy link will appear in the footer.</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="termsUrl">Terms of Service URL</Label>
+                <Input
+                  id="termsUrl"
+                  placeholder="https://yourstore.com/terms"
+                  data-testid="input-terms-url"
+                  {...form.register("termsUrl")}
+                />
+                <p className="text-xs text-muted-foreground">When set, a Terms of Service link will appear in the footer.</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="aboutUrl">About Page URL</Label>
+                <Input
+                  id="aboutUrl"
+                  placeholder="https://yourstore.com/about"
+                  data-testid="input-about-url"
+                  {...form.register("aboutUrl")}
+                />
+                <p className="text-xs text-muted-foreground">When set, a "Read Our Story" button will appear in the Philosophy section.</p>
               </div>
             </CardContent>
           </Card>

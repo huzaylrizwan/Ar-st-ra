@@ -4,12 +4,14 @@ import { useProduct } from "@/hooks/use-products";
 import { useCategory } from "@/hooks/use-categories";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState } from "react";
-import { Box, Check, ChevronRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Box, Check, ChevronRight, Clock, X } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import { cn } from "@/lib/utils";
 import { ARStudio } from "@/components/ARStudio";
 import { useSettings } from "@/hooks/use-settings";
+import { ProductInquirySheet } from "@/components/ProductInquirySheet";
+import { QRCodeSVG } from "qrcode.react";
 
 export default function ProductDetails() {
   const [match, params] = useRoute("/products/:id");
@@ -22,6 +24,26 @@ export default function ProductDetails() {
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [arViewerOpen, setArViewerOpen] = useState(false);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [arSupported, setArSupported] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const check = async () => {
+      let iosAR = false;
+      try {
+        iosAR = typeof document !== "undefined" &&
+          !!(document.createElement("a").relList?.supports?.("ar"));
+      } catch {
+        iosAR = false;
+      }
+      const webxrAR = await (navigator as any).xr
+        ?.isSessionSupported?.("immersive-ar")
+        .catch(() => false);
+      setArSupported(!!(iosAR || webxrAR));
+    };
+    check();
+  }, []);
 
   // Re-sync index when embla changes
   if (emblaApi) {
@@ -119,14 +141,19 @@ export default function ProductDetails() {
                 <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">Finish</span>
                 <div className="flex gap-2 sm:gap-3">
                   {product.colors.map((color) => (
-                    <div 
-                      key={color} 
-                      className="w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-border cursor-pointer shadow-sm relative group"
+                    <button
+                      key={color}
+                      onClick={() => setSelectedColor(color === selectedColor ? null : color)}
+                      aria-label={`color ${color}`}
+                      className={cn(
+                        "w-8 h-8 sm:w-10 sm:h-10 rounded-full border border-border shadow-sm relative transition-all",
+                        selectedColor === color
+                          ? "ring-2 ring-primary ring-offset-2 scale-110"
+                          : "hover:scale-105"
+                      )}
                       style={{ backgroundColor: color }}
                       title={color}
-                    >
-                      <div className="absolute inset-0 rounded-full ring-2 ring-primary ring-offset-2 opacity-0 group-hover:opacity-50 transition-opacity" />
-                    </div>
+                    />
                   ))}
                 </div>
               </div>
@@ -138,12 +165,18 @@ export default function ProductDetails() {
                 <span className="text-xs sm:text-sm font-bold uppercase tracking-wider">Size</span>
                 <div className="flex flex-wrap gap-2 sm:gap-3">
                   {product.sizes.map((size) => (
-                    <div 
-                      key={size} 
-                      className="px-3 sm:px-4 py-1.5 sm:py-2 border border-border text-xs sm:text-sm font-medium cursor-pointer hover:border-primary hover:text-primary transition-colors rounded-full sm:rounded-none"
+                    <button
+                      key={size}
+                      onClick={() => setSelectedSize(size === selectedSize ? null : size)}
+                      className={cn(
+                        "px-3 sm:px-4 py-1.5 sm:py-2 border text-xs sm:text-sm font-medium transition-colors rounded-full sm:rounded-none",
+                        selectedSize === size
+                          ? "border-primary text-primary bg-primary/5"
+                          : "border-border hover:border-primary hover:text-primary"
+                      )}
                     >
                       {size}
-                    </div>
+                    </button>
                   ))}
                 </div>
               </div>
@@ -151,24 +184,55 @@ export default function ProductDetails() {
 
             {/* Actions - Rounded on mobile */}
             <div className="pt-4 sm:pt-8 space-y-3 sm:space-y-4">
-              {product.arLink ? (
-                <Button
-                  size="lg"
-                  className="w-full h-12 sm:h-14 text-sm sm:text-base tracking-widest uppercase font-bold gap-2 sm:gap-3 rounded-full sm:rounded-none shadow-xl shadow-primary/10"
-                  onClick={() => setArViewerOpen(true)}
-                  data-testid="button-ar-view"
-                >
-                  <Box className="w-4 h-4 sm:w-5 sm:h-5" /> View in Reality
-                </Button>
-              ) : (
-                <div className="p-3 sm:p-4 bg-muted/50 text-xs sm:text-sm text-center text-muted-foreground rounded-xl sm:rounded-sm">
-                  AR View not available for this item
+              {product.stockStatus !== "out_of_stock" ? (
+                <>
+                  {product.arLink ? (
+                    arSupported === false ? (
+                      <div className="flex flex-col items-center gap-3 p-4 border border-border rounded-xl sm:rounded-sm bg-muted/30">
+                        <QRCodeSVG value={typeof window !== "undefined" ? window.location.href : ""} size={120} data-testid="qrcode" />
+                        <p className="text-xs text-center text-muted-foreground">
+                          Scan on your phone to view in your space
+                        </p>
+                      </div>
+                    ) : (
+                      <Button
+                        size="lg"
+                        data-testid="button-ar-view"
+                        className="w-full h-12 sm:h-14 text-sm sm:text-base tracking-widest uppercase font-bold gap-2 sm:gap-3 rounded-full sm:rounded-none shadow-xl shadow-primary/10"
+                        onClick={() => setArViewerOpen(true)}
+                      >
+                        <Box className="w-4 h-4 sm:w-5 sm:h-5" /> View in Reality
+                      </Button>
+                    )
+                  ) : (
+                    <div className="p-3 sm:p-4 bg-muted/50 text-xs sm:text-sm text-center text-muted-foreground rounded-xl sm:rounded-sm">
+                      AR View not available for this item
+                    </div>
+                  )}
+
+                  <ProductInquirySheet
+                    product={product}
+                    selectedColor={selectedColor}
+                    selectedSize={selectedSize}
+                  />
+                </>
+              ) : null}
+
+              {product.stockStatus === "in_stock" && (
+                <div className="flex items-center justify-center gap-2 text-[10px] sm:text-xs text-muted-foreground uppercase tracking-widest pt-1 sm:pt-2">
+                  <Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" /> In Stock & Ready to Ship
                 </div>
               )}
-              
-              <div className="flex items-center justify-center gap-2 text-[10px] sm:text-xs text-muted-foreground uppercase tracking-widest pt-1 sm:pt-2">
-                <Check className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" /> In Stock & Ready to Ship
-              </div>
+              {product.stockStatus === "made_to_order" && (
+                <div className="flex items-center justify-center gap-2 text-[10px] sm:text-xs text-amber-600 uppercase tracking-widest pt-1 sm:pt-2">
+                  <Clock className="w-3 h-3 sm:w-4 sm:h-4" /> Made to Order — 6–8 Weeks
+                </div>
+              )}
+              {product.stockStatus === "out_of_stock" && (
+                <div className="flex items-center justify-center gap-2 text-[10px] sm:text-xs text-red-500 uppercase tracking-widest pt-1 sm:pt-2">
+                  <X className="w-3 h-3 sm:w-4 sm:h-4" /> Currently Unavailable
+                </div>
+              )}
             </div>
           </div>
         </div>
