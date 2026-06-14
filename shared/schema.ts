@@ -170,7 +170,7 @@ export const insertProductModelSchema = createInsertSchema(productModels).omit({
 export const insertProductMeasurementSchema = createInsertSchema(productMeasurements).omit({ id: true });
 export const insertSupervisorSchema = createInsertSchema(supervisors).omit({ id: true, addedAt: true });
 export const insertPageViewSchema = createInsertSchema(pageViews).omit({ id: true, viewedAt: true });
-export const insertInquirySchema = createInsertSchema(inquiries).omit({ id: true, createdAt: true });
+export const insertInquirySchema = createInsertSchema(inquiries).omit({ id: true, createdAt: true, isRead: true });
 
 // Types
 export type Category = typeof categories.$inferSelect;

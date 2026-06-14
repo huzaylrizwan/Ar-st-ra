@@ -197,7 +197,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <ul className="space-y-2 text-sm text-muted-foreground">
                 {(categories?.filter(c => !c.isHidden).slice(0, 5) ?? []).map(cat => (
                   <li key={cat.id}>
-                    <Link href={`/categories/${cat.slug}`} className="hover:text-primary transition-colors">
+                    <Link href={`/categories?id=${cat.id}`} className="hover:text-primary transition-colors">
                       {cat.name}
                     </Link>
                   </li>
