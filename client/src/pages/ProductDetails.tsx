@@ -9,6 +9,7 @@ import { Box, Check, ChevronRight, Clock, X } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import { cn } from "@/lib/utils";
 import { ARStudio } from "@/components/ARStudio";
+import { ARStudioErrorBoundary } from "@/components/ErrorBoundary";
 import { useSettings } from "@/hooks/use-settings";
 import { ProductInquirySheet } from "@/components/ProductInquirySheet";
 import { QRCodeSVG } from "qrcode.react";
@@ -240,7 +241,9 @@ export default function ProductDetails() {
 
       {/* Full-screen 3D Studio Overlay */}
       {arViewerOpen && product.arLink && (
-        <ARStudio product={product} onClose={() => setArViewerOpen(false)} />
+        <ARStudioErrorBoundary>
+          <ARStudio product={product} onClose={() => setArViewerOpen(false)} />
+        </ARStudioErrorBoundary>
       )}
     </Layout>
   );
