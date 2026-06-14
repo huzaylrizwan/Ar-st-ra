@@ -1,16 +1,17 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useSettings } from "@/hooks/use-settings";
-import { 
-  LayoutDashboard, 
-  Package, 
-  FolderTree, 
-  Settings, 
+import {
+  LayoutDashboard,
+  Package,
+  FolderTree,
+  Settings,
   LogOut,
   Menu,
   Flag,
   HelpCircle,
-  Users
+  Users,
+  TrendingUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -54,6 +55,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       </div>
       <div className="flex-1 px-4 py-4 space-y-1">
         <NavItem href="/admin" icon={LayoutDashboard} label="Dashboard" />
+        <NavItem href="/admin/analytics" icon={TrendingUp} label="Analytics" />
         <NavItem href="/admin/products" icon={Package} label="Products" />
         <NavItem href="/admin/categories" icon={FolderTree} label="Categories" />
         <NavItem href="/admin/banners" icon={Flag} label="Banners" />
