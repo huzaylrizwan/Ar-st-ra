@@ -44,6 +44,7 @@ export default function Analytics() {
     queryKey: ["/api/analytics/catalog-health"],
     queryFn: async () => {
       const res = await fetch("/api/analytics/catalog-health", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch catalog health");
       return res.json();
     },
   });

@@ -36,7 +36,7 @@ export default function AdminProducts() {
     }
   }, [products]);
 
-  const sensors = useSensors(useSensor(PointerSensor));
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
   const reorderMutation = useMutation({
     mutationFn: async (items: { id: number; sortOrder: number }[]) => {

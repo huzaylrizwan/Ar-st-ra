@@ -72,6 +72,7 @@ function HeroImagesManager() {
 }
 
 export default function AdminBanners() {
+  const { toast } = useToast();
   const { data: banners, isLoading } = useQuery<Banner[]>({
     queryKey: ["/api/banners"],
   });
@@ -101,7 +102,6 @@ export default function AdminBanners() {
     },
   });
 
-  const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
 
