@@ -34,6 +34,7 @@ export default function Analytics() {
     queryKey: ["/api/analytics/live-visitors"],
     queryFn: async () => {
       const res = await fetch("/api/analytics/live-visitors", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch live visitors");
       return res.json();
     },
     refetchInterval: 30 * 1000,
