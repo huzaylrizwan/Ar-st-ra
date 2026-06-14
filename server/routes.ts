@@ -627,6 +627,40 @@ export async function registerRoutes(
     res.sendStatus(204);
   });
 
+  // Analytics
+  app.get("/api/analytics/summary", requireAdmin, async (req, res) => {
+    const summary = await storage.getAnalyticsSummary();
+    res.json(summary);
+  });
+
+  app.get("/api/analytics/catalog-health", requireAdmin, async (req, res) => {
+    const health = await storage.getCatalogHealth();
+    res.json(health);
+  });
+
+  // Reorder
+  app.patch("/api/products/reorder", requireAdmin, async (req, res) => {
+    const items = z.array(z.object({ id: z.number(), sortOrder: z.number() })).parse(req.body);
+    await storage.reorderProducts(items);
+    res.sendStatus(204);
+  });
+
+  app.patch("/api/categories/reorder", requireAdmin, async (req, res) => {
+    const items = z.array(z.object({ id: z.number(), sortOrder: z.number() })).parse(req.body);
+    await storage.reorderCategories(items);
+    res.sendStatus(204);
+  });
+
+  // Bulk product operations
+  app.patch("/api/products/bulk", requireAdmin, async (req, res) => {
+    const { ids, action } = z.object({
+      ids: z.array(z.number()),
+      action: z.enum(["hide", "show", "delete"]),
+    }).parse(req.body);
+    await storage.bulkUpdateProducts(ids, action);
+    res.sendStatus(204);
+  });
+
   // Run seed
   seedDatabase().catch(console.error);
 
