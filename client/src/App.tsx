@@ -62,6 +62,7 @@ import AdminBanners from "@/pages/admin/Banners";
 import AdminFAQ from "@/pages/admin/FAQ";
 import AdminSupervisors from "@/pages/admin/Supervisors";
 import Analytics from "@/pages/admin/Analytics";
+import Inquiries from "@/pages/admin/Inquiries";
 import SupervisorDashboard from "@/pages/supervisor/SupervisorDashboard";
 import SupervisorContact from "@/pages/supervisor/SupervisorContact";
 import SupervisorProducts from "@/pages/supervisor/SupervisorProducts";
@@ -186,6 +187,9 @@ function Router() {
       </Route>
       <Route path="/admin/analytics">
         <ProtectedRoute component={Analytics} />
+      </Route>
+      <Route path="/admin/inquiries">
+        <ProtectedRoute component={Inquiries} />
       </Route>
 
       {/* Supervisor Routes */}
