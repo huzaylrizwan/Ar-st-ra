@@ -16,6 +16,7 @@ let csrfToken: string | null = null;
 async function getCsrfToken(): Promise<string> {
   if (csrfToken) return csrfToken;
   const res = await fetch("/api/csrf-token");
+  if (!res.ok) throw new Error(`Failed to fetch CSRF token: ${res.status}`);
   const data = await res.json();
   csrfToken = data.token as string;
   return csrfToken;
@@ -39,7 +40,14 @@ export async function fetchWithCsrf(
     headers.set("X-CSRF-Token", token);
   }
 
-  return fetch(input, { credentials: "include", ...init, headers });
+  const response = await fetch(input, { credentials: "include", ...init, headers });
+
+  // Bust CSRF cache on 403 so next call fetches a fresh token
+  if (response.status === 403 && needsCsrf) {
+    csrfToken = null;
+  }
+
+  return response;
 }
 
 // ---------------------------------------------------------------------------
