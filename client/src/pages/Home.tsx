@@ -279,9 +279,13 @@ export default function Home() {
                   <p className="text-xs uppercase tracking-wider text-muted-foreground mt-1">Year Warranty</p>
                 </div>
               </div>
-              <Button variant="ghost" className="px-0 text-primary uppercase tracking-widest text-xs font-bold mt-4">
-                Read Our Story <ArrowRight className="ml-2 w-4 h-4" />
-              </Button>
+              {settings?.aboutUrl && (
+                <a href={settings.aboutUrl} target="_blank" rel="noopener noreferrer">
+                  <Button variant="ghost" className="px-0 text-primary uppercase tracking-widest text-xs font-bold mt-4">
+                    Read Our Story <ArrowRight className="ml-2 w-4 h-4" />
+                  </Button>
+                </a>
+              )}
             </div>
           </div>
         </div>
