@@ -45,6 +45,9 @@ export function useDeleteInquiry() {
       const res = await fetch(`/api/inquiries/${id}`, { method: "DELETE", credentials: "include" });
       if (!res.ok) throw new Error("Failed to delete inquiry");
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["/api/inquiries"] }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/inquiries"] });
+      qc.invalidateQueries({ queryKey: ["/api/inquiries/unread-count"] });
+    },
   });
 }
