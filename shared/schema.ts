@@ -59,6 +59,11 @@ export const themeSettings = pgTable("theme_settings", {
   studioBottomBarColor: text("studio_bottom_bar_color").default("#000000"),
   // Currency
   currencySymbol: text("currency_symbol").default("$"),
+  // Legal & contact pages
+  contactEmail: text("contact_email"),
+  privacyPolicyUrl: text("privacy_policy_url"),
+  termsUrl: text("terms_url"),
+  aboutUrl: text("about_url"),
 });
 
 // Promo Banners - multiple rotating banners
