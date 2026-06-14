@@ -13,10 +13,11 @@ passport.use(
       try {
         const user = await storage.getUserByEmail(email);
         if (!user) return done(null, false, { message: "Invalid credentials" });
-        if (!user.passwordHash) return done(null, false, { message: "This account uses SSO login" });
+        if (!user.passwordHash) return done(null, false, { message: "Invalid credentials" });
         const valid = await bcrypt.compare(password, user.passwordHash);
         if (!valid) return done(null, false, { message: "Invalid credentials" });
-        return done(null, user);
+        const { passwordHash: _pw, ...safeUser } = user;
+        return done(null, safeUser);
       } catch (err) {
         return done(err);
       }
@@ -25,7 +26,7 @@ passport.use(
 );
 
 export function registerLocalAuthRoutes(app: Express) {
-  app.post("/api/auth/login", authLimiter, async (req, res, next) => {
+  app.post("/api/auth/login", authLimiter, (req, res, next) => {
     passport.authenticate("local-users", (err: any, user: any, info: any) => {
       if (err) return next(err);
       if (!user) return res.status(401).json({ message: info?.message ?? "Invalid credentials" });
@@ -51,18 +52,22 @@ export function registerLocalAuthRoutes(app: Express) {
   });
 
   // One-time admin setup — disabled after first admin user exists
-  app.post("/api/auth/setup", async (req, res) => {
-    const existingAdmin = await storage.getAdminUser();
-    if (existingAdmin) {
-      return res.status(403).json({ message: "Setup already complete" });
+  app.post("/api/auth/setup", async (req, res, next) => {
+    try {
+      const existingAdmin = await storage.getAdminUser();
+      if (existingAdmin) {
+        return res.status(403).json({ message: "Setup already complete" });
+      }
+      const { email, password, name } = req.body;
+      if (!email || !password || password.length < 8) {
+        return res.status(400).json({ message: "Email and password (min 8 chars) required" });
+      }
+      const passwordHash = await bcrypt.hash(password, 12);
+      const user = await storage.createUser({ email, passwordHash, name: name ?? null, role: "admin" });
+      const { passwordHash: _, ...safeUser } = user;
+      res.status(201).json(safeUser);
+    } catch (err) {
+      next(err);
     }
-    const { email, password, name } = req.body;
-    if (!email || !password || password.length < 8) {
-      return res.status(400).json({ message: "Email and password (min 8 chars) required" });
-    }
-    const passwordHash = await bcrypt.hash(password, 12);
-    const user = await storage.createUser({ email, passwordHash, name: name ?? null, role: "admin" });
-    const { passwordHash: _, ...safeUser } = user;
-    res.status(201).json(safeUser);
   });
 }
