@@ -9,6 +9,7 @@ export const categories = pgTable("categories", {
   slug: text("slug").notNull().unique(),
   imageUrl: text("image_url").notNull(),
   isHidden: boolean("is_hidden").default(false).notNull(),
+  sortOrder: integer("sort_order").default(0).notNull(),
 });
 
 export const products = pgTable("products", {
@@ -64,6 +65,7 @@ export const themeSettings = pgTable("theme_settings", {
   privacyPolicyUrl: text("privacy_policy_url"),
   termsUrl: text("terms_url"),
   aboutUrl: text("about_url"),
+  heroSlideInterval: integer("hero_slide_interval").default(5).notNull(),
 });
 
 // Promo Banners - multiple rotating banners

@@ -37,7 +37,7 @@ import {
   type InsertInquiry,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, asc, gt, countDistinct, isNull, and, lt, desc, sql } from "drizzle-orm";
+import { eq, asc, gt, countDistinct, isNull, and, lt, desc, sql, gte, like, inArray } from "drizzle-orm";
 
 export interface IStorage {
   // Categories
@@ -116,6 +116,26 @@ export interface IStorage {
   getUnreadInquiryCount(): Promise<number>;
   markInquiryRead(id: number): Promise<void>;
   deleteInquiry(id: number): Promise<void>;
+
+  // Analytics
+  getAnalyticsSummary(): Promise<{
+    todayViews: number;
+    last30Days: { date: string; views: number }[];
+    topProducts: { path: string; views: number }[];
+    topCategories: { path: string; views: number }[];
+  }>;
+  getCatalogHealth(): Promise<{
+    productsNoArLink: number;
+    productsHidden: number;
+    productsNoImages: number;
+    categoriesEmpty: number;
+    productsOutOfStock: number;
+  }>;
+
+  // Reorder + bulk
+  reorderProducts(items: { id: number; sortOrder: number }[]): Promise<void>;
+  reorderCategories(items: { id: number; sortOrder: number }[]): Promise<void>;
+  bulkUpdateProducts(ids: number[], action: "hide" | "show" | "delete"): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -500,6 +520,102 @@ export class DatabaseStorage implements IStorage {
 
   async deleteInquiry(id: number): Promise<void> {
     await db.delete(inquiries).where(eq(inquiries.id, id));
+  }
+
+  async getAnalyticsSummary() {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    const todayResult = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(pageViews)
+      .where(gte(pageViews.viewedAt, todayStart));
+
+    const last30 = await db
+      .select({
+        date: sql<string>`DATE(viewed_at)::text`,
+        views: sql<number>`count(*)::int`,
+      })
+      .from(pageViews)
+      .where(gte(pageViews.viewedAt, thirtyDaysAgo))
+      .groupBy(sql`DATE(viewed_at)`)
+      .orderBy(sql`DATE(viewed_at)`);
+
+    const topProducts = await db
+      .select({
+        path: pageViews.path,
+        views: sql<number>`count(*)::int`,
+      })
+      .from(pageViews)
+      .where(and(gte(pageViews.viewedAt, thirtyDaysAgo), like(pageViews.path, "/products/%")))
+      .groupBy(pageViews.path)
+      .orderBy(sql`count(*) desc`)
+      .limit(5);
+
+    const topCategories = await db
+      .select({
+        path: pageViews.path,
+        views: sql<number>`count(*)::int`,
+      })
+      .from(pageViews)
+      .where(and(gte(pageViews.viewedAt, thirtyDaysAgo), like(pageViews.path, "/categories%")))
+      .groupBy(pageViews.path)
+      .orderBy(sql`count(*) desc`)
+      .limit(5);
+
+    return {
+      todayViews: todayResult[0]?.count ?? 0,
+      last30Days: last30,
+      topProducts,
+      topCategories,
+    };
+  }
+
+  async getCatalogHealth() {
+    const [allProducts, allCategories] = await Promise.all([
+      db.select().from(products),
+      db.select().from(categories),
+    ]);
+    const allProductsByCat = allProducts.reduce((acc, p) => {
+      if (p.categoryId) acc.add(p.categoryId);
+      return acc;
+    }, new Set<number>());
+
+    return {
+      productsNoArLink: allProducts.filter(p => !p.arLink).length,
+      productsHidden: allProducts.filter(p => p.isHidden).length,
+      productsNoImages: allProducts.filter(p => !p.images || p.images.length === 0).length,
+      categoriesEmpty: allCategories.filter(c => !allProductsByCat.has(c.id)).length,
+      productsOutOfStock: allProducts.filter(p => p.stockStatus === "out_of_stock").length,
+    };
+  }
+
+  async reorderProducts(items: { id: number; sortOrder: number }[]): Promise<void> {
+    await Promise.all(
+      items.map(({ id, sortOrder }) =>
+        db.update(products).set({ sortOrder }).where(eq(products.id, id))
+      )
+    );
+  }
+
+  async reorderCategories(items: { id: number; sortOrder: number }[]): Promise<void> {
+    await Promise.all(
+      items.map(({ id, sortOrder }) =>
+        db.update(categories).set({ sortOrder }).where(eq(categories.id, id))
+      )
+    );
+  }
+
+  async bulkUpdateProducts(ids: number[], action: "hide" | "show" | "delete"): Promise<void> {
+    if (ids.length === 0) return;
+    if (action === "delete") {
+      await db.delete(products).where(inArray(products.id, ids));
+    } else {
+      await db.update(products)
+        .set({ isHidden: action === "hide" })
+        .where(inArray(products.id, ids));
+    }
   }
 }
 
