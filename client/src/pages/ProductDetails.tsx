@@ -4,13 +4,14 @@ import { useProduct } from "@/hooks/use-products";
 import { useCategory } from "@/hooks/use-categories";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Box, Check, ChevronRight, Clock, X } from "lucide-react";
 import useEmblaCarousel from "embla-carousel-react";
 import { cn } from "@/lib/utils";
 import { ARStudio } from "@/components/ARStudio";
 import { useSettings } from "@/hooks/use-settings";
 import { ProductInquirySheet } from "@/components/ProductInquirySheet";
+import QRCode from "qrcode.react";
 
 export default function ProductDetails() {
   const [match, params] = useRoute("/products/:id");
@@ -25,6 +26,24 @@ export default function ProductDetails() {
   const [arViewerOpen, setArViewerOpen] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [arSupported, setArSupported] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const check = async () => {
+      let iosAR = false;
+      try {
+        iosAR = typeof document !== "undefined" &&
+          !!(document.createElement("a").relList?.supports?.("ar"));
+      } catch {
+        iosAR = false;
+      }
+      const webxrAR = await (navigator as any).xr
+        ?.isSessionSupported?.("immersive-ar")
+        .catch(() => false);
+      setArSupported(!!(iosAR || webxrAR));
+    };
+    check();
+  }, []);
 
   // Re-sync index when embla changes
   if (emblaApi) {
@@ -168,14 +187,23 @@ export default function ProductDetails() {
               {product.stockStatus !== "out_of_stock" ? (
                 <>
                   {product.arLink ? (
-                    <Button
-                      size="lg"
-                      className="w-full h-12 sm:h-14 text-sm sm:text-base tracking-widest uppercase font-bold gap-2 sm:gap-3 rounded-full sm:rounded-none shadow-xl shadow-primary/10"
-                      onClick={() => setArViewerOpen(true)}
-                      data-testid="button-ar-view"
-                    >
-                      <Box className="w-4 h-4 sm:w-5 sm:h-5" /> View in Reality
-                    </Button>
+                    arSupported === false ? (
+                      <div className="flex flex-col items-center gap-3 p-4 border border-border rounded-xl sm:rounded-sm bg-muted/30">
+                        <QRCode value={typeof window !== "undefined" ? window.location.href : ""} size={120} />
+                        <p className="text-xs text-center text-muted-foreground">
+                          Scan on your phone to view in your space
+                        </p>
+                      </div>
+                    ) : (
+                      <Button
+                        size="lg"
+                        data-testid="button-ar-view"
+                        className="w-full h-12 sm:h-14 text-sm sm:text-base tracking-widest uppercase font-bold gap-2 sm:gap-3 rounded-full sm:rounded-none shadow-xl shadow-primary/10"
+                        onClick={() => setArViewerOpen(true)}
+                      >
+                        <Box className="w-4 h-4 sm:w-5 sm:h-5" /> View in Reality
+                      </Button>
+                    )
                   ) : (
                     <div className="p-3 sm:p-4 bg-muted/50 text-xs sm:text-sm text-center text-muted-foreground rounded-xl sm:rounded-sm">
                       AR View not available for this item

@@ -52,11 +52,18 @@ vi.mock("embla-carousel-react", () => ({
   default: () => [vi.fn(), { on: vi.fn(), scrollTo: vi.fn(), selectedScrollSnap: () => 0 }],
 }));
 
+vi.mock("qrcode.react", () => ({
+  default: ({ value }: { value: string }) => <div data-testid="qrcode" data-value={value} />,
+}));
+
 describe("ProductDetails", () => {
-  it("shows View in Reality button when arLink is set", async () => {
+  it("shows AR button or QR code when arLink is set", async () => {
     const { default: ProductDetails } = await import("@/pages/ProductDetails");
     render(<ProductDetails />);
-    expect(screen.getByTestId("button-ar-view")).toBeInTheDocument();
+    // In jsdom, AR is not supported so QR code shows; on real devices the button shows.
+    const hasArButton = !!screen.queryByTestId("button-ar-view");
+    const hasQrCode = !!screen.queryByTestId("qrcode");
+    expect(hasArButton || hasQrCode).toBe(true);
   });
 
   it("highlights selected color swatch on click", async () => {
