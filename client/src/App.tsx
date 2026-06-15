@@ -10,6 +10,7 @@ import { useSupervisor } from "@/hooks/use-supervisor";
 import { useEffect, useRef } from "react";
 import { useSettings } from "@/hooks/use-settings";
 import { nanoid } from "nanoid";
+import { AnimatePresence, motion } from "framer-motion";
 
 function ScrollToTop() {
   const [location] = useLocation();
@@ -162,17 +163,11 @@ function AuthRedirectHandler() {
 }
 
 function Router() {
+  const [location] = useLocation();
+
   return (
     <Switch>
-      {/* Public Routes */}
-      <Route path="/" component={Home} />
-      <Route path="/login" component={Login} />
-      <Route path="/categories" component={CategoryPage} />
-      <Route path="/products/:id" component={ProductDetails} />
-      <Route path="/contact" component={Contact} />
-      <Route path="/faq" component={FAQ} />
-      
-      {/* Admin Routes */}
+      {/* Admin Routes — no page transitions */}
       <Route path="/admin">
         <ProtectedRoute component={Dashboard} />
       </Route>
@@ -207,7 +202,7 @@ function Router() {
         <ProtectedRoute component={Inquiries} />
       </Route>
 
-      {/* Supervisor Routes */}
+      {/* Supervisor Routes — no page transitions */}
       <Route path="/supervisor">
         <SupervisorRoute component={SupervisorDashboard} />
       </Route>
@@ -218,7 +213,28 @@ function Router() {
         <SupervisorRoute component={SupervisorProducts} />
       </Route>
 
-      <Route component={NotFound} />
+      {/* Public Routes — with AnimatePresence fade transitions */}
+      <Route>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={location}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+          >
+            <Switch>
+              <Route path="/" component={Home} />
+              <Route path="/login" component={Login} />
+              <Route path="/categories" component={CategoryPage} />
+              <Route path="/products/:id" component={ProductDetails} />
+              <Route path="/contact" component={Contact} />
+              <Route path="/faq" component={FAQ} />
+              <Route component={NotFound} />
+            </Switch>
+          </motion.div>
+        </AnimatePresence>
+      </Route>
     </Switch>
   );
 }
