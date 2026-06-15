@@ -7,7 +7,8 @@ import { ProductCard } from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Box, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, Box } from "lucide-react";
+import { RevealOnScroll } from "@/components/RevealOnScroll";
 import {
   Dialog,
   DialogContent,
@@ -16,127 +17,56 @@ import {
 } from "@/components/ui/dialog";
 import { useState, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import useEmblaCarousel from "embla-carousel-react";
 import { api } from "@shared/routes";
 import type { Category, HeroImage, ThemeSettings } from "@shared/schema";
 
-// Categories Carousel Component
-function CategoriesCarousel({ categories, isLoading }: { categories: Category[], isLoading: boolean }) {
-  const [emblaRef, emblaApi] = useEmblaCarousel({
-    align: "start",
-    containScroll: "trimSnaps",
-    slidesToScroll: 1,
-    dragFree: true,
-  });
-
-  const [canScrollPrev, setCanScrollPrev] = useState(false);
-  const [canScrollNext, setCanScrollNext] = useState(false);
-
-  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
-  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
-
-  const onSelect = useCallback(() => {
-    if (!emblaApi) return;
-    setCanScrollPrev(emblaApi.canScrollPrev());
-    setCanScrollNext(emblaApi.canScrollNext());
-  }, [emblaApi]);
-
-  useEffect(() => {
-    if (!emblaApi) return;
-    onSelect();
-    emblaApi.on("select", onSelect);
-    emblaApi.on("reInit", onSelect);
-    return () => {
-      emblaApi.off("select", onSelect);
-      emblaApi.off("reInit", onSelect);
-    };
-  }, [emblaApi, onSelect]);
+// Magazine Category Grid Component
+function MagazineCategoryGrid({ categories }: { categories: Category[] }) {
+  const visible = categories.filter(c => !c.isHidden).slice(0, 5);
+  if (visible.length === 0) return null;
 
   return (
-    <section className="py-12 sm:py-24 bg-background">
-      <div className="container mx-auto px-4 sm:px-4">
-        <div className="flex items-end justify-between mb-6 sm:mb-12">
-          <div className="space-y-2 sm:space-y-4">
-            <h2 className="font-serif text-xl sm:text-3xl md:text-4xl">Curated Collections</h2>
-            <p className="text-xs sm:text-base text-muted-foreground">Each piece tells a story of craftsmanship.</p>
+    <RevealOnScroll>
+      <section className="py-16 sm:py-24 container mx-auto px-4 sm:px-6">
+        <div className="flex items-end justify-between mb-10">
+          <div>
+            <p className="text-xs uppercase tracking-[0.25em] mb-3" style={{ color: "var(--accent)", fontFamily: "var(--font-sans)" }}>
+              Our Collections
+            </p>
+            <h2 className="font-medium" style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(24px, 3vw, 40px)", color: "var(--text-primary)" }}>
+              Curated for Every Space
+            </h2>
           </div>
-          
-          {/* Navigation Arrows */}
-          <div className="hidden sm:flex gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              className="rounded-full disabled:opacity-30"
-              onClick={scrollPrev}
-              disabled={!canScrollPrev}
-              data-testid="button-carousel-prev"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="rounded-full disabled:opacity-30"
-              onClick={scrollNext}
-              disabled={!canScrollNext}
-              data-testid="button-carousel-next"
-            >
-              <ChevronRight className="h-5 w-5" />
-            </Button>
-          </div>
+          <Link href="/categories" className="text-xs uppercase tracking-widest transition-opacity hover:opacity-70"
+            style={{ color: "var(--accent)", fontFamily: "var(--font-sans)" }}>
+            View All →
+          </Link>
         </div>
 
-        {/* Carousel Container - compact on mobile */}
-        <div className="overflow-hidden" ref={emblaRef}>
-          <div className="flex gap-3 sm:gap-4">
-            {isLoading ? (
-              [1, 2, 3, 4].map((i) => (
-                <div 
-                  key={i} 
-                  className="flex-none w-[55%] sm:w-[45%] lg:w-[30%] aspect-[3/4] bg-muted animate-pulse rounded-2xl" 
-                />
-              ))
-            ) : (
-              categories.map((category, index) => (
-                <motion.div
-                  key={category.id}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.4, delay: index * 0.08 }}
-                  className="flex-none w-[55%] sm:w-[45%] lg:w-[30%]"
-                >
-                  <Link href={`/categories?id=${category.id}`}>
-                    <div className="group relative aspect-[3/4] rounded-2xl sm:rounded-2xl overflow-hidden cursor-pointer shadow-lg" data-testid={`category-card-${category.id}`}>
-                      {/* Category Image */}
-                      {category.imageUrl ? (
-                        <img 
-                          src={category.imageUrl} 
-                          alt={category.name}
-                          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                      ) : (
-                        <div className="absolute inset-0 bg-muted flex items-center justify-center">
-                          <span className="text-muted-foreground text-xs">No Image</span>
-                        </div>
-                      )}
-                      
-                      {/* Gradient Overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                      
-                      {/* Category Info */}
-                      <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 text-white">
-                        <h3 className="font-serif text-base sm:text-xl md:text-2xl font-medium mb-0.5 sm:mb-1">{category.name}</h3>
-                        <p className="text-[10px] sm:text-sm text-white/70 uppercase tracking-wider">View Collection</p>
-                      </div>
-                    </div>
-                  </Link>
-                </motion.div>
-              ))
-            )}
-          </div>
+        {/* Magazine grid */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-[200px] md:auto-rows-[240px]">
+          {visible.map((cat, i) => (
+            <Link key={cat.id} href={`/categories?filter=${cat.slug}`}
+              className={`group relative overflow-hidden block ${i === 0 ? "row-span-2" : ""} ${i === 3 ? "md:col-span-2" : ""}`}
+              style={{ borderRadius: "var(--radius-card)" }}
+            >
+              <img
+                src={cat.imageUrl}
+                alt={cat.name}
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              />
+              {/* Glass label */}
+              <div className="absolute bottom-0 left-0 right-0 p-4 glass"
+                style={{ borderRadius: "0 0 var(--radius-card) var(--radius-card)" }}>
+                <h3 className="font-medium text-sm" style={{ fontFamily: "var(--font-serif)", color: "var(--text-primary)" }}>
+                  {cat.name}
+                </h3>
+              </div>
+            </Link>
+          ))}
         </div>
-      </div>
-    </section>
+      </section>
+    </RevealOnScroll>
   );
 }
 
@@ -246,7 +176,7 @@ function HeroSection({ heroImages, settings }: { heroImages: HeroImage[], settin
 }
 
 export default function Home() {
-  const { data: categories, isLoading: isCategoriesLoading } = useCategories();
+  const { data: categories } = useCategories();
   const { data: featuredProducts, isLoading: isProductsLoading } = useProducts();
   const { data: settings } = useSettings();
   const [showARTutorial, setShowARTutorial] = useState(false);
@@ -310,12 +240,9 @@ export default function Home() {
       <ARTutorial />
       <HeroSection heroImages={activeHeroImages ?? []} settings={settings} />
 
-      {/* Featured Categories - Horizontal Carousel */}
+      {/* Featured Categories - Magazine Grid */}
       {showCollections && (
-        <CategoriesCarousel 
-          categories={categories?.filter(c => !c.isHidden) || []} 
-          isLoading={isCategoriesLoading} 
-        />
+        <MagazineCategoryGrid categories={categories ?? []} />
       )}
 
       {/* Philosophy / About Block */}
