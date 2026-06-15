@@ -150,7 +150,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   {settings.whatsappNumber}
                 </a>
               )}
-              <div className="relative">
+              <div className="relative hidden md:flex items-center">
                 <Heart
                   className="w-5 h-5 transition-colors hover:opacity-80"
                   style={{ color: "var(--text-secondary)" }}
@@ -160,7 +160,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center text-black"
                     style={{ background: "var(--accent)" }}
                   >
-                    {wishlistCount > 9 ? "9+" : wishlistCount}
+                    {wishlistCount > 9 ? "9+" : String(wishlistCount)}
                   </span>
                 )}
               </div>
