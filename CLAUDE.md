@@ -193,7 +193,37 @@ A full 4-phase overhaul was designed and planned. See:
 - [x] Task 7: Integration tests — Products CRUD
 - [x] Task 8: Final test suite verification
 
-### Phase 5 — Supervisor Portal Expansion ⬜ NOT STARTED
+### Phase 5 — Supervisor Portal Expansion ⬜ DEFERRED (doing after Luxury Redesign)
+
+### Phase 6 — Luxury Redesign ✅ Plan 1 COMPLETE (Plans 2 & 3 pending)
+
+**Goal:** International-grade luxury UX competing with Minotti, B&B Italia, Poliform. 3-way theme engine (Dark Obsidian / White Marble / Warm Dusk). Glass morphism. Cormorant Garamond. Inline 3D model viewer. Flexible product specs + sections.
+
+**Branch:** `worktree-luxury-plan1` (merge when Plans 2 & 3 complete)
+
+**Design Spec:** `docs/superpowers/specs/2026-06-15-luxury-redesign-design.md`
+**Plans:** `docs/superpowers/plans/2026-06-15-luxury-plan1-foundation.md` (done), `plan2-public-pages.md` (next), `plan3-product-and-admin.md` (next)
+
+#### Plan 1 — Design Foundation ✅ COMPLETE (branch: worktree-luxury-plan1)
+- [x] Task 1: Schema — specs + sections JSON columns on products
+- [x] Task 2: CSS — 3-theme variable system (dark-obsidian / white-marble / warm-dusk) + glass utilities
+- [x] Task 3: ThemeProvider — reads DB theme, sets data-theme on html
+- [x] Task 4: RevealOnScroll component (framer-motion whileInView)
+- [x] Task 5: Navbar — glass scroll-state, WhatsApp CTA pill, Cormorant typography
+- [x] Task 6: Promo banner — continuous marquee animation with hover-pause
+- [x] Task 7: Footer — editorial 4-column dark glass redesign
+- [x] Task 8: Settings — 3-theme picker with live preview + DB persistence
+- [x] Task 9: Page transitions — AnimatePresence fade (in Layout.tsx)
+
+#### Plan 2 — Public Pages ⬜ NOT STARTED
+- Wishlist, ProductCard luxury rewrite, Homepage hero, Category grid, Collections masonry, Skeleton shimmer
+
+#### Plan 3 — Product Page & Admin ⬜ NOT STARTED
+- InlineModelViewer, Product 3D-first layout, Material swatches, Specs/Sections display, Admin editor 6-section accordion
+
+**CSS variable rule:** Always use `var(--text-accent)` NOT `var(--accent)` for gold/brand color in custom CSS/inline styles. `--accent` resolves to a shadcn HSL string.
+
+**Supervisor Portal Expansion ⬜ NOT STARTED
 
 **Approach:** Extend existing `/supervisor/` portal (Approach A). Fix broken supervisor creation first.
 
