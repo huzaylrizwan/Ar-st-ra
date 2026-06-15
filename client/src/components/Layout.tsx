@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Menu, ShieldCheck, Instagram, Facebook, MessageCircle, MapPin, ExternalLink } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Banner } from "@shared/schema";
 import { FloatingContactButton } from "@/components/FloatingContactButton";
@@ -17,6 +17,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { data: categories } = useCategories();
   const [location] = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 80);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   const { data: banners, isLoading: bannersLoading } = useQuery<Banner[]>({
     queryKey: ["/api/banners/active"],
@@ -32,8 +39,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
     const isActive = location === href;
     return (
       <Link href={href} className={`
-        text-sm uppercase tracking-widest font-medium transition-colors hover:text-primary
-        ${isActive ? "text-primary border-b-2 border-primary" : "text-muted-foreground"}
+        text-xs uppercase tracking-widest font-medium transition-colors duration-200
+        ${isActive ? "text-[var(--text-accent)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}
         py-2
       `}>
         {children}
@@ -54,7 +61,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {getBannerText()}
       </div>
 
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border/40">
+      <header className={`sticky top-0 z-50 transition-all duration-300 ${
+        scrolled
+          ? "glass border-b border-[var(--glass-border)]"
+          : "bg-transparent border-b border-transparent"
+      }`}>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             
@@ -91,7 +102,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <div className="flex-1 flex items-center justify-center md:justify-start md:flex-none overflow-hidden">
               <Link href="/" className="group flex items-center gap-2" data-testid="link-home-logo">
                 {settings?.logoUrl && <img src={settings.logoUrl} alt="Logo" className="h-6 sm:h-8 w-auto object-contain flex-shrink-0" />}
-                <span className="font-serif text-lg sm:text-2xl font-bold tracking-tight group-hover:text-primary transition-colors truncate">
+                <span className="text-xl tracking-[0.12em] uppercase font-light transition-colors truncate"
+                  style={{ fontFamily: "var(--font-display)", color: "var(--text-primary)" }}>
                   {settings?.brandName || "LUXE"}
                 </span>
               </Link>
@@ -106,6 +118,24 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
             {/* Right Actions */}
             <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+              {settings?.whatsappNumber && (
+                <a
+                  href={`https://wa.me/${settings.whatsappNumber.replace(/\D/g, "")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hidden md:flex items-center gap-2 px-4 py-2 text-xs uppercase tracking-widest transition-all duration-200 hover:opacity-80"
+                  style={{
+                    background: "var(--accent-glow)",
+                    border: "1px solid var(--text-accent)",
+                    borderRadius: "var(--radius-pill)",
+                    color: "var(--text-accent)",
+                    fontFamily: "var(--font-sans)",
+                  }}
+                >
+                  <MessageCircle className="w-3.5 h-3.5" />
+                  {settings.whatsappNumber}
+                </a>
+              )}
               {user ? (
                 <Button variant="ghost" size="sm" onClick={() => logout()} className="text-[10px] sm:text-xs uppercase tracking-wider text-muted-foreground px-2 sm:px-3" data-testid="button-logout">
                   Logout
