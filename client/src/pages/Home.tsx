@@ -142,6 +142,110 @@ function CategoriesCarousel({ categories, isLoading }: { categories: Category[],
 
 const FALLBACK_HERO_IMAGE = "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=1974&auto=format&fit=crop";
 
+function HeroSection({ heroImages, settings }: { heroImages: HeroImage[], settings: any }) {
+  const activeImages = heroImages.filter(img => img.isActive);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const interval = settings?.heroSlideInterval ?? 5;
+
+  useEffect(() => {
+    if (activeImages.length <= 1) return;
+    const timer = setInterval(() => {
+      setCurrentIndex(i => (i + 1) % activeImages.length);
+    }, interval * 1000);
+    return () => clearInterval(timer);
+  }, [activeImages.length, interval]);
+
+  const bgImage = activeImages[currentIndex]?.url
+    || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=1800&q=80";
+
+  return (
+    <section className="relative h-screen min-h-[600px] flex items-center justify-center overflow-hidden">
+      {/* Background image with transition */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={bgImage}
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${bgImage})` }}
+          initial={{ opacity: 0, scale: 1.04 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 1.2, ease: "easeInOut" }}
+        />
+      </AnimatePresence>
+
+      {/* Gradient overlay */}
+      <div className="absolute inset-0" style={{
+        background: "linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.15) 40%, rgba(0,0,0,0.65) 100%)"
+      }} />
+
+      {/* Content */}
+      <div className="relative z-10 text-center px-6 max-w-3xl mx-auto">
+        <motion.p
+          className="text-xs uppercase tracking-[0.35em] mb-6"
+          style={{ color: "var(--accent)", fontFamily: "var(--font-sans)" }}
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.7 }}
+        >
+          {settings?.brandName || "Luxury Furniture"} · Pakistan
+        </motion.p>
+
+        <motion.h1
+          className="font-light leading-[1.1] mb-6"
+          style={{
+            fontFamily: "var(--font-display)",
+            color: "#fff",
+            fontSize: "clamp(40px, 6vw, 80px)",
+          }}
+          initial={{ opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.8 }}
+        >
+          Where Space<br />Becomes Art
+        </motion.h1>
+
+        <motion.p
+          className="text-base mb-10 max-w-md mx-auto"
+          style={{ color: "rgba(255,255,255,0.65)", fontFamily: "var(--font-sans)" }}
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.7, duration: 0.7 }}
+        >
+          Handcrafted luxury furniture with augmented reality visualisation
+        </motion.p>
+
+        <motion.div
+          className="flex items-center justify-center gap-4 flex-wrap"
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.9, duration: 0.6 }}
+        >
+          <Link href="/categories">
+            <button className="px-8 py-3 text-xs uppercase tracking-widest font-medium transition-all duration-200 hover:opacity-90"
+              style={{
+                background: "var(--accent)",
+                color: "#000",
+                borderRadius: "var(--radius-pill)",
+                fontFamily: "var(--font-sans)",
+              }}>
+              Explore Collection
+            </button>
+          </Link>
+        </motion.div>
+      </div>
+
+      {/* Scroll indicator */}
+      <motion.div
+        className="absolute bottom-8 left-1/2 -translate-x-1/2"
+        animate={{ y: [0, 8, 0] }}
+        transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+      >
+        <div className="w-px h-12 mx-auto" style={{ background: "linear-gradient(to bottom, transparent, rgba(255,255,255,0.5))" }} />
+      </motion.div>
+    </section>
+  );
+}
+
 export default function Home() {
   const { data: categories, isLoading: isCategoriesLoading } = useCategories();
   const { data: featuredProducts, isLoading: isProductsLoading } = useProducts();
@@ -157,18 +261,6 @@ export default function Home() {
     },
   });
 
-  const slideInterval = ((settings?.heroSlideInterval ?? 5)) * 1000;
-  const [slideIndex, setSlideIndex] = useState(0);
-
-  useEffect(() => {
-    if (!activeHeroImages || activeHeroImages.length <= 1) return;
-    const timer = setInterval(() => {
-      setSlideIndex(i => (i + 1) % activeHeroImages.length);
-    }, slideInterval);
-    return () => clearInterval(timer);
-  }, [activeHeroImages, slideInterval]);
-
-  const heroImageUrl = activeHeroImages?.[slideIndex]?.url ?? FALLBACK_HERO_IMAGE;
 
   const showCollections = settings?.showCollections !== false;
   const showNewArrivals = settings?.showNewArrivals !== false;
@@ -217,65 +309,7 @@ export default function Home() {
   return (
     <Layout>
       <ARTutorial />
-      {/* Hero Section - Compact on mobile */}
-      <section className="relative h-[70vh] sm:h-[85vh] w-full max-w-full overflow-hidden">
-        {isHeroImageLoading ? (
-          <div className="absolute inset-0 w-full h-full bg-muted animate-pulse" />
-        ) : (
-          <AnimatePresence mode="sync">
-            <motion.img
-              key={heroImageUrl}
-              src={heroImageUrl}
-              alt="Luxury Interior"
-              className="absolute inset-0 w-full h-full object-cover"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.8 }}
-            />
-          </AnimatePresence>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-black/10" />
-        
-        <div className="relative container mx-auto h-full flex items-end sm:items-center pb-12 sm:pb-0 px-5 sm:px-6">
-          <motion.div 
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-            className="max-w-xl text-white space-y-4 sm:space-y-6"
-          >
-            <h1 className="font-serif text-3xl sm:text-5xl md:text-7xl font-bold leading-tight">
-              Timeless Elegance for Modern Living
-            </h1>
-            <p className="text-sm sm:text-lg md:text-xl text-white/90 font-light max-w-md leading-relaxed">
-              Discover furniture that defines sophistication.
-            </p>
-            <div className="pt-2 sm:pt-4">
-              <Link href="/categories">
-                <Button size="lg" className="bg-white text-black rounded-full sm:rounded-none px-6 sm:px-8 py-5 sm:py-6 text-xs sm:text-sm tracking-widest uppercase font-bold shadow-xl">
-                  Explore Collection
-                </Button>
-              </Link>
-            </div>
-          </motion.div>
-        </div>
-        {/* Slideshow dot indicators */}
-        {activeHeroImages && activeHeroImages.length > 1 && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
-            {activeHeroImages.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setSlideIndex(i)}
-                className={`w-2 h-2 rounded-full transition-all ${
-                  i === slideIndex ? "bg-white scale-125" : "bg-white/50 hover:bg-white/80"
-                }`}
-                aria-label={`Go to slide ${i + 1}`}
-              />
-            ))}
-          </div>
-        )}
-      </section>
+      <HeroSection heroImages={activeHeroImages ?? []} settings={settings} />
 
       {/* Featured Categories - Horizontal Carousel */}
       {showCollections && (
