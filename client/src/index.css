@@ -1,77 +1,148 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  /* Luxury Light Theme */
-  --background: 40 20% 98%;      /* #FAF9F6 - Off white/Cream */
-  --foreground: 220 10% 10%;     /* Dark charcoal */
-  
-  --primary: 43 50% 45%;         /* Muted Gold/Brass */
-  --primary-foreground: 0 0% 100%;
+/* ── THEME: Dark Obsidian (default) ── */
+[data-theme="dark-obsidian"], :root {
+  --bg:              #0a0a0f;
+  --surface-1:       rgba(255,255,255,0.06);
+  --surface-2:       rgba(255,255,255,0.04);
+  --glass-bg:        rgba(15,15,25,0.75);
+  --glass-border:    rgba(255,255,255,0.12);
+  --glass-blur:      20px;
+  --accent:          #c9a96e;
+  --accent-glow:     rgba(201,169,110,0.25);
+  --text-primary:    rgba(255,255,255,0.92);
+  --text-secondary:  rgba(255,255,255,0.45);
+  --text-accent:     #c9a96e;
+  --border:          rgba(255,255,255,0.1);
+  --radius-card:     20px;
+  --radius-btn:      12px;
+  --radius-input:    10px;
+  --radius-modal:    24px;
+  --radius-pill:     999px;
+  --shadow-card:     0 4px 24px rgba(0,0,0,0.4);
+  --shadow-glow:     0 0 40px rgba(201,169,110,0.2), 0 8px 32px rgba(0,0,0,0.5);
+  --nav-bg:          rgba(10,10,15,0.85);
+  --font-display:    'Cormorant Garamond', serif;
+  --font-serif:      'Playfair Display', serif;
+  --font-sans:       'Inter', sans-serif;
 
-  --card: 0 0% 100%;
-  --card-foreground: 220 10% 10%;
-  
-  --popover: 0 0% 100%;
-  --popover-foreground: 220 10% 10%;
-  
-  --muted: 40 10% 94%;
-  --muted-foreground: 220 10% 40%;
-  
-  --accent: 43 30% 94%;          /* Light gold tint */
-  --accent-foreground: 43 50% 35%;
-  
-  --destructive: 0 84% 60%;
+  /* Shadcn/ui token bridge */
+  --background:      10 10% 6%;
+  --foreground:      40 10% 90%;
+  --primary:         43 50% 60%;
+  --primary-foreground: 240 10% 5%;
+  --card:            240 5% 9%;
+  --card-foreground: 40 10% 90%;
+  --popover:         240 5% 9%;
+  --popover-foreground: 40 10% 90%;
+  --muted:           240 5% 13%;
+  --muted-foreground: 240 5% 55%;
+  --accent:          43 30% 15%;
+  --accent-foreground: 43 50% 60%;
+  --destructive:     0 62% 30%;
   --destructive-foreground: 0 0% 98%;
-
-  --border: 40 10% 90%;
-  --input: 40 10% 90%;
-  --ring: 43 50% 45%;
-
-  --radius: 0.25rem;
-  
-  --font-serif: 'Playfair Display', serif;
-  --font-sans: 'Inter', sans-serif;
-  
-  --sidebar-background: 40 20% 98%;
-  --sidebar-foreground: 220 10% 10%;
-  --sidebar-primary: 43 50% 45%;
-  --sidebar-primary-foreground: 0 0% 100%;
-  --sidebar-accent: 43 30% 94%;
-  --sidebar-accent-foreground: 43 50% 35%;
-  --sidebar-border: 40 10% 90%;
-  --sidebar-ring: 43 50% 45%;
+  --border:          240 5% 16%;
+  --input:           240 5% 16%;
+  --ring:            43 50% 60%;
+  --radius:          0.75rem;
 }
 
-.dark {
-  /* Luxury Dark Theme */
-  --background: 240 5% 8%;       /* Rich dark gray/black */
-  --foreground: 40 10% 94%;
-  
-  --primary: 43 45% 55%;         /* Lighter Gold for dark mode */
-  --primary-foreground: 240 5% 8%;
+/* ── THEME: White Marble ── */
+[data-theme="white-marble"] {
+  --bg:              #faf9f5;
+  --surface-1:       rgba(255,255,255,0.8);
+  --surface-2:       rgba(255,255,255,0.5);
+  --glass-bg:        rgba(255,255,255,0.65);
+  --glass-border:    rgba(0,0,0,0.08);
+  --glass-blur:      16px;
+  --accent:          #8b6f4e;
+  --accent-glow:     rgba(139,111,78,0.2);
+  --text-primary:    rgba(20,18,15,0.9);
+  --text-secondary:  rgba(20,18,15,0.45);
+  --text-accent:     #8b6f4e;
+  --border:          rgba(0,0,0,0.08);
+  --radius-card:     20px;
+  --radius-btn:      12px;
+  --radius-input:    10px;
+  --radius-modal:    24px;
+  --radius-pill:     999px;
+  --shadow-card:     0 4px 24px rgba(0,0,0,0.08);
+  --shadow-glow:     0 0 40px rgba(139,111,78,0.15), 0 8px 32px rgba(0,0,0,0.1);
+  --nav-bg:          rgba(250,249,245,0.88);
+  --font-display:    'Cormorant Garamond', serif;
+  --font-serif:      'Playfair Display', serif;
+  --font-sans:       'Inter', sans-serif;
 
-  --card: 240 5% 12%;
-  --card-foreground: 40 10% 94%;
-  
-  --popover: 240 5% 12%;
-  --popover-foreground: 40 10% 94%;
-  
-  --muted: 240 5% 16%;
-  --muted-foreground: 240 5% 60%;
-  
-  --accent: 43 30% 15%;
-  --accent-foreground: 43 45% 55%;
-  
-  --destructive: 0 62% 30%;
+  /* Shadcn/ui token bridge */
+  --background:      40 20% 98%;
+  --foreground:      30 10% 10%;
+  --primary:         30 30% 43%;
+  --primary-foreground: 0 0% 100%;
+  --card:            0 0% 100%;
+  --card-foreground: 30 10% 10%;
+  --popover:         0 0% 100%;
+  --popover-foreground: 30 10% 10%;
+  --muted:           40 10% 94%;
+  --muted-foreground: 30 10% 45%;
+  --accent:          40 20% 92%;
+  --accent-foreground: 30 30% 35%;
+  --destructive:     0 84% 60%;
   --destructive-foreground: 0 0% 98%;
+  --border:          40 10% 88%;
+  --input:           40 10% 88%;
+  --ring:            30 30% 43%;
+  --radius:          0.75rem;
+}
 
-  --border: 240 5% 20%;
-  --input: 240 5% 20%;
-  --ring: 43 45% 55%;
+/* ── THEME: Warm Dusk ── */
+[data-theme="warm-dusk"] {
+  --bg:              #1a1008;
+  --surface-1:       rgba(255,180,100,0.07);
+  --surface-2:       rgba(255,180,100,0.04);
+  --glass-bg:        rgba(26,16,8,0.8);
+  --glass-border:    rgba(232,168,124,0.18);
+  --glass-blur:      20px;
+  --accent:          #e8a87c;
+  --accent-glow:     rgba(232,168,124,0.25);
+  --text-primary:    rgba(255,235,210,0.92);
+  --text-secondary:  rgba(255,235,210,0.42);
+  --text-accent:     #e8a87c;
+  --border:          rgba(232,168,124,0.15);
+  --radius-card:     20px;
+  --radius-btn:      12px;
+  --radius-input:    10px;
+  --radius-modal:    24px;
+  --radius-pill:     999px;
+  --shadow-card:     0 4px 24px rgba(0,0,0,0.5);
+  --shadow-glow:     0 0 40px rgba(232,168,124,0.2), 0 8px 32px rgba(0,0,0,0.6);
+  --nav-bg:          rgba(26,16,8,0.88);
+  --font-display:    'Cormorant Garamond', serif;
+  --font-serif:      'Playfair Display', serif;
+  --font-sans:       'Inter', sans-serif;
+
+  /* Shadcn/ui token bridge */
+  --background:      28 50% 7%;
+  --foreground:      30 60% 90%;
+  --primary:         25 65% 68%;
+  --primary-foreground: 28 50% 5%;
+  --card:            28 40% 10%;
+  --card-foreground: 30 60% 90%;
+  --popover:         28 40% 10%;
+  --popover-foreground: 30 60% 90%;
+  --muted:           28 30% 14%;
+  --muted-foreground: 30 20% 55%;
+  --accent:          25 40% 18%;
+  --accent-foreground: 25 65% 68%;
+  --destructive:     0 62% 30%;
+  --destructive-foreground: 0 0% 98%;
+  --border:          28 30% 18%;
+  --input:           28 30% 18%;
+  --ring:            25 65% 68%;
+  --radius:          0.75rem;
 }
 
 @layer base {
@@ -99,15 +170,77 @@
   .bg-gold {
     background-color: hsl(var(--primary));
   }
-  
+
   /* Luxury Hover Effects */
   .hover-lift {
     @apply transition-transform duration-500 ease-out hover:-translate-y-1;
   }
-  
+
   .image-scale {
     @apply transition-transform duration-700 ease-out hover:scale-105;
   }
+
+  .glass {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+  }
+
+  .glass-subtle {
+    background: color-mix(in srgb, var(--glass-bg) 60%, transparent);
+    border: 1px solid color-mix(in srgb, var(--glass-border) 50%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .glow-accent {
+    box-shadow: var(--shadow-glow);
+  }
+
+  .card-shadow {
+    box-shadow: var(--shadow-card);
+  }
+
+  .text-accent {
+    color: var(--text-accent);
+  }
+
+  .border-accent {
+    border-color: var(--accent);
+  }
+}
+
+/* Shimmer animation for skeleton loading */
+@keyframes shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--surface-1) 25%,
+    var(--surface-2) 50%,
+    var(--surface-1) 75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite linear;
+}
+
+@keyframes marquee {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 30s linear infinite;
+}
+
+.marquee-track:hover {
+  animation-play-state: paused;
 }
 
 /* Custom Scrollbar for sleek look */
