@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import { useAuth } from "@/hooks/use-auth";
 import { useSupervisor } from "@/hooks/use-supervisor";
 import { useEffect, useRef } from "react";
@@ -230,9 +231,11 @@ function App() {
         <ScrollToTop />
         <PageViewTracker />
         <AuthRedirectHandler />
-        <ErrorBoundary>
-          <Router />
-        </ErrorBoundary>
+        <ThemeProvider>
+          <ErrorBoundary>
+            <Router />
+          </ErrorBoundary>
+        </ThemeProvider>
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>
