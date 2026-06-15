@@ -246,30 +246,6 @@ export default function Home() {
         <MagazineCategoryGrid categories={categories ?? []} />
       )}
 
-      {/* Philosophy / About Block */}
-      {showPhilosophy && (
-        <RevealOnScroll>
-          <section className="py-20 sm:py-28 px-6">
-            <div
-              className="max-w-4xl mx-auto text-center py-20 px-8 glass"
-              style={{ borderRadius: "var(--radius-modal)" }}
-            >
-              <p className="text-xs uppercase tracking-[0.3em] mb-6" style={{ color: "var(--accent)", fontFamily: "var(--font-sans)" }}>
-                Our Philosophy
-              </p>
-              <h2 className="font-light leading-tight mb-6"
-                style={{ fontFamily: "var(--font-display)", fontSize: "clamp(28px, 4vw, 52px)", color: "var(--text-primary)" }}>
-                Where craftsmanship<br />meets living
-              </h2>
-              <p className="text-base leading-relaxed max-w-xl mx-auto"
-                style={{ color: "var(--text-secondary)", fontFamily: "var(--font-sans)" }}>
-                Every piece in our collection is handpicked for quality, beauty, and lasting value.
-              </p>
-            </div>
-          </section>
-        </RevealOnScroll>
-      )}
-
       {/* New Arrivals horizontal strip */}
       {featuredProducts && featuredProducts.filter(p => !p.isHidden).length > 0 && settings?.showNewArrivals && (
         <RevealOnScroll>
@@ -294,6 +270,30 @@ export default function Home() {
                   <ProductCard product={product} featured />
                 </div>
               ))}
+            </div>
+          </section>
+        </RevealOnScroll>
+      )}
+
+      {/* Philosophy / About Block */}
+      {showPhilosophy && (
+        <RevealOnScroll>
+          <section className="py-20 sm:py-28 px-6">
+            <div
+              className="max-w-4xl mx-auto text-center py-20 px-8 glass"
+              style={{ borderRadius: "var(--radius-modal)" }}
+            >
+              <p className="text-xs uppercase tracking-[0.3em] mb-6" style={{ color: "var(--accent)", fontFamily: "var(--font-sans)" }}>
+                Our Philosophy
+              </p>
+              <h2 className="font-light leading-tight mb-6"
+                style={{ fontFamily: "var(--font-display)", fontSize: "clamp(28px, 4vw, 52px)", color: "var(--text-primary)" }}>
+                Where craftsmanship<br />meets living
+              </h2>
+              <p className="text-base leading-relaxed max-w-xl mx-auto"
+                style={{ color: "var(--text-secondary)", fontFamily: "var(--font-sans)" }}>
+                Every piece in our collection is handpicked for quality, beauty, and lasting value.
+              </p>
             </div>
           </section>
         </RevealOnScroll>
