@@ -1,5 +1,5 @@
 export * from "./models/auth";
-import { pgTable, text, serial, integer, boolean, real, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, real, timestamp, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -25,6 +25,13 @@ export const products = pgTable("products", {
   isHidden: boolean("is_hidden").default(false).notNull(),
   stockStatus: text("stock_status").default("in_stock").notNull(),
   sortOrder: integer("sort_order").default(0).notNull(),
+  specs: json("specs").$type<Array<{ label: string; value: string }>>(),
+  sections: json("sections").$type<{
+    story?: string;
+    care?: string;
+    delivery?: string;
+    custom?: Array<{ title: string; body: string }>;
+  }>(),
 });
 
 export const themeSettings = pgTable("theme_settings", {
@@ -163,7 +170,15 @@ export const inquiries = pgTable("inquiries", {
 
 // Schemas
 export const insertCategorySchema = createInsertSchema(categories).omit({ id: true });
-export const insertProductSchema = createInsertSchema(products).omit({ id: true });
+export const insertProductSchema = createInsertSchema(products).omit({ id: true }).extend({
+  specs: z.array(z.object({ label: z.string(), value: z.string() })).optional(),
+  sections: z.object({
+    story: z.string().optional(),
+    care: z.string().optional(),
+    delivery: z.string().optional(),
+    custom: z.array(z.object({ title: z.string(), body: z.string() })).optional(),
+  }).optional(),
+});
 export const insertThemeSettingsSchema = createInsertSchema(themeSettings).omit({ id: true });
 export const insertBannerSchema = createInsertSchema(banners).omit({ id: true });
 export const insertFaqItemSchema = createInsertSchema(faqItems).omit({ id: true });
