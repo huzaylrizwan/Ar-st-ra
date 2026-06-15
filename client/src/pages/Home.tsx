@@ -18,7 +18,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import useEmblaCarousel from "embla-carousel-react";
 import { api } from "@shared/routes";
-import type { Category, HeroImage } from "@shared/schema";
+import type { Category, HeroImage, ThemeSettings } from "@shared/schema";
 
 // Categories Carousel Component
 function CategoriesCarousel({ categories, isLoading }: { categories: Category[], isLoading: boolean }) {
@@ -140,9 +140,7 @@ function CategoriesCarousel({ categories, isLoading }: { categories: Category[],
   );
 }
 
-const FALLBACK_HERO_IMAGE = "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?q=80&w=1974&auto=format&fit=crop";
-
-function HeroSection({ heroImages, settings }: { heroImages: HeroImage[], settings: any }) {
+function HeroSection({ heroImages, settings }: { heroImages: HeroImage[], settings?: ThemeSettings }) {
   const activeImages = heroImages.filter(img => img.isActive);
   const [currentIndex, setCurrentIndex] = useState(0);
   const interval = settings?.heroSlideInterval ?? 5;
@@ -236,6 +234,7 @@ function HeroSection({ heroImages, settings }: { heroImages: HeroImage[], settin
 
       {/* Scroll indicator */}
       <motion.div
+        aria-hidden="true"
         className="absolute bottom-8 left-1/2 -translate-x-1/2"
         animate={{ y: [0, 8, 0] }}
         transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
@@ -252,7 +251,7 @@ export default function Home() {
   const { data: settings } = useSettings();
   const [showARTutorial, setShowARTutorial] = useState(false);
 
-  const { data: activeHeroImages, isLoading: isHeroImageLoading } = useQuery<HeroImage[]>({
+  const { data: activeHeroImages } = useQuery<HeroImage[]>({
     queryKey: ["/api/hero-images/active-all"],
     queryFn: async () => {
       const res = await fetch("/api/hero-images/active-all", { credentials: "include" });
