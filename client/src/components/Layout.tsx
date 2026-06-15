@@ -57,9 +57,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex flex-col font-sans bg-background text-foreground overflow-x-hidden">
       {/* Promo Bar */}
-      <div className="bg-primary text-primary-foreground py-2 text-center text-xs tracking-widest uppercase font-bold" data-testid="banner-promo">
-        {getBannerText()}
-      </div>
+      {settings?.showBanner !== false && banners && banners.length > 0 && (
+        <div
+          className="overflow-hidden py-2 text-center text-xs tracking-widest uppercase font-semibold"
+          style={{ background: "var(--text-accent)", color: "#000" }}
+          data-testid="banner-promo"
+        >
+          <div className="marquee-track">
+            {[...banners, ...banners].map((banner, i) => (
+              <span key={i} className="px-8 whitespace-nowrap">
+                {banner.text} <span className="opacity-50 mx-4">·</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
 
       <header className={`sticky top-0 z-50 transition-all duration-300 ${
         scrolled
