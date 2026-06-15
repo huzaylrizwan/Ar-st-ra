@@ -183,167 +183,138 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </AnimatePresence>
       </main>
 
-      <footer className="bg-muted/30 pt-10 md:pt-16 pb-6 md:pb-8 border-t border-border">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-12 mb-8 md:mb-12">
-            {/* Brand Column */}
-            <div>
-              <h3 className="font-serif text-xl font-bold mb-4">{settings?.brandName || "LUXE"}</h3>
-              <p className="text-muted-foreground text-sm leading-relaxed max-w-xs mb-4">
-                Crafting exceptional living spaces with timeless furniture pieces designed for the modern connoisseur.
+      <footer style={{
+        background: "#0a0a0f",
+        borderTop: "1px solid rgba(201,169,110,0.2)",
+      }}>
+        {/* Glow line */}
+        <div style={{
+          height: "1px",
+          background: "linear-gradient(90deg, transparent, var(--text-accent), transparent)",
+          opacity: 0.5,
+        }} />
+
+        <div className="container mx-auto px-6 lg:px-8 py-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+
+            {/* Col 1: Brand */}
+            <div className="lg:col-span-1">
+              <div className="text-3xl font-light tracking-[0.15em] uppercase mb-4"
+                style={{ fontFamily: "var(--font-display)", color: "#fff" }}>
+                {settings?.brandName || "LUXE"}
+              </div>
+              <p className="text-xs leading-relaxed mb-6" style={{ color: "rgba(255,255,255,0.4)" }}>
+                Handcrafted luxury furniture with augmented reality visualisation.
               </p>
-              
-              {/* Social Media Links */}
-              {(settings?.instagramUrl || settings?.facebookUrl || settings?.whatsappNumber) && (
-                <div className="flex gap-3 mt-4">
-                  {settings?.instagramUrl && (
-                    <a 
-                      href={settings.instagramUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="p-2 bg-muted rounded-full hover:bg-primary hover:text-primary-foreground transition-colors"
-                      data-testid="link-social-instagram"
-                    >
-                      <Instagram className="w-4 h-4" />
-                    </a>
-                  )}
-                  {settings?.facebookUrl && (
-                    <a 
-                      href={settings.facebookUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="p-2 bg-muted rounded-full hover:bg-primary hover:text-primary-foreground transition-colors"
-                      data-testid="link-social-facebook"
-                    >
-                      <Facebook className="w-4 h-4" />
-                    </a>
-                  )}
-                  {settings?.whatsappNumber && (
-                    <a 
-                      href={`https://wa.me/${settings.whatsappNumber.replace(/\D/g, '')}`}
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="p-2 bg-muted rounded-full hover:bg-primary hover:text-primary-foreground transition-colors"
-                      data-testid="link-social-whatsapp"
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                    </a>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Collections - Dynamic */}
-            <div className="hidden md:block">
-              <h4 className="text-sm font-bold uppercase tracking-widest mb-4">Collections</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                {(categories?.filter(c => !c.isHidden).slice(0, 5) ?? []).map(cat => (
-                  <li key={cat.id}>
-                    <Link href={`/categories?id=${cat.id}`} className="hover:text-primary transition-colors">
-                      {cat.name}
-                    </Link>
-                  </li>
-                ))}
-                {(!categories || categories.filter(c => !c.isHidden).length === 0) && (
-                  <li><Link href="/categories" className="hover:text-primary transition-colors">View All</Link></li>
+              <div className="flex gap-4">
+                {settings?.instagramUrl && (
+                  <a href={settings.instagramUrl} target="_blank" rel="noopener noreferrer"
+                    className="transition-opacity hover:opacity-70" style={{ color: "rgba(255,255,255,0.5)" }}>
+                    <Instagram className="w-5 h-5" />
+                  </a>
                 )}
-              </ul>
+                {settings?.facebookUrl && (
+                  <a href={settings.facebookUrl} target="_blank" rel="noopener noreferrer"
+                    className="transition-opacity hover:opacity-70" style={{ color: "rgba(255,255,255,0.5)" }}>
+                    <Facebook className="w-5 h-5" />
+                  </a>
+                )}
+                {settings?.whatsappNumber && (
+                  <a href={`https://wa.me/${settings.whatsappNumber.replace(/\D/g, "")}`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="transition-opacity hover:opacity-70" style={{ color: "rgba(255,255,255,0.5)" }}>
+                    <MessageCircle className="w-5 h-5" />
+                  </a>
+                )}
+              </div>
             </div>
 
-            {/* Support */}
+            {/* Col 2: Quick Links */}
             <div>
-              <h4 className="text-sm font-bold uppercase tracking-widest mb-4">Support</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/contact" className="hover:text-primary transition-colors" data-testid="link-footer-contact">Contact Us</Link></li>
-                <li><Link href="/faq" className="hover:text-primary transition-colors" data-testid="link-footer-faq">FAQ</Link></li>
-              </ul>
+              <div className="text-xs uppercase tracking-[0.2em] mb-6" style={{ color: "rgba(255,255,255,0.3)" }}>
+                Quick Links
+              </div>
+              <div className="flex flex-col gap-3">
+                {[
+                  { href: "/", label: "Home" },
+                  { href: "/categories", label: "Collections" },
+                  { href: "/faq", label: "FAQ" },
+                  { href: "/contact", label: "Contact" },
+                ].map(({ href, label }) => (
+                  <Link key={href} href={href}
+                    className="text-sm transition-colors hover:opacity-100"
+                    style={{ color: "rgba(255,255,255,0.45)" }}>
+                    {label}
+                  </Link>
+                ))}
+              </div>
             </div>
 
-            {/* Location / Address */}
+            {/* Col 3: Collections (dynamic from DB) */}
             <div>
-              {settings?.address && (
-                <>
-                  <h4 className="text-sm font-bold uppercase tracking-widest mb-4">Visit Us</h4>
-                  <div className="flex items-start gap-2 text-sm text-muted-foreground mb-3">
-                    <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                    <p className="leading-relaxed">{settings.address}</p>
+              <div className="text-xs uppercase tracking-[0.2em] mb-6" style={{ color: "rgba(255,255,255,0.3)" }}>
+                Collections
+              </div>
+              <div className="flex flex-col gap-3">
+                {categories?.filter(c => !c.isHidden).slice(0, 6).map(cat => (
+                  <Link key={cat.id} href={`/categories?filter=${cat.slug}`}
+                    className="text-sm transition-colors hover:opacity-100"
+                    style={{ color: "rgba(255,255,255,0.45)" }}>
+                    {cat.name}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            {/* Col 4: Contact */}
+            <div>
+              <div className="text-xs uppercase tracking-[0.2em] mb-6" style={{ color: "rgba(255,255,255,0.3)" }}>
+                Contact
+              </div>
+              <div className="flex flex-col gap-4">
+                {settings?.whatsappNumber && (
+                  <a href={`https://wa.me/${settings.whatsappNumber.replace(/\D/g, "")}`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="flex items-start gap-3 text-sm transition-opacity hover:opacity-80"
+                    style={{ color: "rgba(255,255,255,0.45)" }}>
+                    <MessageCircle className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: "#c9a96e" }} />
+                    {settings.whatsappNumber}
+                  </a>
+                )}
+                {settings?.contactEmail && (
+                  <a href={`mailto:${settings.contactEmail}`}
+                    className="flex items-start gap-3 text-sm transition-opacity hover:opacity-80"
+                    style={{ color: "rgba(255,255,255,0.45)" }}>
+                    <ExternalLink className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: "#c9a96e" }} />
+                    {settings.contactEmail}
+                  </a>
+                )}
+                {settings?.address && (
+                  <div className="flex items-start gap-3 text-sm" style={{ color: "rgba(255,255,255,0.45)" }}>
+                    <MapPin className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: "#c9a96e" }} />
+                    <span className="leading-relaxed">{settings.address}</span>
                   </div>
-                  {settings?.mapEmbedUrl && (
-                    <a 
-                      href={settings.mapEmbedUrl} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                      data-testid="link-footer-map"
-                    >
-                      <ExternalLink className="w-3 h-3" />
-                      View on Google Maps
-                    </a>
-                  )}
-                </>
-              )}
-              
-              {!settings?.address && (
-                <>
-                  <h4 className="text-sm font-bold uppercase tracking-widest mb-4">Newsletter</h4>
-                  <p className="text-xs text-muted-foreground mb-4">Subscribe to receive exclusive offers and design inspiration.</p>
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      const emailInput = e.currentTarget.elements.namedItem("newsletter-email") as HTMLInputElement;
-                      const email = emailInput?.value;
-                      if (!email) return;
-                      if (settings?.whatsappNumber) {
-                        window.open(`https://wa.me/${settings.whatsappNumber.replace(/\D/g, "")}?text=Newsletter+subscription:+${encodeURIComponent(email)}`, "_blank");
-                      } else if (settings?.contactEmail) {
-                        window.open(`mailto:${settings.contactEmail}?subject=Newsletter+Subscription&body=Email:+${encodeURIComponent(email)}`, "_blank");
-                      }
-                    }}
-                    className="flex gap-2"
-                  >
-                    <input
-                      name="newsletter-email"
-                      type="email"
-                      placeholder="Email Address"
-                      className="bg-background border border-input rounded-sm px-3 py-2 text-sm w-full focus:outline-none focus:ring-1 focus:ring-primary"
-                      data-testid="input-newsletter-email"
-                    />
-                    <Button type="submit" variant="default" size="sm" className="rounded-sm" data-testid="button-newsletter-join">Join</Button>
-                  </form>
-                </>
-              )}
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Attribution - Prominent */}
-          <div className="py-4 mb-4 border-t border-b border-border/50 text-center">
-            <p className="text-sm text-muted-foreground">
-              <span className="font-medium">AR Experience</span> powered by{" "}
-              <a 
-                href="https://growyoursmedia.com" 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="text-primary hover:underline font-semibold"
-                data-testid="link-attribution"
-              >
-                GrowYourMedia
-              </a>
+          </div>
+        </div>
+
+        {/* Copyright bar */}
+        <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+          <div className="container mx-auto px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-2">
+            <p className="text-xs" style={{ color: "rgba(255,255,255,0.25)" }}>
+              © {new Date().getFullYear()} {settings?.brandName || "Luxury Furniture"}. All rights reserved.
             </p>
-          </div>
-
-          {/* Copyright */}
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-muted-foreground">
-            <p>&copy; {new Date().getFullYear()} {settings?.brandName || "Luxury Furniture"}. All rights reserved.</p>
-            <div className="flex gap-6">
+            <div className="flex gap-4">
               {settings?.privacyPolicyUrl && (
-                <a href={settings.privacyPolicyUrl} target="_blank" rel="noopener noreferrer" className="hover:text-foreground" data-testid="link-privacy">
-                  Privacy Policy
-                </a>
+                <a href={settings.privacyPolicyUrl} className="text-xs transition-opacity hover:opacity-70"
+                  style={{ color: "rgba(255,255,255,0.25)" }}>Privacy Policy</a>
               )}
               {settings?.termsUrl && (
-                <a href={settings.termsUrl} target="_blank" rel="noopener noreferrer" className="hover:text-foreground" data-testid="link-terms">
-                  Terms of Service
-                </a>
+                <a href={settings.termsUrl} className="text-xs transition-opacity hover:opacity-70"
+                  style={{ color: "rgba(255,255,255,0.25)" }}>Terms</a>
               )}
             </div>
           </div>
