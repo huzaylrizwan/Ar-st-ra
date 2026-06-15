@@ -13,7 +13,7 @@ interface ProductCardProps {
 
 export function ProductCard({ product, featured = false }: ProductCardProps) {
   const { data: settings } = useSettings();
-  const currencySymbol = settings?.currencySymbol ?? "PKR";
+  const currencySymbol = settings?.currencySymbol ?? "$";
   const mainImage = product.images?.[0] || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&q=80";
 
   const hasModel = false; // will be enhanced in Plan 3 with productModels check
@@ -38,6 +38,8 @@ export function ProductCard({ product, featured = false }: ProductCardProps) {
         <img
           src={mainImage}
           alt={product.name}
+          loading="lazy"
+          decoding="async"
           className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
           style={{ position: "absolute", inset: 0 }}
         />
@@ -87,10 +89,10 @@ export function ProductCard({ product, featured = false }: ProductCardProps) {
   );
 }
 
-export function ProductCardSkeleton() {
+export function ProductCardSkeleton({ featured = false }: { featured?: boolean }) {
   return (
-    <div style={{ borderRadius: "var(--radius-card)", overflow: "hidden" }}>
-      <Skeleton className="w-full aspect-square" />
+    <div style={{ borderRadius: "var(--radius-card)", overflow: "hidden", aspectRatio: featured ? "3/4" : "1/1" }}>
+      <Skeleton className="w-full h-full" />
     </div>
   );
 }
