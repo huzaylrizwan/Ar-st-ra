@@ -6,7 +6,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowRight, Box } from "lucide-react";
+import { ArrowRight, Box, MessageCircle } from "lucide-react";
 import { RevealOnScroll } from "@/components/RevealOnScroll";
 import {
   Dialog,
@@ -248,70 +248,93 @@ export default function Home() {
 
       {/* Philosophy / About Block */}
       {showPhilosophy && (
-      <section className="py-24 bg-muted/30">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            <div className="order-2 md:order-1 relative aspect-[4/3]">
-              {/* Unsplash craftsman working on wood */}
-              <img 
-                src="https://images.unsplash.com/photo-1581539250439-c96689b516dd?w=800&q=80" 
-                alt="Craftsmanship" 
-                className="w-full h-full object-cover rounded-sm shadow-xl"
-              />
-            </div>
-            <div className="order-1 md:order-2 space-y-6 md:pl-12">
-              <h2 className="font-serif text-3xl md:text-4xl leading-tight">Designed for the Senses, <br/>Built for Generations</h2>
-              <p className="text-muted-foreground leading-relaxed">
-                We believe furniture is more than just functional objects; it is the soul of a home. Our pieces are crafted with the finest materials—solid hardwoods, full-grain leathers, and premium textiles—to ensure they age beautifully.
+        <RevealOnScroll>
+          <section className="py-20 sm:py-28 px-6">
+            <div
+              className="max-w-4xl mx-auto text-center py-20 px-8 glass"
+              style={{ borderRadius: "var(--radius-modal)" }}
+            >
+              <p className="text-xs uppercase tracking-[0.3em] mb-6" style={{ color: "var(--accent)", fontFamily: "var(--font-sans)" }}>
+                Our Philosophy
               </p>
-              <div className="flex gap-8 pt-4">
-                <div>
-                  <h4 className="font-serif text-2xl font-bold text-primary">100%</h4>
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground mt-1">Handmade</p>
-                </div>
-                <div>
-                  <h4 className="font-serif text-2xl font-bold text-primary">25+</h4>
-                  <p className="text-xs uppercase tracking-wider text-muted-foreground mt-1">Year Warranty</p>
-                </div>
-              </div>
-              {settings?.aboutUrl && (
-                <a href={settings.aboutUrl} target="_blank" rel="noopener noreferrer">
-                  <Button variant="ghost" className="px-0 text-primary uppercase tracking-widest text-xs font-bold mt-4">
-                    Read Our Story <ArrowRight className="ml-2 w-4 h-4" />
-                  </Button>
-                </a>
-              )}
+              <h2 className="font-light leading-tight mb-6"
+                style={{ fontFamily: "var(--font-display)", fontSize: "clamp(28px, 4vw, 52px)", color: "var(--text-primary)" }}>
+                Where craftsmanship<br />meets living
+              </h2>
+              <p className="text-base leading-relaxed max-w-xl mx-auto"
+                style={{ color: "var(--text-secondary)", fontFamily: "var(--font-sans)" }}>
+                Every piece in our collection is handpicked for quality, beauty, and lasting value.
+              </p>
             </div>
-          </div>
-        </div>
-      </section>
+          </section>
+        </RevealOnScroll>
       )}
 
-      {/* Featured Products - 2 columns on mobile */}
-      {showNewArrivals && (
-      <section className="py-12 sm:py-24 bg-background">
-        <div className="container mx-auto px-4">
-          <div className="flex justify-between items-end mb-6 sm:mb-12">
-            <div>
-              <h2 className="font-serif text-xl sm:text-3xl md:text-4xl mb-1 sm:mb-2">New Arrivals</h2>
-              <p className="text-xs sm:text-base text-muted-foreground">The latest additions to our catalog.</p>
+      {/* New Arrivals horizontal strip */}
+      {featuredProducts && featuredProducts.filter(p => !p.isHidden).length > 0 && settings?.showNewArrivals && (
+        <RevealOnScroll>
+          <section className="py-16 sm:py-20">
+            <div className="container mx-auto px-4 sm:px-6 mb-8">
+              <div className="flex items-end justify-between">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.25em] mb-3" style={{ color: "var(--accent)", fontFamily: "var(--font-sans)" }}>Fresh In</p>
+                  <h2 className="font-medium" style={{ fontFamily: "var(--font-serif)", fontSize: "clamp(22px, 2.5vw, 36px)", color: "var(--text-primary)" }}>
+                    New Arrivals
+                  </h2>
+                </div>
+                <Link href="/categories" className="text-xs uppercase tracking-widest transition-opacity hover:opacity-70"
+                  style={{ color: "var(--accent)" }}>
+                  View All →
+                </Link>
+              </div>
             </div>
-            <Link href="/categories" data-testid="link-see-all-products">
-              <span className="text-xs sm:text-sm text-primary font-medium">See All</span>
-            </Link>
-          </div>
+            <div className="flex gap-5 overflow-x-auto scrollbar-hide px-4 sm:px-6 pb-4">
+              {featuredProducts.filter(p => !p.isHidden).slice(0, 8).map(product => (
+                <div key={product.id} className="flex-shrink-0 w-[240px] sm:w-[280px]">
+                  <ProductCard product={product} featured />
+                </div>
+              ))}
+            </div>
+          </section>
+        </RevealOnScroll>
+      )}
 
-          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6">
-            {isProductsLoading ? (
-              [1, 2, 3, 4].map((i) => <div key={i} className="aspect-square bg-muted animate-pulse rounded-xl" />)
-            ) : (
-              featuredProducts?.filter(p => !p.isHidden).slice(0, 4).map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))
-            )}
-          </div>
-        </div>
-      </section>
+      {/* WhatsApp CTA Strip */}
+      {settings?.whatsappNumber && (
+        <RevealOnScroll>
+          <section className="py-16 px-6">
+            <div
+              className="max-w-2xl mx-auto text-center py-12 px-8"
+              style={{
+                background: "var(--accent-glow)",
+                border: "1px solid var(--accent)",
+                borderRadius: "var(--radius-modal)",
+              }}
+            >
+              <h3 className="font-medium text-xl mb-3"
+                style={{ fontFamily: "var(--font-serif)", color: "var(--text-primary)" }}>
+                Ready to transform your space?
+              </h3>
+              <p className="text-sm mb-6" style={{ color: "var(--text-secondary)" }}>
+                Speak with our team on WhatsApp — we'll help you find the perfect piece.
+              </p>
+              <a
+                href={`https://wa.me/${settings.whatsappNumber.replace(/\D/g, "")}?text=Hi, I'd like to enquire about your furniture collection.`}
+                target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-8 py-3 text-xs uppercase tracking-widest font-medium transition-all duration-200 hover:opacity-90"
+                style={{
+                  background: "var(--accent)",
+                  color: "#000",
+                  borderRadius: "var(--radius-pill)",
+                  fontFamily: "var(--font-sans)",
+                }}
+              >
+                <MessageCircle className="w-4 h-4" />
+                Chat on WhatsApp
+              </a>
+            </div>
+          </section>
+        </RevealOnScroll>
       )}
 
       {/* AR Feature Teaser - Compact on mobile */}
