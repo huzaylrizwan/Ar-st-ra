@@ -18,6 +18,36 @@ import { Image as ImageIcon, Check, Instagram, Facebook, Phone, MapPin, Map } fr
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
+const THEMES = [
+  {
+    id: "dark-obsidian",
+    name: "Dark Obsidian",
+    desc: "Deep navy · Gold accents · Glowing glass",
+    bg: "#0a0a0f",
+    accent: "#c9a96e",
+    surface: "rgba(255,255,255,0.06)",
+    border: "rgba(255,255,255,0.12)",
+  },
+  {
+    id: "white-marble",
+    name: "White Marble",
+    desc: "Warm cream · Brass accents · Frosted glass",
+    bg: "#faf9f5",
+    accent: "#8b6f4e",
+    surface: "rgba(255,255,255,0.8)",
+    border: "rgba(0,0,0,0.08)",
+  },
+  {
+    id: "warm-dusk",
+    name: "Warm Dusk",
+    desc: "Deep brown · Amber accents · Warm glass",
+    bg: "#1a1008",
+    accent: "#e8a87c",
+    surface: "rgba(255,180,100,0.07)",
+    border: "rgba(232,168,124,0.18)",
+  },
+] as const;
+
 const THEME_PRESETS = [
   { id: "gold", name: "Gold", primaryColor: "#d4af37", description: "Warm gold accent on cream background" },
   { id: "emerald", name: "Emerald", primaryColor: "#047857", description: "Deep emerald green accent" },
@@ -118,6 +148,56 @@ export default function AdminSettings() {
                       </span>
                     </ImageUploader>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Site Theme Picker Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Site Theme</CardTitle>
+                <CardDescription>Select the visual style for your public website. Changes live instantly for all visitors after saving.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {THEMES.map((theme) => {
+                    const isActive = (form.watch("activeThemePreset") || "dark-obsidian") === theme.id;
+                    return (
+                      <button
+                        key={theme.id}
+                        type="button"
+                        onClick={() => {
+                          form.setValue("activeThemePreset", theme.id, { shouldDirty: true });
+                          document.documentElement.setAttribute("data-theme", theme.id);
+                        }}
+                        className="relative text-left rounded-2xl p-4 transition-all duration-200 border-2"
+                        style={{
+                          background: theme.bg,
+                          borderColor: isActive ? theme.accent : "rgba(255,255,255,0.1)",
+                          boxShadow: isActive ? `0 0 20px ${theme.accent}33` : "none",
+                        }}
+                      >
+                        {/* Mini glass chip preview */}
+                        <div className="rounded-lg p-3 mb-3" style={{
+                          background: theme.surface,
+                          border: `1px solid ${theme.border}`,
+                        }}>
+                          <div className="text-xs font-semibold" style={{ color: theme.accent, letterSpacing: "0.1em" }}>
+                            PREVIEW
+                          </div>
+                          <div className="text-sm mt-1" style={{ color: theme.accent === "#8b6f4e" ? "#333" : "#fff", opacity: 0.9 }}>
+                            {settings?.brandName || "Luxury"}
+                          </div>
+                        </div>
+                        <div className="font-semibold text-sm" style={{ color: theme.accent }}>{theme.name}</div>
+                        <div className="text-xs mt-1 opacity-60" style={{ color: theme.accent }}>{theme.desc}</div>
+                        {isActive && (
+                          <div className="absolute top-3 right-3 w-5 h-5 rounded-full flex items-center justify-center text-black text-xs font-bold"
+                            style={{ background: theme.accent }}>✓</div>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>

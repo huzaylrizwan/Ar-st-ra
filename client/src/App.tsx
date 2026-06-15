@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ThemeProvider } from "@/components/ThemeProvider";
 import { useAuth } from "@/hooks/use-auth";
 import { useSupervisor } from "@/hooks/use-supervisor";
 import { useEffect, useRef } from "react";
@@ -163,15 +164,7 @@ function AuthRedirectHandler() {
 function Router() {
   return (
     <Switch>
-      {/* Public Routes */}
-      <Route path="/" component={Home} />
-      <Route path="/login" component={Login} />
-      <Route path="/categories" component={CategoryPage} />
-      <Route path="/products/:id" component={ProductDetails} />
-      <Route path="/contact" component={Contact} />
-      <Route path="/faq" component={FAQ} />
-      
-      {/* Admin Routes */}
+      {/* Admin Routes — no page transitions */}
       <Route path="/admin">
         <ProtectedRoute component={Dashboard} />
       </Route>
@@ -206,7 +199,7 @@ function Router() {
         <ProtectedRoute component={Inquiries} />
       </Route>
 
-      {/* Supervisor Routes */}
+      {/* Supervisor Routes — no page transitions */}
       <Route path="/supervisor">
         <SupervisorRoute component={SupervisorDashboard} />
       </Route>
@@ -217,7 +210,18 @@ function Router() {
         <SupervisorRoute component={SupervisorProducts} />
       </Route>
 
-      <Route component={NotFound} />
+      {/* Public Routes */}
+      <Route>
+        <Switch>
+          <Route path="/" component={Home} />
+          <Route path="/login" component={Login} />
+          <Route path="/categories" component={CategoryPage} />
+          <Route path="/products/:id" component={ProductDetails} />
+          <Route path="/contact" component={Contact} />
+          <Route path="/faq" component={FAQ} />
+          <Route component={NotFound} />
+        </Switch>
+      </Route>
     </Switch>
   );
 }
@@ -230,9 +234,11 @@ function App() {
         <ScrollToTop />
         <PageViewTracker />
         <AuthRedirectHandler />
-        <ErrorBoundary>
-          <Router />
-        </ErrorBoundary>
+        <ThemeProvider>
+          <ErrorBoundary>
+            <Router />
+          </ErrorBoundary>
+        </ThemeProvider>
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>
