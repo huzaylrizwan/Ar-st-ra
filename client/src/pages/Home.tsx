@@ -178,7 +178,7 @@ function HeroSection({ heroImages, settings }: { heroImages: HeroImage[], settin
 
 export default function Home() {
   const { data: categories } = useCategories();
-  const { data: featuredProducts, isLoading: isProductsLoading } = useProducts();
+  const { data: featuredProducts } = useProducts();
   const { data: settings } = useSettings();
   const [showARTutorial, setShowARTutorial] = useState(false);
 
@@ -196,6 +196,8 @@ export default function Home() {
   const showNewArrivals = settings?.showNewArrivals !== false;
   const showPhilosophy = settings?.showPhilosophy !== false;
   const showARSection = settings?.showARSection !== false;
+
+  const visibleProducts = (featuredProducts ?? []).filter(p => !p.isHidden);
 
   const ARTutorial = () => (
     <Dialog open={showARTutorial} onOpenChange={setShowARTutorial}>
@@ -247,7 +249,7 @@ export default function Home() {
       )}
 
       {/* New Arrivals horizontal strip */}
-      {featuredProducts && featuredProducts.filter(p => !p.isHidden).length > 0 && settings?.showNewArrivals && (
+      {visibleProducts.length > 0 && showNewArrivals && (
         <RevealOnScroll>
           <section className="py-16 sm:py-20">
             <div className="container mx-auto px-4 sm:px-6 mb-8">
@@ -265,7 +267,7 @@ export default function Home() {
               </div>
             </div>
             <div className="flex gap-5 overflow-x-auto scrollbar-hide px-4 sm:px-6 pb-4">
-              {featuredProducts.filter(p => !p.isHidden).slice(0, 8).map(product => (
+              {visibleProducts.slice(0, 8).map(product => (
                 <div key={product.id} className="flex-shrink-0 w-[240px] sm:w-[280px]">
                   <ProductCard product={product} featured />
                 </div>
