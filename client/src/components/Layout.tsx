@@ -2,9 +2,10 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useSettings } from "@/hooks/use-settings";
 import { useCategories } from "@/hooks/use-categories";
+import { useWishlist } from "@/hooks/use-wishlist";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Menu, ShieldCheck, Instagram, Facebook, MessageCircle, MapPin, ExternalLink } from "lucide-react";
+import { Menu, ShieldCheck, Instagram, Facebook, MessageCircle, MapPin, ExternalLink, Heart } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,6 +16,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const { data: settings } = useSettings();
   const { data: categories } = useCategories();
+  const { count: wishlistCount } = useWishlist();
   const [location] = useLocation();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -148,6 +150,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   {settings.whatsappNumber}
                 </a>
               )}
+              <div className="relative">
+                <Heart
+                  className="w-5 h-5 cursor-pointer transition-colors hover:opacity-80"
+                  style={{ color: "var(--text-secondary)" }}
+                />
+                {wishlistCount > 0 && (
+                  <span
+                    className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center text-black"
+                    style={{ background: "var(--accent)" }}
+                  >
+                    {wishlistCount}
+                  </span>
+                )}
+              </div>
               {user ? (
                 <Button variant="ghost" size="sm" onClick={() => logout()} className="text-[10px] sm:text-xs uppercase tracking-wider text-muted-foreground px-2 sm:px-3" data-testid="button-logout">
                   Logout
