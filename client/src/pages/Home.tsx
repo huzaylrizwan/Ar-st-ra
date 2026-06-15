@@ -2,7 +2,6 @@ import { Layout } from "@/components/Layout";
 import { useCategories } from "@/hooks/use-categories";
 import { useProducts } from "@/hooks/use-products";
 import { useSettings } from "@/hooks/use-settings";
-import { CategoryCard } from "@/components/CategoryCard";
 import { ProductCard } from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
@@ -15,7 +14,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@shared/routes";
 import type { Category, HeroImage, ThemeSettings } from "@shared/schema";
@@ -46,13 +45,15 @@ function MagazineCategoryGrid({ categories }: { categories: Category[] }) {
         {/* Magazine grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-[200px] md:auto-rows-[240px]">
           {visible.map((cat, i) => (
-            <Link key={cat.id} href={`/categories?filter=${cat.slug}`}
+            <Link key={cat.id} href={`/categories?id=${cat.id}`}
               className={`group relative overflow-hidden block ${i === 0 ? "row-span-2" : ""} ${i === 3 ? "md:col-span-2" : ""}`}
               style={{ borderRadius: "var(--radius-card)" }}
             >
               <img
                 src={cat.imageUrl}
                 alt={cat.name}
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
               {/* Glass label */}
