@@ -10,7 +10,6 @@ import { useSupervisor } from "@/hooks/use-supervisor";
 import { useEffect, useRef } from "react";
 import { useSettings } from "@/hooks/use-settings";
 import { nanoid } from "nanoid";
-import { AnimatePresence, motion } from "framer-motion";
 
 function ScrollToTop() {
   const [location] = useLocation();
@@ -163,8 +162,6 @@ function AuthRedirectHandler() {
 }
 
 function Router() {
-  const [location] = useLocation();
-
   return (
     <Switch>
       {/* Admin Routes — no page transitions */}
@@ -213,27 +210,17 @@ function Router() {
         <SupervisorRoute component={SupervisorProducts} />
       </Route>
 
-      {/* Public Routes — with AnimatePresence fade transitions */}
+      {/* Public Routes */}
       <Route>
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={location}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.18 }}
-          >
-            <Switch>
-              <Route path="/" component={Home} />
-              <Route path="/login" component={Login} />
-              <Route path="/categories" component={CategoryPage} />
-              <Route path="/products/:id" component={ProductDetails} />
-              <Route path="/contact" component={Contact} />
-              <Route path="/faq" component={FAQ} />
-              <Route component={NotFound} />
-            </Switch>
-          </motion.div>
-        </AnimatePresence>
+        <Switch>
+          <Route path="/" component={Home} />
+          <Route path="/login" component={Login} />
+          <Route path="/categories" component={CategoryPage} />
+          <Route path="/products/:id" component={ProductDetails} />
+          <Route path="/contact" component={Contact} />
+          <Route path="/faq" component={FAQ} />
+          <Route component={NotFound} />
+        </Switch>
       </Route>
     </Switch>
   );
