@@ -152,7 +152,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               )}
               <div className="relative">
                 <Heart
-                  className="w-5 h-5 cursor-pointer transition-colors hover:opacity-80"
+                  className="w-5 h-5 transition-colors hover:opacity-80"
                   style={{ color: "var(--text-secondary)" }}
                 />
                 {wishlistCount > 0 && (
@@ -160,7 +160,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center text-black"
                     style={{ background: "var(--accent)" }}
                   >
-                    {wishlistCount}
+                    {wishlistCount > 9 ? "9+" : wishlistCount}
                   </span>
                 )}
               </div>

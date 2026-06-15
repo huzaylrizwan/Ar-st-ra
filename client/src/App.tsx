@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { WishlistProvider } from "@/contexts/WishlistContext";
 import { useAuth } from "@/hooks/use-auth";
 import { useSupervisor } from "@/hooks/use-supervisor";
 import { useEffect, useRef } from "react";
@@ -234,11 +235,13 @@ function App() {
         <ScrollToTop />
         <PageViewTracker />
         <AuthRedirectHandler />
-        <ThemeProvider>
-          <ErrorBoundary>
-            <Router />
-          </ErrorBoundary>
-        </ThemeProvider>
+        <WishlistProvider>
+          <ThemeProvider>
+            <ErrorBoundary>
+              <Router />
+            </ErrorBoundary>
+          </ThemeProvider>
+        </WishlistProvider>
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>
