@@ -13,6 +13,9 @@ import { ARStudioErrorBoundary } from "@/components/ErrorBoundary";
 import { useSettings } from "@/hooks/use-settings";
 import { ProductInquirySheet } from "@/components/ProductInquirySheet";
 import { QRCodeSVG } from "qrcode.react";
+import { useQuery } from "@tanstack/react-query";
+import type { ProductModel, ProductMaterial } from "@shared/schema";
+import { InlineModelViewer } from "@/components/InlineModelViewer";
 
 export default function ProductDetails() {
   const [match, params] = useRoute("/products/:id");
@@ -22,12 +25,33 @@ export default function ProductDetails() {
   const { data: settings } = useSettings();
   const currencySymbol = settings?.currencySymbol ?? "$";
   
+  const { data: productModels = [] } = useQuery<ProductModel[]>({
+    queryKey: [`/api/products/${id}/models`],
+    enabled: !!id,
+  });
+
+  const { data: productMaterials = [] } = useQuery<ProductMaterial[]>({
+    queryKey: [`/api/products/${id}/materials`],
+    enabled: !!id,
+  });
+
+  const defaultModel = productModels.find(m => m.isDefault) ?? productModels[0];
+  const defaultMaterial = productMaterials.find(m => m.isDefault && (!m.modelId || m.modelId === defaultModel?.id));
+
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [arViewerOpen, setArViewerOpen] = useState(false);
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [arSupported, setArSupported] = useState<boolean | null>(null);
+  const [activeMaterialId, setActiveMaterialId] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<"3D Model" | "Photos">("3D Model");
+
+  useEffect(() => {
+    if (defaultMaterial && activeMaterialId === null) {
+      setActiveMaterialId(defaultMaterial.id);
+    }
+  }, [defaultMaterial, activeMaterialId]);
 
   useEffect(() => {
     const check = async () => {
@@ -91,33 +115,90 @@ export default function ProductDetails() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-12 lg:gap-20">
-          {/* Images - Rounded on mobile */}
+          {/* Left column: 3D viewer (primary) or image carousel (fallback) */}
           <div className="space-y-3 sm:space-y-4">
-            <div className="overflow-hidden rounded-2xl sm:rounded-sm bg-muted/20" ref={emblaRef}>
-              <div className="flex">
-                {product.images?.map((src, i) => (
-                  <div className="flex-[0_0_100%] min-w-0" key={i}>
-                    <img src={src} className="w-full h-auto object-cover aspect-square sm:aspect-[4/5]" alt={`${product.name} ${i + 1}`} />
+            {defaultModel ? (
+              <>
+                {/* 3D / Photos tab switcher */}
+                <div className="flex gap-2">
+                  {(["3D Model", "Photos"] as const).map(tab => (
+                    <button
+                      key={tab}
+                      type="button"
+                      onClick={() => setActiveTab(tab)}
+                      className="px-4 py-1.5 text-xs uppercase tracking-widest transition-all duration-200"
+                      style={{
+                        borderRadius: "var(--radius-pill)",
+                        background: activeTab === tab ? "var(--accent)" : "var(--surface-1)",
+                        color: activeTab === tab ? "#000" : "var(--text-secondary)",
+                        border: `1px solid ${activeTab === tab ? "var(--accent)" : "var(--glass-border)"}`,
+                      }}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+
+                {activeTab === "3D Model" ? (
+                  <div style={{ aspectRatio: "4/5", minHeight: 320 }}>
+                    <InlineModelViewer
+                      modelUrl={defaultModel.modelUrl}
+                      materials={productMaterials.filter(m => !m.modelId || m.modelId === defaultModel.id)}
+                      activeMaterialId={activeMaterialId}
+                      className="w-full h-full"
+                    />
                   </div>
+                ) : (
+                  /* Photo carousel */
+                  <div className="overflow-hidden rounded-2xl sm:rounded-sm bg-muted/20" ref={emblaRef}>
+                    <div className="flex">
+                      {product.images?.map((src, i) => (
+                        <div className="flex-[0_0_100%] min-w-0" key={i}>
+                          <img src={src} className="w-full h-auto object-cover aspect-square sm:aspect-[4/5]" alt={`${product.name} ${i + 1}`} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              /* No 3D model: show photo carousel as primary */
+              <div className="overflow-hidden rounded-2xl sm:rounded-sm bg-muted/20" ref={emblaRef}>
+                <div className="flex">
+                  {product.images?.map((src, i) => (
+                    <div className="flex-[0_0_100%] min-w-0" key={i}>
+                      <img src={src} className="w-full h-auto object-cover aspect-square sm:aspect-[4/5]" alt={`${product.name} ${i + 1}`} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Photo thumbnail strip — always shown when photos exist */}
+            {product.images && product.images.length > 0 && (
+              <div className="flex gap-2 sm:gap-4 overflow-x-auto pb-2 scrollbar-hide">
+                {product.images.map((src, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => {
+                      scrollTo(i);
+                      if (defaultModel) setActiveTab("Photos");
+                    }}
+                    className="relative flex-shrink-0 transition-all duration-200"
+                    style={{
+                      width: 60, height: 60,
+                      borderRadius: "var(--radius-input)",
+                      overflow: "hidden",
+                      border: `2px solid ${selectedIndex === i && activeTab === "Photos" ? "var(--accent)" : "transparent"}`,
+                      opacity: selectedIndex === i && activeTab === "Photos" ? 1 : 0.6,
+                    }}
+                  >
+                    <img src={src} className="w-full h-full object-cover" alt="thumbnail" />
+                  </button>
                 ))}
               </div>
-            </div>
-            
-            {/* Thumbs - Compact on mobile */}
-            <div className="flex gap-2 sm:gap-4 overflow-x-auto pb-2">
-              {product.images?.map((src, i) => (
-                <button
-                  key={i}
-                  onClick={() => scrollTo(i)}
-                  className={cn(
-                    "relative flex-[0_0_60px] sm:flex-[0_0_80px] aspect-square rounded-xl sm:rounded-sm overflow-hidden border-2 transition-all",
-                    selectedIndex === i ? "border-primary opacity-100" : "border-transparent opacity-60 hover:opacity-100"
-                  )}
-                >
-                  <img src={src} className="w-full h-full object-cover" alt="thumbnail" />
-                </button>
-              ))}
-            </div>
+            )}
           </div>
 
           {/* Details - Compact on mobile */}
