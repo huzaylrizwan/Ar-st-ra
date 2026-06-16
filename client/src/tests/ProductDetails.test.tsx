@@ -1,6 +1,26 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
+vi.mock("@tanstack/react-query", async () => {
+  const actual = await vi.importActual("@tanstack/react-query");
+  return {
+    ...actual,
+    useQuery: vi.fn().mockReturnValue({ data: undefined, isLoading: false, error: null }),
+  };
+});
+
+vi.mock("@/components/InlineModelViewer", () => ({
+  InlineModelViewer: () => <div data-testid="inline-model-viewer" />,
+}));
+
+vi.mock("@/components/ProductCard", () => ({
+  ProductCard: ({ product }: any) => <div data-testid={`product-card-${product.id}`}>{product.name}</div>,
+}));
+
+vi.mock("@/hooks/use-toast", () => ({
+  useToast: () => ({ toast: vi.fn() }),
+}));
+
 vi.mock("wouter", () => ({
   useRoute: () => [true, { id: "1" }],
   Link: ({ children, href }: any) => <a href={href}>{children}</a>,
