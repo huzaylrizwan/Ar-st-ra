@@ -217,6 +217,45 @@ export default function ProductDetails() {
               <p>{product.description}</p>
             </div>
 
+            {/* Material swatches — shown when 3D model has materials */}
+            {productMaterials.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs uppercase tracking-widest" style={{ color: "var(--text-secondary)" }}>
+                    Material
+                  </span>
+                  <span className="text-xs" style={{ color: "var(--accent)" }}>
+                    {productMaterials.find(m => m.id === activeMaterialId)?.colorName || ""}
+                  </span>
+                </div>
+                <div className="flex gap-2 flex-wrap">
+                  {productMaterials
+                    .filter(m => !m.modelId || m.modelId === defaultModel?.id)
+                    .map(material => {
+                      const isActive = activeMaterialId === material.id;
+                      return (
+                        <button
+                          key={material.id}
+                          type="button"
+                          title={material.colorName || material.name}
+                          onClick={() => setActiveMaterialId(material.id)}
+                          style={{
+                            width: 32, height: 32,
+                            borderRadius: "50%",
+                            background: material.colorHex,
+                            border: `2px solid ${isActive ? "var(--accent)" : "var(--glass-border)"}`,
+                            transform: isActive ? "scale(1.15)" : "scale(1)",
+                            boxShadow: isActive ? `0 0 0 3px var(--accent-glow)` : "none",
+                            transition: "all 0.2s",
+                            flexShrink: 0,
+                          }}
+                        />
+                      );
+                    })}
+                </div>
+              </div>
+            )}
+
             {/* Colors - Compact on mobile */}
             {product.colors && product.colors.length > 0 && (
               <div className="space-y-2 sm:space-y-3">
