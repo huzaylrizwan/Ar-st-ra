@@ -15,6 +15,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { ImageUploader } from "@/components/ImageUploader";
 import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
   ArrowLeft, Plus, Pencil, Trash2, Image as ImageIcon, X, Box, Upload, Palette, Ruler,
   ChevronDown, ChevronRight, Check, Loader2, AlertCircle
 } from "lucide-react";
@@ -538,247 +544,347 @@ export default function AdminProductEditor() {
 
         {/* Product Form */}
         <form onSubmit={form.handleSubmit(onSaveForm)} className="space-y-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left column */}
-            <div className="space-y-5">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-sm font-medium">Product Name</Label>
-                <Input
-                  id="name"
-                  {...form.register("name")}
-                  placeholder="e.g. Velvet Sofa"
-                  className={`h-10 ${form.formState.errors.name ? "border-destructive" : ""}`}
-                  data-testid="input-product-name"
-                />
-                {form.formState.errors.name && (
-                  <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>
-                )}
-              </div>
+          <Accordion type="multiple" defaultValue={["basic"]} className="space-y-3">
 
-              <div className="space-y-2">
-                <Label htmlFor="categoryId" className="text-sm font-medium">Category</Label>
-                <Select
-                  value={form.watch("categoryId") ? String(form.watch("categoryId")) : undefined}
-                  onValueChange={(val) => form.setValue("categoryId", Number(val), { shouldValidate: true, shouldDirty: true })}
-                >
-                  <SelectTrigger className={`h-10 ${form.formState.errors.categoryId ? "border-destructive" : ""}`} data-testid="select-category">
-                    <SelectValue placeholder="Select Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories?.map((c) => (
-                      <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {form.formState.errors.categoryId && (
-                  <p className="text-sm text-destructive">Category is required</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="price" className="text-sm font-medium">Price</Label>
-                <div className="flex">
-                  <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">
-                    {currencySymbol}
-                  </span>
+            {/* Section 1 — Basic Info */}
+            <AccordionItem value="basic" className="glass rounded-2xl border-none" style={{ padding: "0 24px" }}>
+              <AccordionTrigger className="text-sm font-semibold uppercase tracking-widest py-5 hover:no-underline">
+                1 · Basic Info
+              </AccordionTrigger>
+              <AccordionContent className="pb-6 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-sm font-medium">Product Name</Label>
                   <Input
-                    id="price"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    value={form.watch("price") ? (form.watch("price") / 100).toFixed(2) : ""}
-                    onChange={(e) => {
-                      const dollars = parseFloat(e.target.value) || 0;
-                      form.setValue("price", Math.round(dollars * 100), { shouldDirty: true });
-                    }}
-                    className={`rounded-l-none h-10 ${form.formState.errors.price ? "border-destructive" : ""}`}
-                    data-testid="input-price"
+                    id="name"
+                    {...form.register("name")}
+                    placeholder="e.g. Velvet Sofa"
+                    className={`h-10 ${form.formState.errors.name ? "border-destructive" : ""}`}
+                    data-testid="input-product-name"
+                  />
+                  {form.formState.errors.name && (
+                    <p className="text-sm text-destructive">{form.formState.errors.name.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="categoryId" className="text-sm font-medium">Category</Label>
+                  <Select
+                    value={form.watch("categoryId") ? String(form.watch("categoryId")) : undefined}
+                    onValueChange={(val) => form.setValue("categoryId", Number(val), { shouldValidate: true, shouldDirty: true })}
+                  >
+                    <SelectTrigger className={`h-10 ${form.formState.errors.categoryId ? "border-destructive" : ""}`} data-testid="select-category">
+                      <SelectValue placeholder="Select Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories?.map((c) => (
+                        <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {form.formState.errors.categoryId && (
+                    <p className="text-sm text-destructive">Category is required</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description" className="text-sm font-medium">Description</Label>
+                  <Textarea
+                    id="description"
+                    {...form.register("description")}
+                    placeholder="Describe this product..."
+                    rows={4}
+                    className={`resize-y ${form.formState.errors.description ? "border-destructive" : ""}`}
+                    data-testid="textarea-description"
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">Enter price in dollars (stored as cents)</p>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="description" className="text-sm font-medium">Description</Label>
-                <Textarea
-                  id="description"
-                  {...form.register("description")}
-                  placeholder="Describe this product..."
-                  rows={4}
-                  className={`resize-y ${form.formState.errors.description ? "border-destructive" : ""}`}
-                  data-testid="textarea-description"
-                />
-              </div>
-
-              <div className="flex items-center justify-between py-3 px-4 rounded-lg bg-muted/40 border border-border">
-                <div>
-                  <Label htmlFor="isHidden" className="text-sm font-medium">Hide from Store</Label>
-                  <p className="text-xs text-muted-foreground mt-0.5">Product won't appear on the public storefront</p>
+                <div className="flex items-center justify-between py-3 px-4 rounded-lg bg-muted/40 border border-border">
+                  <div>
+                    <Label htmlFor="isHidden" className="text-sm font-medium">Hide from Store</Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">Product won't appear on the public storefront</p>
+                  </div>
+                  <Switch
+                    id="isHidden"
+                    checked={isHidden}
+                    onCheckedChange={(checked) => form.setValue("isHidden", checked, { shouldDirty: true })}
+                    data-testid="switch-hide-product"
+                  />
                 </div>
-                <Switch
-                  id="isHidden"
-                  checked={isHidden}
-                  onCheckedChange={(checked) => form.setValue("isHidden", checked, { shouldDirty: true })}
-                  data-testid="switch-hide-product"
-                />
-              </div>
+              </AccordionContent>
+            </AccordionItem>
 
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Stock Status</Label>
-                <Select
-                  value={form.watch("stockStatus") ?? "in_stock"}
-                  onValueChange={(val) => form.setValue("stockStatus", val as "in_stock" | "made_to_order" | "out_of_stock", { shouldDirty: true })}
-                >
-                  <SelectTrigger data-testid="select-stock-status">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="in_stock">In Stock</SelectItem>
-                    <SelectItem value="made_to_order">Made to Order</SelectItem>
-                    <SelectItem value="out_of_stock">Out of Stock</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Right column */}
-            <div className="space-y-5">
-              {/* Product Images */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Product Images</Label>
-                <p className="text-xs text-muted-foreground">First image used as thumbnail. Upload up to 5 photos.</p>
-                <DndContext sensors={imageDndSensors} collisionDetection={closestCenter} onDragEnd={handleImageDragEnd}>
-                  <SortableContext items={images} strategy={horizontalListSortingStrategy}>
-                    <div className="flex flex-wrap gap-3">
-                      {images.map((url, i) => (
-                        <SortableImage key={url} url={url} index={i} onRemove={() => removeImage(i)} />
-                      ))}
-                      <ImageUploader
-                        accept="image/*"
-                        className="p-0 h-auto bg-transparent border-0 hover:bg-transparent shadow-none"
-                        onUpload={(url) => {
-                          const current = form.getValues("images") || [];
-                          form.setValue("images", [...current, url], { shouldDirty: true });
-                        }}
-                      >
-                        <div
-                          className="w-20 h-20 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors gap-1"
-                          data-testid="button-upload-images"
+            {/* Section 2 — Images */}
+            <AccordionItem value="media" className="glass rounded-2xl border-none" style={{ padding: "0 24px" }}>
+              <AccordionTrigger className="text-sm font-semibold uppercase tracking-widest py-5 hover:no-underline">
+                2 · Images
+              </AccordionTrigger>
+              <AccordionContent className="pb-6 space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Product Images</Label>
+                  <p className="text-xs text-muted-foreground">First image used as thumbnail. Upload up to 5 photos.</p>
+                  <DndContext sensors={imageDndSensors} collisionDetection={closestCenter} onDragEnd={handleImageDragEnd}>
+                    <SortableContext items={images} strategy={horizontalListSortingStrategy}>
+                      <div className="flex flex-wrap gap-3">
+                        {images.map((url, i) => (
+                          <SortableImage key={url} url={url} index={i} onRemove={() => removeImage(i)} />
+                        ))}
+                        <ImageUploader
+                          accept="image/*"
+                          className="p-0 h-auto bg-transparent border-0 hover:bg-transparent shadow-none"
+                          onUpload={(url) => {
+                            const current = form.getValues("images") || [];
+                            form.setValue("images", [...current, url], { shouldDirty: true });
+                          }}
                         >
-                          <ImageIcon className="w-5 h-5 text-muted-foreground" />
-                          <span className="text-[10px] text-muted-foreground">Add photo</span>
-                        </div>
-                      </ImageUploader>
-                    </div>
-                  </SortableContext>
-                </DndContext>
-              </div>
-
-              {/* AR Model */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Default AR Model <span className="text-muted-foreground font-normal text-xs">(.glb / .gltf)</span></Label>
-                {arLink ? (
-                  <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800 mb-2">
-                    <Box className="w-5 h-5 text-blue-500 shrink-0" />
-                    <span className="text-sm text-blue-700 dark:text-blue-300 flex-1">3D model uploaded</span>
-                    <button
-                      type="button"
-                      onClick={() => { form.setValue("arLink", "", { shouldValidate: true, shouldDirty: true }); setArLinkStatus(null); }}
-                      className="text-destructive hover:text-destructive/70"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                ) : null}
-                <ImageUploader
-                  accept=".glb,.gltf"
-                  className="h-9"
-                  onUpload={(url) => {
-                    form.setValue("arLink", url, { shouldValidate: true, shouldDirty: true });
-                    validateArLinkField(url);
-                  }}
-                >
-                  <div className="flex items-center gap-2" data-testid="button-upload-ar-model">
-                    <Upload className="w-4 h-4" />
-                    {arLink ? "Replace AR Model" : "Upload AR Model (.glb)"}
-                  </div>
-                </ImageUploader>
-                <Input
-                  placeholder="Or paste a .glb URL directly"
-                  value={arLink || ""}
-                  onChange={(e) => form.setValue("arLink", e.target.value, { shouldValidate: true, shouldDirty: true })}
-                  onBlur={(e) => validateArLinkField(e.target.value)}
-                  className="text-xs h-8"
-                />
-                {isValidatingArLink && (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Loader2 className="w-3 h-3 animate-spin" /> Validating link…
-                  </p>
-                )}
-                {arLinkStatus && !isValidatingArLink && (
-                  <p className={`text-xs flex items-center gap-1 ${arLinkStatus.valid ? "text-green-600" : "text-red-500"}`}>
-                    {arLinkStatus.valid ? <Check className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
-                    {arLinkStatus.message}
-                  </p>
-                )}
-              </div>
-
-              {/* Measurements */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium flex items-center gap-2">
-                  <Ruler className="w-4 h-4" /> Measurements
-                </Label>
-                {pendingMeasurements.length > 0 && (
-                  <div className="border border-border rounded-lg overflow-hidden mb-2">
-                    <div className="grid grid-cols-[1fr_1fr_36px] px-3 py-2 bg-muted/50 border-b border-border">
-                      <span className="text-xs font-medium text-muted-foreground uppercase">Label</span>
-                      <span className="text-xs font-medium text-muted-foreground uppercase">Value</span>
-                      <span />
-                    </div>
-                    <div className="divide-y divide-border">
-                      {pendingMeasurements.map((meas) => (
-                        <div key={meas.tempId} className="grid grid-cols-[1fr_1fr_36px] items-center gap-1 px-2 py-1.5" data-testid={`measurement-row-${meas.tempId}`}>
-                          <Input
-                            value={meas.label}
-                            onChange={(e) => setPendingMeasurements((prev) => prev.map((m) => m.tempId === meas.tempId ? { ...m, label: e.target.value } : m))}
-                            placeholder="Width"
-                            className="h-8 border-0 shadow-none focus-visible:ring-1 bg-transparent text-sm"
-                            data-testid={`input-measurement-label-${meas.tempId}`}
-                          />
-                          <Input
-                            value={meas.value}
-                            onChange={(e) => setPendingMeasurements((prev) => prev.map((m) => m.tempId === meas.tempId ? { ...m, value: e.target.value } : m))}
-                            placeholder="220 cm"
-                            className="h-8 border-0 shadow-none focus-visible:ring-1 bg-transparent text-sm"
-                            data-testid={`input-measurement-value-${meas.tempId}`}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => removeMeasurementRow(meas.tempId)}
-                            className="text-muted-foreground hover:text-destructive flex items-center justify-center"
-                            data-testid={`button-remove-measurement-${meas.tempId}`}
+                          <div
+                            className="w-20 h-20 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-colors gap-1"
+                            data-testid="button-upload-images"
                           >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ))}
+                            <ImageIcon className="w-5 h-5 text-muted-foreground" />
+                            <span className="text-[10px] text-muted-foreground">Add photo</span>
+                          </div>
+                        </ImageUploader>
+                      </div>
+                    </SortableContext>
+                  </DndContext>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* Section 3 — 3D Models & Materials */}
+            <AccordionItem value="models" className="glass rounded-2xl border-none" style={{ padding: "0 24px" }}>
+              <AccordionTrigger className="text-sm font-semibold uppercase tracking-widest py-5 hover:no-underline">
+                3 · 3D Models &amp; Materials
+              </AccordionTrigger>
+              <AccordionContent className="pb-6 space-y-4">
+                {isNew ? (
+                  <p className="text-sm text-muted-foreground">Save the product first to manage 3D models.</p>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm text-muted-foreground">3D model configurations for this product</p>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={addModelRow}
+                          className="gap-2"
+                          data-testid="button-add-model"
+                        >
+                          <Plus className="w-4 h-4" /> Add Model
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={handleSaveModels}
+                          data-testid="button-save-models"
+                        >
+                          Save Models
+                        </Button>
+                      </div>
                     </div>
-                  </div>
+
+                    {pendingModels.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed border-border rounded-xl">
+                        <Box className="w-10 h-10 text-muted-foreground mb-3" />
+                        <p className="text-sm text-muted-foreground">No models yet</p>
+                        <p className="text-xs text-muted-foreground/70 mt-1">Add a 3D model configuration for this product</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {pendingModels.map((mod) => (
+                          <ModelCard
+                            key={mod.tempId}
+                            mod={mod}
+                            onToggleExpand={() => toggleModelExpanded(mod.tempId)}
+                            onSetDefault={() => setModelDefault(mod.tempId)}
+                            onUpdateField={(field, value) => updateModelField(mod.tempId, field, value)}
+                            onRemove={() => removeModelRow(mod.tempId)}
+                            onAddMaterial={() => addMaterialToModel(mod.tempId)}
+                            onRemoveMaterial={(matTempId) => removeMaterialFromModel(mod.tempId, matTempId)}
+                            onUpdateMaterial={(matTempId, field, value) => updateMaterialInModel(mod.tempId, matTempId, field, value)}
+                            onSetMaterialDefault={(matTempId) => setMaterialDefaultInModel(mod.tempId, matTempId)}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </>
                 )}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addMeasurementRow}
-                  className="gap-2 border-dashed w-full"
-                  data-testid="button-add-measurement"
-                >
-                  <Plus className="w-4 h-4" /> Add Measurement
-                </Button>
-              </div>
-            </div>
-          </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* Section 4 — Specifications */}
+            <AccordionItem value="specs" className="glass rounded-2xl border-none" style={{ padding: "0 24px" }}>
+              <AccordionTrigger className="text-sm font-semibold uppercase tracking-widest py-5 hover:no-underline">
+                4 · Specifications
+              </AccordionTrigger>
+              <AccordionContent className="pb-6 space-y-4">
+                {/* AR Model */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Default AR Model <span className="text-muted-foreground font-normal text-xs">(.glb / .gltf)</span></Label>
+                  {arLink ? (
+                    <div className="flex items-center gap-3 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800 mb-2">
+                      <Box className="w-5 h-5 text-blue-500 shrink-0" />
+                      <span className="text-sm text-blue-700 dark:text-blue-300 flex-1">3D model uploaded</span>
+                      <button
+                        type="button"
+                        onClick={() => { form.setValue("arLink", "", { shouldValidate: true, shouldDirty: true }); setArLinkStatus(null); }}
+                        className="text-destructive hover:text-destructive/70"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : null}
+                  <ImageUploader
+                    accept=".glb,.gltf"
+                    className="h-9"
+                    onUpload={(url) => {
+                      form.setValue("arLink", url, { shouldValidate: true, shouldDirty: true });
+                      validateArLinkField(url);
+                    }}
+                  >
+                    <div className="flex items-center gap-2" data-testid="button-upload-ar-model">
+                      <Upload className="w-4 h-4" />
+                      {arLink ? "Replace AR Model" : "Upload AR Model (.glb)"}
+                    </div>
+                  </ImageUploader>
+                  <Input
+                    placeholder="Or paste a .glb URL directly"
+                    value={arLink || ""}
+                    onChange={(e) => form.setValue("arLink", e.target.value, { shouldValidate: true, shouldDirty: true })}
+                    onBlur={(e) => validateArLinkField(e.target.value)}
+                    className="text-xs h-8"
+                  />
+                  {isValidatingArLink && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Loader2 className="w-3 h-3 animate-spin" /> Validating link…
+                    </p>
+                  )}
+                  {arLinkStatus && !isValidatingArLink && (
+                    <p className={`text-xs flex items-center gap-1 ${arLinkStatus.valid ? "text-green-600" : "text-red-500"}`}>
+                      {arLinkStatus.valid ? <Check className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
+                      {arLinkStatus.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Measurements */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium flex items-center gap-2">
+                    <Ruler className="w-4 h-4" /> Measurements
+                  </Label>
+                  {pendingMeasurements.length > 0 && (
+                    <div className="border border-border rounded-lg overflow-hidden mb-2">
+                      <div className="grid grid-cols-[1fr_1fr_36px] px-3 py-2 bg-muted/50 border-b border-border">
+                        <span className="text-xs font-medium text-muted-foreground uppercase">Label</span>
+                        <span className="text-xs font-medium text-muted-foreground uppercase">Value</span>
+                        <span />
+                      </div>
+                      <div className="divide-y divide-border">
+                        {pendingMeasurements.map((meas) => (
+                          <div key={meas.tempId} className="grid grid-cols-[1fr_1fr_36px] items-center gap-1 px-2 py-1.5" data-testid={`measurement-row-${meas.tempId}`}>
+                            <Input
+                              value={meas.label}
+                              onChange={(e) => setPendingMeasurements((prev) => prev.map((m) => m.tempId === meas.tempId ? { ...m, label: e.target.value } : m))}
+                              placeholder="Width"
+                              className="h-8 border-0 shadow-none focus-visible:ring-1 bg-transparent text-sm"
+                              data-testid={`input-measurement-label-${meas.tempId}`}
+                            />
+                            <Input
+                              value={meas.value}
+                              onChange={(e) => setPendingMeasurements((prev) => prev.map((m) => m.tempId === meas.tempId ? { ...m, value: e.target.value } : m))}
+                              placeholder="220 cm"
+                              className="h-8 border-0 shadow-none focus-visible:ring-1 bg-transparent text-sm"
+                              data-testid={`input-measurement-value-${meas.tempId}`}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeMeasurementRow(meas.tempId)}
+                              className="text-muted-foreground hover:text-destructive flex items-center justify-center"
+                              data-testid={`button-remove-measurement-${meas.tempId}`}
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addMeasurementRow}
+                    className="gap-2 border-dashed w-full"
+                    data-testid="button-add-measurement"
+                  >
+                    <Plus className="w-4 h-4" /> Add Measurement
+                  </Button>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* Section 5 — Rich Content Sections */}
+            <AccordionItem value="sections" className="glass rounded-2xl border-none" style={{ padding: "0 24px" }}>
+              <AccordionTrigger className="text-sm font-semibold uppercase tracking-widest py-5 hover:no-underline">
+                5 · Rich Content Sections
+              </AccordionTrigger>
+              <AccordionContent className="pb-6 space-y-4">
+                <p className="text-sm text-muted-foreground">Coming in next update.</p>
+              </AccordionContent>
+            </AccordionItem>
+
+            {/* Section 6 — Pricing & Availability */}
+            <AccordionItem value="pricing" className="glass rounded-2xl border-none" style={{ padding: "0 24px" }}>
+              <AccordionTrigger className="text-sm font-semibold uppercase tracking-widest py-5 hover:no-underline">
+                6 · Pricing &amp; Availability
+              </AccordionTrigger>
+              <AccordionContent className="pb-6 space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="price" className="text-sm font-medium">Price</Label>
+                  <div className="flex">
+                    <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">
+                      {currencySymbol}
+                    </span>
+                    <Input
+                      id="price"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      value={form.watch("price") ? (form.watch("price") / 100).toFixed(2) : ""}
+                      onChange={(e) => {
+                        const dollars = parseFloat(e.target.value) || 0;
+                        form.setValue("price", Math.round(dollars * 100), { shouldDirty: true });
+                      }}
+                      className={`rounded-l-none h-10 ${form.formState.errors.price ? "border-destructive" : ""}`}
+                      data-testid="input-price"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Enter price in dollars (stored as cents)</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Stock Status</Label>
+                  <Select
+                    value={form.watch("stockStatus") ?? "in_stock"}
+                    onValueChange={(val) => form.setValue("stockStatus", val as "in_stock" | "made_to_order" | "out_of_stock", { shouldDirty: true })}
+                  >
+                    <SelectTrigger data-testid="select-stock-status">
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="in_stock">In Stock</SelectItem>
+                      <SelectItem value="made_to_order">Made to Order</SelectItem>
+                      <SelectItem value="out_of_stock">Out of Stock</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+
+          </Accordion>
 
           {/* Save bar */}
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-border">
@@ -799,65 +905,6 @@ export default function AdminProductEditor() {
             </Button>
           </div>
         </form>
-
-        {/* Models Panel — only shown for existing products */}
-        {!isNew && (
-          <div className="space-y-4 border-t border-border pt-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-serif font-semibold flex items-center gap-2">
-                  <Box className="w-5 h-5" /> Models
-                </h2>
-                <p className="text-sm text-muted-foreground mt-0.5">3D model configurations for this product</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={addModelRow}
-                  className="gap-2"
-                  data-testid="button-add-model"
-                >
-                  <Plus className="w-4 h-4" /> Add Model
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={handleSaveModels}
-                  data-testid="button-save-models"
-                >
-                  Save Models
-                </Button>
-              </div>
-            </div>
-
-            {pendingModels.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center border-2 border-dashed border-border rounded-xl">
-                <Box className="w-10 h-10 text-muted-foreground mb-3" />
-                <p className="text-sm text-muted-foreground">No models yet</p>
-                <p className="text-xs text-muted-foreground/70 mt-1">Add a 3D model configuration for this product</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {pendingModels.map((mod) => (
-                  <ModelCard
-                    key={mod.tempId}
-                    mod={mod}
-                    onToggleExpand={() => toggleModelExpanded(mod.tempId)}
-                    onSetDefault={() => setModelDefault(mod.tempId)}
-                    onUpdateField={(field, value) => updateModelField(mod.tempId, field, value)}
-                    onRemove={() => removeModelRow(mod.tempId)}
-                    onAddMaterial={() => addMaterialToModel(mod.tempId)}
-                    onRemoveMaterial={(matTempId) => removeMaterialFromModel(mod.tempId, matTempId)}
-                    onUpdateMaterial={(matTempId, field, value) => updateMaterialInModel(mod.tempId, matTempId, field, value)}
-                    onSetMaterialDefault={(matTempId) => setMaterialDefaultInModel(mod.tempId, matTempId)}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        )}
       </div>
     </AdminLayout>
   );
