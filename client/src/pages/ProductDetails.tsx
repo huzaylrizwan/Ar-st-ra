@@ -28,17 +28,17 @@ export default function ProductDetails() {
   const currencySymbol = settings?.currencySymbol ?? "$";
   
   const { data: productModels = [] } = useQuery<ProductModel[]>({
-    queryKey: [`/api/products/${id}/models`],
+    queryKey: ["/api/products", id, "models"],
     enabled: !!id,
   });
 
   const { data: productMaterials = [] } = useQuery<ProductMaterial[]>({
-    queryKey: [`/api/products/${id}/materials`],
+    queryKey: ["/api/products", id, "materials"],
     enabled: !!id,
   });
 
   const { data: measurements = [] } = useQuery<{id: number; label: string; value: string}[]>({
-    queryKey: [`/api/products/${id}/measurements`],
+    queryKey: ["/api/products", id, "measurements"],
     enabled: !!id,
   });
 
@@ -91,12 +91,12 @@ export default function ProductDetails() {
     check();
   }, []);
 
-  // Re-sync index when embla changes
-  if (emblaApi) {
-    emblaApi.on("select", () => {
-      setSelectedIndex(emblaApi.selectedScrollSnap());
-    });
-  }
+  useEffect(() => {
+    if (!emblaApi) return;
+    const onSelect = () => setSelectedIndex(emblaApi.selectedScrollSnap());
+    emblaApi.on("select", onSelect);
+    return () => { emblaApi.off("select", onSelect); };
+  }, [emblaApi]);
 
   const scrollTo = (index: number) => emblaApi && emblaApi.scrollTo(index);
 

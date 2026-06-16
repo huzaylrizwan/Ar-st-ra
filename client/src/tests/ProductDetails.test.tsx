@@ -69,7 +69,7 @@ vi.mock("@/hooks/use-mobile", () => ({
 }));
 
 vi.mock("embla-carousel-react", () => ({
-  default: () => [vi.fn(), { on: vi.fn(), scrollTo: vi.fn(), selectedScrollSnap: () => 0 }],
+  default: () => [vi.fn(), { on: vi.fn(), off: vi.fn(), scrollTo: vi.fn(), selectedScrollSnap: () => 0 }],
 }));
 
 vi.mock("qrcode.react", () => ({
