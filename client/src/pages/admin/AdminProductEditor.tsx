@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
 import { ImageUploader } from "@/components/ImageUploader";
 import {
   Accordion,
@@ -86,6 +87,9 @@ export default function AdminProductEditor() {
 
   const [pendingMeasurements, setPendingMeasurements] = useState<PendingMeasurement[]>([]);
   const [deletedMeasurementIds, setDeletedMeasurementIds] = useState<number[]>([]);
+
+  type SpecRow = { label: string; value: string };
+  const [specs, setSpecs] = useState<SpecRow[]>([]);
 
   const [pendingModels, setPendingModels] = useState<PendingModel[]>([]);
   const [deletedModelIds, setDeletedModelIds] = useState<number[]>([]);
@@ -195,6 +199,12 @@ export default function AdminProductEditor() {
   }, [product, isNew, isDataLoaded]);
 
   useEffect(() => {
+    if (product?.specs && Array.isArray(product.specs)) {
+      setSpecs(product.specs as SpecRow[]);
+    }
+  }, [product?.specs]);
+
+  useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isDirty) {
         e.preventDefault();
@@ -220,7 +230,7 @@ export default function AdminProductEditor() {
       setIsSavingForm(true);
 
       const priceCents = Math.round(Number(data.price));
-      const payload = { ...data, price: priceCents, categoryId: Number(data.categoryId) };
+      const payload = { ...data, price: priceCents, categoryId: Number(data.categoryId), specs };
 
       let savedProduct: Product;
       if (isNew) {
@@ -720,6 +730,57 @@ export default function AdminProductEditor() {
                 4 · Specifications
               </AccordionTrigger>
               <AccordionContent className="pb-6 space-y-4">
+                {/* Dynamic Specs */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs uppercase tracking-widest text-muted-foreground">
+                      Specifications
+                    </Label>
+                    <span className="text-xs text-muted-foreground">{specs.length}/20</span>
+                  </div>
+
+                  {specs.map((spec, i) => (
+                    <div key={i} className="flex gap-2 items-center">
+                      <Input
+                        placeholder="Label (e.g. Material)"
+                        value={spec.label}
+                        onChange={e => setSpecs(prev => prev.map((s, j) => j === i ? { ...s, label: e.target.value } : s))}
+                        className="w-36 flex-shrink-0"
+                      />
+                      <Input
+                        placeholder="Value (e.g. Italian Velvet)"
+                        value={spec.value}
+                        onChange={e => setSpecs(prev => prev.map((s, j) => j === i ? { ...s, value: e.target.value } : s))}
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 flex-shrink-0 text-destructive hover:text-destructive"
+                        onClick={() => setSpecs(prev => prev.filter((_, j) => j !== i))}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+
+                  {specs.length < 20 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="gap-2 border-dashed"
+                      onClick={() => setSpecs(prev => [...prev, { label: "", value: "" }])}
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Add Specification
+                    </Button>
+                  )}
+                </div>
+
+                <Separator className="my-4" />
+
                 {/* AR Model */}
                 <div className="space-y-2">
                   <Label className="text-sm font-medium">Default AR Model <span className="text-muted-foreground font-normal text-xs">(.glb / .gltf)</span></Label>
