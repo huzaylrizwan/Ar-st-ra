@@ -35,6 +35,11 @@ export default function ProductDetails() {
     enabled: !!id,
   });
 
+  const { data: measurements = [] } = useQuery<{id: number; label: string; value: string}[]>({
+    queryKey: [`/api/products/${id}/measurements`],
+    enabled: !!id,
+  });
+
   const defaultModel = productModels.find(m => m.isDefault) ?? productModels[0];
   const defaultMaterial = productMaterials.find(m => m.isDefault && (!m.modelId || m.modelId === defaultModel?.id));
 
@@ -256,6 +261,48 @@ export default function ProductDetails() {
               </div>
             )}
 
+            {/* Flexible Specs */}
+            {Array.isArray(product.specs) && product.specs.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs uppercase tracking-widest" style={{ color: "var(--text-secondary)" }}>
+                  Specifications
+                </p>
+                <div className="rounded-xl overflow-hidden" style={{ border: "1px solid var(--glass-border)" }}>
+                  {(product.specs as Array<{ label: string; value: string }>).map((spec, i) => (
+                    <div
+                      key={i}
+                      className="flex items-start gap-3 px-4 py-2.5 text-sm"
+                      style={{
+                        background: i % 2 === 0 ? "var(--surface-1)" : "var(--surface-2)",
+                        borderBottom: i < (product.specs as any[]).length - 1 ? `1px solid var(--glass-border)` : "none",
+                      }}
+                    >
+                      <span className="w-28 flex-shrink-0 font-medium text-xs uppercase tracking-wide"
+                        style={{ color: "var(--text-secondary)" }}>
+                        {spec.label}
+                      </span>
+                      <span style={{ color: "var(--text-primary)" }}>{spec.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Fallback to measurements if no specs */}
+            {(!Array.isArray(product.specs) || (product.specs as any[]).length === 0) && measurements.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs uppercase tracking-widest" style={{ color: "var(--text-secondary)" }}>Dimensions</p>
+                <div className="flex gap-2 flex-wrap">
+                  {measurements.map((m, i) => (
+                    <div key={i} className="px-3 py-2 glass text-xs" style={{ borderRadius: "var(--radius-input)" }}>
+                      <span style={{ color: "var(--text-secondary)" }}>{m.label}: </span>
+                      <span style={{ color: "var(--text-primary)" }}>{m.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Colors - Compact on mobile */}
             {product.colors && product.colors.length > 0 && (
               <div className="space-y-2 sm:space-y-3">
@@ -357,6 +404,57 @@ export default function ProductDetails() {
             </div>
           </div>
         </div>
+
+        {/* Rich optional sections */}
+        {product.sections && (
+          <div className="space-y-3 mt-12 mb-8">
+            {[
+              { key: "story", label: "The Story" },
+              { key: "care", label: "Care & Maintenance" },
+              { key: "delivery", label: "Delivery Information" },
+            ]
+              .filter(({ key }) => !!(product.sections as any)?.[key])
+              .map(({ key, label }) => (
+                <details
+                  key={key}
+                  className="group glass"
+                  style={{ borderRadius: "var(--radius-card)" }}
+                >
+                  <summary
+                    className="flex items-center justify-between px-6 py-4 cursor-pointer list-none"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    <span className="font-medium" style={{ fontFamily: "var(--font-serif)" }}>{label}</span>
+                    <span className="text-lg group-open:rotate-45 transition-transform duration-200"
+                      style={{ color: "var(--accent)" }}>+</span>
+                  </summary>
+                  <div className="px-6 pb-5 text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                    {(product.sections as any)[key]}
+                  </div>
+                </details>
+              ))}
+
+            {/* Custom sections */}
+            {Array.isArray((product.sections as any)?.custom) &&
+              (product.sections as any).custom.map((section: { title: string; body: string }, i: number) => (
+                <details
+                  key={i}
+                  className="group glass"
+                  style={{ borderRadius: "var(--radius-card)" }}
+                >
+                  <summary className="flex items-center justify-between px-6 py-4 cursor-pointer list-none"
+                    style={{ color: "var(--text-primary)" }}>
+                    <span className="font-medium" style={{ fontFamily: "var(--font-serif)" }}>{section.title}</span>
+                    <span className="text-lg group-open:rotate-45 transition-transform duration-200"
+                      style={{ color: "var(--accent)" }}>+</span>
+                  </summary>
+                  <div className="px-6 pb-5 text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                    {section.body}
+                  </div>
+                </details>
+              ))}
+          </div>
+        )}
       </div>
 
       {/* Full-screen 3D Studio Overlay */}
