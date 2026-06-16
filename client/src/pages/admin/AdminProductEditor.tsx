@@ -91,6 +91,15 @@ export default function AdminProductEditor() {
   type SpecRow = { label: string; value: string };
   const [specs, setSpecs] = useState<SpecRow[]>([]);
 
+  type ProductSections = {
+    story?: string;
+    care?: string;
+    delivery?: string;
+    custom?: Array<{ title: string; body: string }>;
+  };
+
+  const [sections, setSections] = useState<ProductSections>({});
+
   const [pendingModels, setPendingModels] = useState<PendingModel[]>([]);
   const [deletedModelIds, setDeletedModelIds] = useState<number[]>([]);
 
@@ -205,6 +214,12 @@ export default function AdminProductEditor() {
   }, [product?.specs]);
 
   useEffect(() => {
+    if (product?.sections && typeof product.sections === "object") {
+      setSections(product.sections as ProductSections);
+    }
+  }, [product?.sections]);
+
+  useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isDirty) {
         e.preventDefault();
@@ -230,7 +245,7 @@ export default function AdminProductEditor() {
       setIsSavingForm(true);
 
       const priceCents = Math.round(Number(data.price));
-      const payload = { ...data, price: priceCents, categoryId: Number(data.categoryId), specs };
+      const payload = { ...data, price: priceCents, categoryId: Number(data.categoryId), specs, sections };
 
       let savedProduct: Product;
       if (isNew) {
@@ -891,8 +906,87 @@ export default function AdminProductEditor() {
               <AccordionTrigger className="text-sm font-semibold uppercase tracking-widest py-5 hover:no-underline">
                 5 · Rich Content Sections
               </AccordionTrigger>
-              <AccordionContent className="pb-6 space-y-4">
-                <p className="text-sm text-muted-foreground">Coming in next update.</p>
+              <AccordionContent className="pb-6 space-y-6">
+                <div className="space-y-6">
+                  {/* Standard sections */}
+                  {([
+                    { key: "story" as const, label: "The Story", placeholder: "Tell the story behind this piece — its craft, inspiration, or origin..." },
+                    { key: "care" as const, label: "Care & Maintenance", placeholder: "How to care for and maintain this piece..." },
+                    { key: "delivery" as const, label: "Delivery Information", placeholder: "Lead time, delivery areas, installation details..." },
+                  ]).map(({ key, label, placeholder }) => (
+                    <div key={key} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-medium">{label}</Label>
+                        <Switch
+                          checked={sections[key] !== undefined}
+                          onCheckedChange={checked =>
+                            setSections(prev => ({
+                              ...prev,
+                              [key]: checked ? (prev[key] ?? "") : undefined,
+                            }))
+                          }
+                        />
+                      </div>
+                      {sections[key] !== undefined && (
+                        <Textarea
+                          placeholder={placeholder}
+                          value={sections[key] || ""}
+                          onChange={e => setSections(prev => ({ ...prev, [key]: e.target.value }))}
+                          rows={4}
+                        />
+                      )}
+                    </div>
+                  ))}
+
+                  {/* Custom sections */}
+                  <div className="space-y-3">
+                    <Label className="text-xs uppercase tracking-widest text-muted-foreground">Custom Sections</Label>
+                    {sections.custom?.map((section, i) => (
+                      <div key={i} className="glass p-4 space-y-2" style={{ borderRadius: "var(--radius-input)" }}>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Section title"
+                            value={section.title}
+                            onChange={e => setSections(prev => ({
+                              ...prev,
+                              custom: prev.custom?.map((s, j) => j === i ? { ...s, title: e.target.value } : s),
+                            }))}
+                            className="flex-1"
+                          />
+                          <Button
+                            type="button" variant="ghost" size="icon"
+                            className="h-9 w-9 text-destructive hover:text-destructive flex-shrink-0"
+                            onClick={() => setSections(prev => ({
+                              ...prev,
+                              custom: prev.custom?.filter((_, j) => j !== i),
+                            }))}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                        <Textarea
+                          placeholder="Section content..."
+                          value={section.body}
+                          onChange={e => setSections(prev => ({
+                            ...prev,
+                            custom: prev.custom?.map((s, j) => j === i ? { ...s, body: e.target.value } : s),
+                          }))}
+                          rows={3}
+                        />
+                      </div>
+                    ))}
+                    <Button
+                      type="button" variant="outline" size="sm" className="gap-2"
+                      onClick={() => setSections(prev => ({
+                        ...prev,
+                        custom: [...(prev.custom || []), { title: "", body: "" }],
+                      }))}
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Add Custom Section
+                    </Button>
+                  </div>
+                </div>
               </AccordionContent>
             </AccordionItem>
 
