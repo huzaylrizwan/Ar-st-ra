@@ -14,8 +14,10 @@ import { useSettings } from "@/hooks/use-settings";
 import { ProductInquirySheet } from "@/components/ProductInquirySheet";
 import { QRCodeSVG } from "qrcode.react";
 import { useQuery } from "@tanstack/react-query";
-import type { ProductModel, ProductMaterial } from "@shared/schema";
+import type { ProductModel, ProductMaterial, Product } from "@shared/schema";
 import { InlineModelViewer } from "@/components/InlineModelViewer";
+import { ProductCard } from "@/components/ProductCard";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ProductDetails() {
   const [match, params] = useRoute("/products/:id");
@@ -39,6 +41,20 @@ export default function ProductDetails() {
     queryKey: [`/api/products/${id}/measurements`],
     enabled: !!id,
   });
+
+  const { data: relatedProducts = [] } = useQuery<Product[]>({
+    queryKey: ["/api/products", "related", id, product?.categoryId],
+    queryFn: async () => {
+      if (!product?.categoryId) return [];
+      const res = await fetch(`/api/products?categoryId=${product.categoryId}`);
+      if (!res.ok) return [];
+      const all = await res.json();
+      return (all as Product[]).filter((p: Product) => p.id !== id && !p.isHidden).slice(0, 5);
+    },
+    enabled: !!product?.categoryId,
+  });
+
+  const { toast } = useToast();
 
   const defaultModel = productModels.find(m => m.isDefault) ?? productModels[0];
   const defaultMaterial = productMaterials.find(m => m.isDefault && (!m.modelId || m.modelId === defaultModel?.id));
@@ -401,6 +417,33 @@ export default function ProductDetails() {
                   <X className="w-3 h-3 sm:w-4 sm:h-4" /> Currently Unavailable
                 </div>
               )}
+
+              {/* Share button */}
+              <button
+                type="button"
+                onClick={async () => {
+                  const shareData = { title: product.name, url: window.location.href };
+                  if (navigator.share) {
+                    try { await navigator.share(shareData); } catch { /* user cancelled */ }
+                  } else {
+                    try {
+                      await navigator.clipboard.writeText(window.location.href);
+                      toast({ title: "Link copied", description: "Product link copied to clipboard" });
+                    } catch {
+                      toast({ title: "Link copied", description: window.location.href });
+                    }
+                  }
+                }}
+                className="w-full py-3 text-xs uppercase tracking-widest transition-opacity hover:opacity-70"
+                style={{
+                  border: "1px solid var(--glass-border)",
+                  borderRadius: "var(--radius-btn)",
+                  color: "var(--text-secondary)",
+                  background: "var(--surface-1)",
+                }}
+              >
+                Share This Piece
+              </button>
             </div>
           </div>
         </div>
@@ -453,6 +496,23 @@ export default function ProductDetails() {
                   </div>
                 </details>
               ))}
+          </div>
+        )}
+
+        {/* Related products strip */}
+        {relatedProducts.length > 0 && (
+          <div className="mt-16 mb-4">
+            <h3 className="font-medium text-xl mb-6"
+              style={{ fontFamily: "var(--font-serif)", color: "var(--text-primary)" }}>
+              From the same collection
+            </h3>
+            <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2">
+              {relatedProducts.map(p => (
+                <div key={p.id} className="flex-shrink-0 w-[200px] sm:w-[240px]">
+                  <ProductCard product={p} />
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>
