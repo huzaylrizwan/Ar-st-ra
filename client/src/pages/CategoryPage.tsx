@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { Layout } from "@/components/Layout";
 import { useCategories, useCategory } from "@/hooks/use-categories";
 import { useProducts } from "@/hooks/use-products";
@@ -8,8 +8,8 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export default function CategoryPage() {
   const [, setLocation] = useLocation();
-  const searchParams = new URLSearchParams(window.location.search);
-  const categoryId = searchParams.get("id");
+  const rawSearch = useSearch();
+  const categoryId = new URLSearchParams(rawSearch).get("id");
 
   const { data: categories } = useCategories();
   const { data: currentCategory } = useCategory(Number(categoryId) || 0);
@@ -62,6 +62,8 @@ export default function CategoryPage() {
           {/* Category pills */}
           <div className="flex gap-2 overflow-x-auto scrollbar-hide">
             <button
+              type="button"
+              aria-pressed={!categoryId}
               onClick={() => setLocation("/categories")}
               className="px-4 py-1.5 text-xs uppercase tracking-wider whitespace-nowrap transition-all"
               style={{
@@ -75,6 +77,8 @@ export default function CategoryPage() {
             {visibleCategories.map(cat => (
               <button
                 key={cat.id}
+                type="button"
+                aria-pressed={Number(categoryId) === cat.id}
                 onClick={() => setLocation(`/categories?id=${cat.id}`)}
                 className="px-4 py-1.5 text-xs uppercase tracking-wider whitespace-nowrap transition-all"
                 style={{
@@ -93,9 +97,9 @@ export default function CategoryPage() {
       {/* Masonry product grid */}
       <div className="container mx-auto px-4 sm:px-6 pb-16">
         {isLoading ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-[200px] md:auto-rows-[240px]">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="aspect-square skeleton-shimmer" style={{ borderRadius: "var(--radius-card)" }} />
+              <div key={i} className="h-full skeleton-shimmer" style={{ borderRadius: "var(--radius-card)" }} />
             ))}
           </div>
         ) : filteredProducts.length === 0 ? (
@@ -103,8 +107,8 @@ export default function CategoryPage() {
             <p className="text-sm" style={{ color: "var(--text-secondary)" }}>No products match your search.</p>
           </div>
         ) : (
-          <motion.div layout className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <AnimatePresence>
+          <motion.div layout className="grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-[200px] md:auto-rows-[240px]">
+            <AnimatePresence mode="popLayout">
               {filteredProducts.map((product, i) => (
                 <motion.div
                   key={product.id}
@@ -113,7 +117,7 @@ export default function CategoryPage() {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.96 }}
                   transition={{ duration: 0.25 }}
-                  className={i % 7 === 0 ? "row-span-2" : i % 7 === 3 ? "md:col-span-2" : ""}
+                  className={`h-full ${i % 7 === 0 ? "row-span-2" : i % 7 === 3 ? "md:col-span-2" : ""}`}
                 >
                   <ProductCard product={product} featured={i % 7 === 0} />
                 </motion.div>
