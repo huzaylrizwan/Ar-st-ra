@@ -8,29 +8,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
-function AutoTextarea({ value, onChange, className, placeholder, ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  const ref = useRef<HTMLTextAreaElement>(null);
-  const adjust = () => {
-    const el = ref.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = el.scrollHeight + "px";
-  };
-  useEffect(adjust, [value]);
-  return (
-    <textarea
-      ref={ref}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      onInput={adjust}
-      className={`w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none overflow-hidden min-h-[80px] ${className ?? ""}`}
-      style={{ boxSizing: "border-box" }}
-      {...props}
-    />
-  );
-}
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -55,6 +32,33 @@ import { apiRequest, fetchWithCsrf, queryClient as globalQueryClient } from "@/l
 import { DndContext, closestCenter, type DragEndEvent, useSensors, useSensor, PointerSensor } from "@dnd-kit/core";
 import { SortableContext, useSortable, arrayMove, horizontalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+
+const AutoTextarea = React.forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>(
+  ({ className, onInput, ...props }, forwardedRef) => {
+    const internalRef = useRef<HTMLTextAreaElement>(null);
+    const setRef = (el: HTMLTextAreaElement | null) => {
+      (internalRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = el;
+      if (typeof forwardedRef === "function") forwardedRef(el);
+      else if (forwardedRef) (forwardedRef as React.MutableRefObject<HTMLTextAreaElement | null>).current = el;
+    };
+    const adjust = () => {
+      const el = internalRef.current;
+      if (!el) return;
+      el.style.height = "auto";
+      el.style.height = el.scrollHeight + "px";
+    };
+    useEffect(adjust);
+    return (
+      <textarea
+        ref={setRef}
+        onInput={(e) => { adjust(); onInput?.(e); }}
+        className={`w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none overflow-hidden min-h-[80px] ${className ?? ""}`}
+        style={{ boxSizing: "border-box" }}
+        {...props}
+      />
+    );
+  }
+);
 
 interface PendingMaterial {
   tempId: string;
@@ -954,7 +958,7 @@ export default function AdminProductEditor() {
                         <AutoTextarea
                           placeholder={placeholder}
                           value={sections[key] || ""}
-                          onChange={e => setSections(prev => ({ ...prev, [key]: (e.target as HTMLTextAreaElement).value }))}
+                          onChange={e => setSections(prev => ({ ...prev, [key]: e.target.value }))}
                         />
                       )}
                     </div>
@@ -991,7 +995,7 @@ export default function AdminProductEditor() {
                           value={section.body}
                           onChange={e => setSections(prev => ({
                             ...prev,
-                            custom: prev.custom?.map((s, j) => j === i ? { ...s, body: (e.target as HTMLTextAreaElement).value } : s),
+                            custom: prev.custom?.map((s, j) => j === i ? { ...s, body: e.target.value } : s),
                           }))}
                         />
                       </div>
