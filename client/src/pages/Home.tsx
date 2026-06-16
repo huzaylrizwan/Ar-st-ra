@@ -2,7 +2,7 @@ import { Layout } from "@/components/Layout";
 import { useCategories } from "@/hooks/use-categories";
 import { useProducts } from "@/hooks/use-products";
 import { useSettings } from "@/hooks/use-settings";
-import { ProductCard } from "@/components/ProductCard";
+import { ProductCard, ProductCardSkeleton } from "@/components/ProductCard";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
@@ -178,7 +178,7 @@ function HeroSection({ heroImages, settings }: { heroImages: HeroImage[], settin
 
 export default function Home() {
   const { data: categories } = useCategories();
-  const { data: featuredProducts } = useProducts();
+  const { data: featuredProducts, isLoading: isLoadingProducts } = useProducts();
   const { data: settings } = useSettings();
   const [showARTutorial, setShowARTutorial] = useState(false);
 
@@ -249,7 +249,7 @@ export default function Home() {
       )}
 
       {/* New Arrivals horizontal strip */}
-      {visibleProducts.length > 0 && showNewArrivals && (
+      {(isLoadingProducts || visibleProducts.length > 0) && showNewArrivals && (
         <RevealOnScroll>
           <section className="py-16 sm:py-20">
             <div className="container mx-auto px-4 sm:px-6 mb-8">
@@ -267,11 +267,19 @@ export default function Home() {
               </div>
             </div>
             <div className="flex gap-5 overflow-x-auto scrollbar-hide px-4 sm:px-6 pb-4">
-              {visibleProducts.slice(0, 8).map(product => (
-                <div key={product.id} className="flex-shrink-0 w-[240px] sm:w-[280px]">
-                  <ProductCard product={product} featured />
-                </div>
-              ))}
+              {isLoadingProducts ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex-shrink-0 w-[240px] sm:w-[280px]">
+                    <ProductCardSkeleton featured />
+                  </div>
+                ))
+              ) : (
+                visibleProducts.slice(0, 8).map(product => (
+                  <div key={product.id} className="flex-shrink-0 w-[240px] sm:w-[280px]">
+                    <ProductCard product={product} featured />
+                  </div>
+                ))
+              )}
             </div>
           </section>
         </RevealOnScroll>
