@@ -14,7 +14,7 @@ interface ProductCardProps {
 export function ProductCard({ product, featured = false }: ProductCardProps) {
   const { data: settings } = useSettings();
   const currencySymbol = settings?.currencySymbol ?? "$";
-  const mainImage = product.images?.[0] || "https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&q=80";
+  const mainImage = product.images?.[0] || "";
 
   const hasModel = false; // will be enhanced in Plan 3 with productModels check
 
@@ -24,7 +24,7 @@ export function ProductCard({ product, featured = false }: ProductCardProps) {
         className="relative overflow-hidden"
         style={{
           borderRadius: "var(--radius-card)",
-          background: "var(--surface-1)",
+          background: "var(--product-stage)",
           boxShadow: "var(--shadow-card)",
           aspectRatio: featured ? "3/4" : "1/1",
         }}
@@ -34,15 +34,18 @@ export function ProductCard({ product, featured = false }: ProductCardProps) {
           transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
         }}
       >
-        {/* Image */}
-        <img
-          src={mainImage}
-          alt={product.name}
-          loading="lazy"
-          decoding="async"
-          className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-          style={{ position: "absolute", inset: 0 }}
-        />
+        {/* Stage + product image */}
+        <div className="absolute inset-0 flex items-center justify-center p-6">
+          {mainImage && (
+            <img
+              src={mainImage}
+              alt={product.name}
+              loading="lazy"
+              decoding="async"
+              className="w-full h-full object-contain transition-transform duration-500 ease-out group-hover:scale-[1.04]"
+            />
+          )}
+        </div>
 
         {/* Top badges */}
         <div className="absolute top-3 left-3 flex gap-2 z-10">

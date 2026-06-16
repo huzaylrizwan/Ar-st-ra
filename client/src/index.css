@@ -26,6 +26,7 @@
   --shadow-card:     0 4px 24px rgba(0,0,0,0.4);
   --shadow-glow:     0 0 40px rgba(201,169,110,0.2), 0 8px 32px rgba(0,0,0,0.5);
   --nav-bg:          rgba(10,10,15,0.85);
+  --product-stage:   #0e0e12;
   --font-display:    'Cormorant Garamond', serif;
   --font-serif:      'Playfair Display', serif;
   --font-sans:       'Inter', sans-serif;
@@ -73,6 +74,7 @@
   --shadow-card:     0 4px 24px rgba(0,0,0,0.08);
   --shadow-glow:     0 0 40px rgba(139,111,78,0.15), 0 8px 32px rgba(0,0,0,0.1);
   --nav-bg:          rgba(250,249,245,0.88);
+  --product-stage:   #ede8df;
   --font-display:    'Cormorant Garamond', serif;
   --font-serif:      'Playfair Display', serif;
   --font-sans:       'Inter', sans-serif;
@@ -120,6 +122,7 @@
   --shadow-card:     0 4px 24px rgba(0,0,0,0.5);
   --shadow-glow:     0 0 40px rgba(232,168,124,0.2), 0 8px 32px rgba(0,0,0,0.6);
   --nav-bg:          rgba(26,16,8,0.88);
+  --product-stage:   #130b02;
   --font-display:    'Cormorant Garamond', serif;
   --font-serif:      'Playfair Display', serif;
   --font-sans:       'Inter', sans-serif;
