@@ -84,7 +84,10 @@ export function useUpdateProduct() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      if (!res.ok) throw new Error("Failed to update product");
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body?.message || `Server error ${res.status}`);
+      }
       return api.products.update.responses[200].parse(await res.json());
     },
     onSuccess: () => {

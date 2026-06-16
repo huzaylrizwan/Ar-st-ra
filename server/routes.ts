@@ -238,9 +238,14 @@ export async function registerRoutes(
   });
 
   app.put(api.products.update.path, requireAdmin, validateCsrf, async (req, res) => {
-    const input = api.products.update.input.parse(req.body);
-    const product = await storage.updateProduct(Number(req.params.id), input);
-    res.json(product);
+    try {
+      const input = api.products.update.input.parse(req.body);
+      const product = await storage.updateProduct(Number(req.params.id), input);
+      res.json(product);
+    } catch (err: any) {
+      logger.error({ err, body: req.body }, "product update failed");
+      res.status(400).json({ message: err?.message ?? "Update failed", issues: err?.issues });
+    }
   });
 
   app.delete(api.products.delete.path, requireAdmin, validateCsrf, async (req, res) => {
