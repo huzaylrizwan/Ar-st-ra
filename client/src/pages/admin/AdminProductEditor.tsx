@@ -488,6 +488,14 @@ export default function AdminProductEditor() {
   const isLoadingPage = !isNew && (productLoading || !isDataLoaded);
   const isSaving = isSavingForm || createMutation.isPending || updateMutation.isPending;
 
+  const images = form.watch("images") || [];
+  const arLink = form.watch("arLink");
+  const isHidden = form.watch("isHidden");
+
+  const imageDndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
+
   if (isLoadingPage) {
     return (
       <AdminLayout>
@@ -500,14 +508,6 @@ export default function AdminProductEditor() {
       </AdminLayout>
     );
   }
-
-  const images = form.watch("images") || [];
-  const arLink = form.watch("arLink");
-  const isHidden = form.watch("isHidden");
-
-  const imageDndSensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
-  );
 
   const handleImageDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;

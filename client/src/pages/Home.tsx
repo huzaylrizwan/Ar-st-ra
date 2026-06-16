@@ -47,14 +47,14 @@ function MagazineCategoryGrid({ categories }: { categories: Category[] }) {
           {visible.map((cat, i) => (
             <Link key={cat.id} href={`/categories?id=${cat.id}`}
               className={`group relative overflow-hidden block ${i === 0 ? "row-span-2" : ""} ${i === 3 ? "md:col-span-2" : ""}`}
-              style={{ borderRadius: "var(--radius-card)" }}
+              style={{ borderRadius: "var(--radius-card)", background: "var(--surface-1)" }}
             >
               <img
                 src={cat.imageUrl}
                 alt={cat.name}
                 loading="lazy"
                 decoding="async"
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                className="w-full h-full object-contain transition-transform duration-700 group-hover:scale-105"
               />
               {/* Glass label */}
               <div className="absolute bottom-0 left-0 right-0 p-4 glass"

@@ -107,9 +107,12 @@ export default function CategoryPage() {
             <p className="text-sm" style={{ color: "var(--text-secondary)" }}>No products match your search.</p>
           </div>
         ) : (
-          <motion.div layout className="grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-[200px] md:auto-rows-[240px]">
+          <motion.div layout className={`grid grid-cols-2 md:grid-cols-3 gap-4 ${filteredProducts.length >= 7 ? "auto-rows-[200px] md:auto-rows-[240px]" : ""}`}>
             <AnimatePresence mode="popLayout">
-              {filteredProducts.map((product, i) => (
+              {filteredProducts.map((product, i) => {
+                const useMasonry = filteredProducts.length >= 7;
+                const spanClass = useMasonry && i % 7 === 0 ? "row-span-2" : useMasonry && i % 7 === 3 ? "md:col-span-2" : "";
+                return (
                 <motion.div
                   key={product.id}
                   layout
@@ -117,11 +120,13 @@ export default function CategoryPage() {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.96 }}
                   transition={{ duration: 0.25 }}
-                  className={`h-full [&>a]:h-full [&>a>div]:h-full ${i % 7 === 0 ? "row-span-2" : i % 7 === 3 ? "md:col-span-2" : ""}`}
+                  className={`h-full [&>a]:h-full [&>a>div]:h-full ${spanClass}`}
+                  style={!useMasonry ? { aspectRatio: "1/1" } : undefined}
                 >
-                  <ProductCard product={product} featured={i % 7 === 0} />
+                  <ProductCard product={product} featured={useMasonry && i % 7 === 0} />
                 </motion.div>
-              ))}
+                );
+              })}
             </AnimatePresence>
           </motion.div>
         )}
