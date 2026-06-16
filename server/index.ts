@@ -74,6 +74,11 @@ async function ensureSchema() {
 
 (async () => {
   await ensureSchema();
+  try {
+    execSync("npm run db:migrate", { stdio: "inherit", env: process.env, cwd: process.cwd() });
+  } catch (err: any) {
+    log("Migration warning: " + (err?.message || "unknown error"));
+  }
   await registerRoutes(httpServer, app);
 
   const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;

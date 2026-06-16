@@ -9,6 +9,7 @@
     "start": "cross-env NODE_ENV=production node dist/index.cjs",
     "check": "tsc",
     "db:push": "drizzle-kit push",
+    "db:migrate": "tsx scripts/run-migrations.ts",
     "test": "vitest run --config vitest.config.server.ts --passWithNoTests && vitest run --config vitest.config.client.ts --passWithNoTests",
     "test:server": "vitest run --config vitest.config.server.ts --passWithNoTests",
     "test:client": "vitest run --config vitest.config.client.ts --passWithNoTests",
