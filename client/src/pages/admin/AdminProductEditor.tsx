@@ -291,6 +291,30 @@ export default function AdminProductEditor() {
     }
   };
 
+  const saveSection = async (patch: Record<string, unknown>) => {
+    try {
+      setIsSavingForm(true);
+      const v = form.getValues();
+      if (isNew) {
+        const catId = Number(v.categoryId);
+        if (!v.name || !catId) {
+          toast({ title: "Required", description: "Fill in name and category first.", variant: "destructive" });
+          return;
+        }
+        const priceCents = Math.round((parseFloat(priceDisplay) || 0) * 100);
+        const payload = { ...v, price: priceCents, categoryId: catId, specs, sections, ...patch };
+        const saved = await createMutation.mutateAsync(payload);
+        navigate(`/admin/products/${saved.id}`, { replace: true });
+      } else {
+        await updateMutation.mutateAsync({ id: productId!, ...patch });
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSavingForm(false);
+    }
+  };
+
   const removeImage = (index: number) => {
     const currentImages = form.getValues("images") || [];
     const newImages = [...currentImages];
@@ -662,6 +686,14 @@ export default function AdminProductEditor() {
                     data-testid="switch-hide-product"
                   />
                 </div>
+                <div className="pt-2 flex justify-end">
+                  <Button type="button" disabled={isSaving} onClick={() => {
+                    const v = form.getValues();
+                    saveSection({ name: v.name, description: v.description, categoryId: Number(v.categoryId), arLink: v.arLink, colors: v.colors, sizes: v.sizes, isHidden: v.isHidden });
+                  }}>
+                    {isSaving ? "Saving…" : "Save Basic Info"}
+                  </Button>
+                </div>
               </AccordionContent>
             </AccordionItem>
 
@@ -699,6 +731,11 @@ export default function AdminProductEditor() {
                       </div>
                     </SortableContext>
                   </DndContext>
+                </div>
+                <div className="pt-2 flex justify-end">
+                  <Button type="button" disabled={isSaving} onClick={() => saveSection({ images: form.getValues("images") })}>
+                    {isSaving ? "Saving…" : "Save Images"}
+                  </Button>
                 </div>
               </AccordionContent>
             </AccordionItem>
@@ -925,6 +962,11 @@ export default function AdminProductEditor() {
                     <Plus className="w-4 h-4" /> Add Measurement
                   </Button>
                 </div>
+                <div className="pt-2 flex justify-end">
+                  <Button type="button" disabled={isSaving} onClick={() => saveSection({ specs })}>
+                    {isSaving ? "Saving…" : "Save Specs"}
+                  </Button>
+                </div>
               </AccordionContent>
             </AccordionItem>
 
@@ -1012,6 +1054,11 @@ export default function AdminProductEditor() {
                     </Button>
                   </div>
                 </div>
+                <div className="pt-2 flex justify-end">
+                  <Button type="button" disabled={isSaving} onClick={() => saveSection({ sections })}>
+                    {isSaving ? "Saving…" : "Save Content"}
+                  </Button>
+                </div>
               </AccordionContent>
             </AccordionItem>
 
@@ -1061,6 +1108,15 @@ export default function AdminProductEditor() {
                       <SelectItem value="out_of_stock">Out of Stock</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="pt-2 flex justify-end">
+                  <Button type="button" disabled={isSaving} onClick={() => {
+                    const priceCents = Math.round((parseFloat(priceDisplay) || 0) * 100);
+                    form.setValue("price", priceCents, { shouldDirty: true });
+                    saveSection({ price: priceCents, stockStatus: form.getValues("stockStatus") });
+                  }}>
+                    {isSaving ? "Saving…" : "Save Pricing"}
+                  </Button>
                 </div>
               </AccordionContent>
             </AccordionItem>
