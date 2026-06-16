@@ -117,7 +117,7 @@ export default function CategoryPage() {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.96 }}
                   transition={{ duration: 0.25 }}
-                  className={`h-full ${i % 7 === 0 ? "row-span-2" : i % 7 === 3 ? "md:col-span-2" : ""}`}
+                  className={`h-full [&>a]:h-full [&>a>div]:h-full ${i % 7 === 0 ? "row-span-2" : i % 7 === 3 ? "md:col-span-2" : ""}`}
                 >
                   <ProductCard product={product} featured={i % 7 === 0} />
                 </motion.div>

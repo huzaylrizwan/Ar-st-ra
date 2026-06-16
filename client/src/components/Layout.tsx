@@ -273,7 +273,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </div>
               <div className="flex flex-col gap-3">
                 {categories?.filter(c => !c.isHidden).slice(0, 6).map(cat => (
-                  <Link key={cat.id} href={`/categories?filter=${cat.slug}`}
+                  <Link key={cat.id} href={`/categories?id=${cat.id}`}
                     className="text-sm transition-colors hover:opacity-100"
                     style={{ color: "rgba(255,255,255,0.45)" }}>
                     {cat.name}
