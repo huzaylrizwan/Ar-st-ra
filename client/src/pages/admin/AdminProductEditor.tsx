@@ -29,7 +29,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { insertProductSchema, type InsertProduct, type Product, type ProductMaterial, type ProductModel, type ProductMeasurement } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, fetchWithCsrf, queryClient as globalQueryClient } from "@/lib/queryClient";
-import { generateModelPoster } from "@/lib/generateModelPoster";
 import { DndContext, closestCenter, type DragEndEvent, useSensors, useSensor, PointerSensor } from "@dnd-kit/core";
 import { SortableContext, useSortable, arrayMove, horizontalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -129,7 +128,6 @@ export default function AdminProductEditor() {
 
   const [pendingModels, setPendingModels] = useState<PendingModel[]>([]);
   const [deletedModelIds, setDeletedModelIds] = useState<number[]>([]);
-  const [generatingPosters, setGeneratingPosters] = useState<Set<string>>(new Set());
 
   const [isDataLoaded, setIsDataLoaded] = useState(() => isNew);
   const [isSavingForm, setIsSavingForm] = useState(false);
@@ -378,30 +376,6 @@ export default function AdminProductEditor() {
 
   const updateModelField = (tempId: string, field: keyof PendingModel, value: string | boolean) => {
     setPendingModels((prev) => prev.map((m) => m.tempId === tempId ? { ...m, [field]: value } : m));
-  };
-
-  const handleGlbUpload = async (tempId: string, modelUrl: string) => {
-    updateModelField(tempId, "modelUrl", modelUrl);
-    setGeneratingPosters((prev) => new Set(prev).add(tempId));
-    toast({ title: "Generating preview…", description: "Rendering 3D model poster" });
-
-    const posterUrl = await generateModelPoster(modelUrl);
-
-    setGeneratingPosters((prev) => { const s = new Set(prev); s.delete(tempId); return s; });
-
-    if (!posterUrl) {
-      toast({ title: "Preview failed", description: "Could not render poster from model", variant: "destructive" });
-      return;
-    }
-
-    updateModelField(tempId, "thumbnailUrl", posterUrl);
-
-    const currentImages = form.getValues("images") || [];
-    if (!currentImages.includes(posterUrl)) {
-      form.setValue("images", [posterUrl, ...currentImages], { shouldDirty: true });
-    }
-
-    toast({ title: "Preview ready", description: "Poster saved and added to product images" });
   };
 
   const setModelDefault = (tempId: string) => {
@@ -812,11 +786,9 @@ export default function AdminProductEditor() {
                           <ModelCard
                             key={mod.tempId}
                             mod={mod}
-                            isGeneratingPoster={generatingPosters.has(mod.tempId)}
                             onToggleExpand={() => toggleModelExpanded(mod.tempId)}
                             onSetDefault={() => setModelDefault(mod.tempId)}
                             onUpdateField={(field, value) => updateModelField(mod.tempId, field, value)}
-                            onGlbUpload={(url) => handleGlbUpload(mod.tempId, url)}
                             onRemove={() => removeModelRow(mod.tempId)}
                             onAddMaterial={() => addMaterialToModel(mod.tempId)}
                             onRemoveMaterial={(matTempId) => removeMaterialFromModel(mod.tempId, matTempId)}
@@ -1177,11 +1149,9 @@ export default function AdminProductEditor() {
 
 interface ModelCardProps {
   mod: PendingModel;
-  isGeneratingPoster?: boolean;
   onToggleExpand: () => void;
   onSetDefault: () => void;
   onUpdateField: (field: keyof PendingModel, value: string | boolean) => void;
-  onGlbUpload: (url: string) => void;
   onRemove: () => void;
   onAddMaterial: () => void;
   onRemoveMaterial: (matTempId: string) => void;
@@ -1191,11 +1161,9 @@ interface ModelCardProps {
 
 function ModelCard({
   mod,
-  isGeneratingPoster = false,
   onToggleExpand,
   onSetDefault,
   onUpdateField,
-  onGlbUpload,
   onRemove,
   onAddMaterial,
   onRemoveMaterial,
@@ -1217,12 +1185,8 @@ function ModelCard({
           {mod.isDefault && <Check className="w-3 h-3" />}
         </button>
 
-        {isGeneratingPoster ? (
-          <div className="w-12 h-12 rounded-lg border border-border flex items-center justify-center shrink-0 bg-muted">
-            <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" />
-          </div>
-        ) : mod.thumbnailUrl ? (
-          <img src={mod.thumbnailUrl} alt="thumbnail" className="w-12 h-12 object-contain rounded-lg border border-border shrink-0" style={{ background: "var(--product-stage)" }} />
+        {mod.thumbnailUrl ? (
+          <img src={mod.thumbnailUrl} alt="thumbnail" className="w-12 h-12 object-cover rounded-lg border border-border shrink-0" />
         ) : (
           <div className="w-12 h-12 rounded-lg border-2 border-dashed border-border flex items-center justify-center shrink-0">
             <Box className="w-5 h-5 text-muted-foreground" />
@@ -1253,7 +1217,7 @@ function ModelCard({
           <ImageUploader
             accept=".glb,.gltf"
             className="h-8 text-xs px-2"
-            onUpload={(url) => onGlbUpload(url)}
+            onUpload={(url) => onUpdateField("modelUrl", url)}
           >
             <span data-testid={`button-upload-model-glb-${mod.tempId}`} className="flex items-center gap-1">
               <Upload className="w-3 h-3" />
