@@ -7,8 +7,30 @@ import { useSettings } from "@/hooks/use-settings";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+
+function AutoTextarea({ value, onChange, className, placeholder, ...props }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  const adjust = () => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = el.scrollHeight + "px";
+  };
+  useEffect(adjust, [value]);
+  return (
+    <textarea
+      ref={ref}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      onInput={adjust}
+      className={`w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none overflow-hidden min-h-[80px] ${className ?? ""}`}
+      style={{ boxSizing: "border-box" }}
+      {...props}
+    />
+  );
+}
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -105,6 +127,7 @@ export default function AdminProductEditor() {
 
   const [isDataLoaded, setIsDataLoaded] = useState(() => isNew);
   const [isSavingForm, setIsSavingForm] = useState(false);
+  const [priceDisplay, setPriceDisplay] = useState("");
   const [arLinkStatus, setArLinkStatus] = useState<{ valid: boolean; message: string } | null>(null);
   const [isValidatingArLink, setIsValidatingArLink] = useState(false);
 
@@ -150,6 +173,7 @@ export default function AdminProductEditor() {
     if (isNew || isDataLoaded) return;
     if (!product) return;
 
+    setPriceDisplay(product.price ? (product.price / 100).toString() : "");
     form.reset({
         name: product.name,
         description: product.description,
@@ -613,12 +637,11 @@ export default function AdminProductEditor() {
 
                 <div className="space-y-2">
                   <Label htmlFor="description" className="text-sm font-medium">Description</Label>
-                  <Textarea
+                  <AutoTextarea
                     id="description"
                     {...form.register("description")}
                     placeholder="Describe this product..."
-                    rows={4}
-                    className={`resize-y ${form.formState.errors.description ? "border-destructive" : ""}`}
+                    className={form.formState.errors.description ? "border-destructive" : ""}
                     data-testid="textarea-description"
                   />
                 </div>
@@ -928,11 +951,10 @@ export default function AdminProductEditor() {
                         />
                       </div>
                       {sections[key] !== undefined && (
-                        <Textarea
+                        <AutoTextarea
                           placeholder={placeholder}
                           value={sections[key] || ""}
-                          onChange={e => setSections(prev => ({ ...prev, [key]: e.target.value }))}
-                          rows={4}
+                          onChange={e => setSections(prev => ({ ...prev, [key]: (e.target as HTMLTextAreaElement).value }))}
                         />
                       )}
                     </div>
@@ -964,14 +986,13 @@ export default function AdminProductEditor() {
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
-                        <Textarea
+                        <AutoTextarea
                           placeholder="Section content..."
                           value={section.body}
                           onChange={e => setSections(prev => ({
                             ...prev,
-                            custom: prev.custom?.map((s, j) => j === i ? { ...s, body: e.target.value } : s),
+                            custom: prev.custom?.map((s, j) => j === i ? { ...s, body: (e.target as HTMLTextAreaElement).value } : s),
                           }))}
-                          rows={3}
                         />
                       </div>
                     ))}
@@ -1004,20 +1025,21 @@ export default function AdminProductEditor() {
                     </span>
                     <Input
                       id="price"
-                      type="number"
-                      step="0.01"
-                      min="0"
+                      type="text"
+                      inputMode="decimal"
                       placeholder="0.00"
-                      value={form.watch("price") ? (form.watch("price") / 100).toFixed(2) : ""}
-                      onChange={(e) => {
-                        const dollars = parseFloat(e.target.value) || 0;
+                      value={priceDisplay}
+                      onChange={(e) => setPriceDisplay(e.target.value)}
+                      onBlur={() => {
+                        const dollars = parseFloat(priceDisplay) || 0;
                         form.setValue("price", Math.round(dollars * 100), { shouldDirty: true });
+                        setPriceDisplay(dollars ? String(dollars) : "");
                       }}
                       className={`rounded-l-none h-10 ${form.formState.errors.price ? "border-destructive" : ""}`}
                       data-testid="input-price"
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">Enter price in dollars (stored as cents)</p>
+                  <p className="text-xs text-muted-foreground">Type the price in dollars — e.g. 1500</p>
                 </div>
 
                 <div className="space-y-2">
