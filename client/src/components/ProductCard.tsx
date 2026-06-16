@@ -91,7 +91,7 @@ export function ProductCard({ product, featured = false }: ProductCardProps) {
 
 export function ProductCardSkeleton({ featured = false }: { featured?: boolean }) {
   return (
-    <div style={{ borderRadius: "var(--radius-card)", overflow: "hidden", aspectRatio: featured ? "3/4" : "1/1" }}>
+    <div aria-hidden="true" style={{ borderRadius: "var(--radius-card)", overflow: "hidden", aspectRatio: featured ? "3/4" : "1/1" }}>
       <Skeleton className="w-full h-full" />
     </div>
   );

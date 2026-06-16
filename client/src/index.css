@@ -228,6 +228,10 @@
   animation: shimmer 1.4s infinite linear;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-shimmer { animation: none; }
+}
+
 @keyframes marquee {
   0%   { transform: translateX(0); }
   100% { transform: translateX(-50%); }
