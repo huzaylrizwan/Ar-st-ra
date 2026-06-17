@@ -24,13 +24,26 @@ export function InlineModelViewer({
   const viewerRef = useRef<any>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Issue 1 fix: use addEventListener instead of onLoad prop (custom elements don't fire React synthetic events)
+  const [loadError, setLoadError] = useState(false);
+
   useEffect(() => {
     const viewer = viewerRef.current;
     if (!viewer) return;
-    const handleLoad = () => setIsLoaded(true);
+
+    // If the model is already loaded (race condition: cached model fires 'load' before effect runs)
+    if ((viewer as any).loaded || (viewer as any).model) {
+      setIsLoaded(true);
+      return;
+    }
+
+    const handleLoad = () => { setIsLoaded(true); setLoadError(false); };
+    const handleError = () => { setIsLoaded(true); setLoadError(true); };
     viewer.addEventListener("load", handleLoad);
-    return () => viewer.removeEventListener("load", handleLoad);
+    viewer.addEventListener("error", handleError);
+    return () => {
+      viewer.removeEventListener("load", handleLoad);
+      viewer.removeEventListener("error", handleError);
+    };
   }, []);
 
   // Apply material when viewer loads or activeMaterialId changes
@@ -92,15 +105,33 @@ export function InlineModelViewer({
       className={className}
       style={{ position: "relative", borderRadius: "var(--radius-card)", overflow: "hidden" }}
     >
-      {/* Loading overlay */}
-      {!isLoaded && (
+      {/* Loading / error overlay */}
+      {(!isLoaded || loadError) && (
         <div
-          className="absolute inset-0 skeleton-shimmer flex items-center justify-center z-10"
-          style={{ borderRadius: "var(--radius-card)" }}
+          className="absolute inset-0 flex items-center justify-center z-10"
+          style={{
+            borderRadius: "var(--radius-card)",
+            background: loadError ? "var(--surface-1)" : undefined,
+          }}
         >
-          <div className="text-xs uppercase tracking-widest" style={{ color: "var(--text-secondary)" }}>
-            Loading 3D Model…
-          </div>
+          {loadError ? (
+            <div className="text-center px-4 space-y-1">
+              <div className="text-xs uppercase tracking-widest" style={{ color: "var(--text-secondary)" }}>
+                3D model unavailable
+              </div>
+              <div className="text-[10px]" style={{ color: "var(--text-secondary)", opacity: 0.6 }}>
+                Re-upload the model file in admin
+              </div>
+            </div>
+          ) : (
+            <div className="skeleton-shimmer absolute inset-0" style={{ borderRadius: "var(--radius-card)" }}>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-xs uppercase tracking-widest" style={{ color: "var(--text-secondary)" }}>
+                  Loading 3D Model…
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

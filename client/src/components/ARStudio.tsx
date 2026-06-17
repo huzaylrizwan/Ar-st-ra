@@ -370,6 +370,11 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
     const mv = modelViewerRef.current;
     if (!mv) return;
 
+    const handleModelError = () => {
+      setModelLoaded(true); // unblock UI
+      setIsSwappingModel(false);
+    };
+
     const handleLoad = async () => {
       setModelLoaded(true);
       setIsSwappingModel(false);
@@ -416,9 +421,11 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
 
     mv.addEventListener("load", handleLoad);
     mv.addEventListener("progress", handleProgress);
+    mv.addEventListener("error", handleModelError);
     return () => {
       mv.removeEventListener("load", handleLoad);
       mv.removeEventListener("progress", handleProgress);
+      mv.removeEventListener("error", handleModelError);
     };
   }, [captureOriginalMaterial, applyTextureOrColor, updateModelSrc]);
 
