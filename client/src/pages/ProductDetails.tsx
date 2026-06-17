@@ -161,14 +161,76 @@ export default function ProductDetails() {
                 </div>
 
                 {activeTab === "3D Model" ? (
-                  <div style={{ aspectRatio: "4/5", minHeight: 320 }}>
-                    <InlineModelViewer
-                      modelUrl={defaultModel.modelUrl}
-                      materials={productMaterials.filter(m => !m.modelId || m.modelId === defaultModel.id)}
-                      activeMaterialId={activeMaterialId}
-                      className="w-full h-full"
-                    />
-                  </div>
+                  <>
+                    <div style={{ aspectRatio: "4/5", minHeight: 320 }}>
+                      <InlineModelViewer
+                        modelUrl={defaultModel.modelUrl}
+                        materials={productMaterials.filter(m => !m.modelId || m.modelId === defaultModel.id)}
+                        activeMaterialId={activeMaterialId}
+                        className="w-full h-full"
+                      />
+                    </div>
+
+                    {/* Luxury material swatches — directly under 3D viewer */}
+                    {productMaterials.filter(m => !m.modelId || m.modelId === defaultModel?.id).length > 0 && (
+                      <div className="space-y-2 pt-1">
+                        <div className="flex items-center gap-3">
+                          <p className="text-[10px] uppercase tracking-[0.15em]" style={{ color: "var(--text-secondary)" }}>Material</p>
+                          <span className="text-[10px] uppercase tracking-wider transition-all duration-200" style={{ color: "var(--accent)" }}>
+                            {productMaterials.find(m => m.id === activeMaterialId)?.colorName ||
+                             productMaterials.find(m => m.id === activeMaterialId)?.name || ""}
+                          </span>
+                        </div>
+                        <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
+                          {productMaterials
+                            .filter(m => !m.modelId || m.modelId === defaultModel?.id)
+                            .map(material => {
+                              const isActive = activeMaterialId === material.id;
+                              return (
+                                <button
+                                  key={material.id}
+                                  type="button"
+                                  onClick={() => setActiveMaterialId(material.id)}
+                                  title={material.colorName || material.name}
+                                  className="flex-shrink-0 flex flex-col items-center gap-1.5 focus:outline-none"
+                                >
+                                  <div style={{
+                                    width: 52, height: 52,
+                                    borderRadius: 12,
+                                    overflow: "hidden",
+                                    background: material.colorHex || "var(--surface-1)",
+                                    border: `2px solid ${isActive ? "var(--accent)" : "var(--glass-border)"}`,
+                                    boxShadow: isActive
+                                      ? `0 0 0 2px var(--accent-glow), 0 4px 16px rgba(0,0,0,0.3)`
+                                      : "0 2px 8px rgba(0,0,0,0.15)",
+                                    transform: isActive ? "scale(1.1)" : "scale(1)",
+                                    transition: "all 0.25s cubic-bezier(0.22, 1, 0.36, 1)",
+                                  }}>
+                                    {material.textureUrl && (
+                                      <img src={material.textureUrl} alt={material.name} className="w-full h-full object-cover" />
+                                    )}
+                                  </div>
+                                  <span style={{
+                                    fontSize: 9,
+                                    letterSpacing: "0.12em",
+                                    textTransform: "uppercase",
+                                    color: isActive ? "var(--accent)" : "var(--text-secondary)",
+                                    fontFamily: "var(--font-sans)",
+                                    transition: "color 0.2s",
+                                    maxWidth: 60,
+                                    textAlign: "center",
+                                    lineHeight: 1.3,
+                                    display: "block",
+                                  }}>
+                                    {material.colorName || material.name}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   /* Photo carousel */
                   <div className="overflow-hidden rounded-2xl sm:rounded-sm bg-muted/20" ref={emblaRef}>
@@ -238,44 +300,6 @@ export default function ProductDetails() {
               <p>{product.description}</p>
             </div>
 
-            {/* Material swatches — shown when 3D model has materials */}
-            {productMaterials.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs uppercase tracking-widest" style={{ color: "var(--text-secondary)" }}>
-                    Material
-                  </span>
-                  <span className="text-xs" style={{ color: "var(--accent)" }}>
-                    {productMaterials.find(m => m.id === activeMaterialId)?.colorName || ""}
-                  </span>
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                  {productMaterials
-                    .filter(m => !m.modelId || m.modelId === defaultModel?.id)
-                    .map(material => {
-                      const isActive = activeMaterialId === material.id;
-                      return (
-                        <button
-                          key={material.id}
-                          type="button"
-                          title={material.colorName || material.name}
-                          onClick={() => setActiveMaterialId(material.id)}
-                          style={{
-                            width: 32, height: 32,
-                            borderRadius: "50%",
-                            background: material.colorHex,
-                            border: `2px solid ${isActive ? "var(--accent)" : "var(--glass-border)"}`,
-                            transform: isActive ? "scale(1.15)" : "scale(1)",
-                            boxShadow: isActive ? `0 0 0 3px var(--accent-glow)` : "none",
-                            transition: "all 0.2s",
-                            flexShrink: 0,
-                          }}
-                        />
-                      );
-                    })}
-                </div>
-              </div>
-            )}
 
             {/* Flexible Specs */}
             {Array.isArray(product.specs) && product.specs.length > 0 && (

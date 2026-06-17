@@ -7,7 +7,10 @@ let _adapter: StorageAdapter | null = null;
 export async function getStorageAdapter(): Promise<StorageAdapter> {
   if (_adapter) return _adapter;
 
-  if (config.STORAGE_PROVIDER === "replit") {
+  if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+    const { CloudinaryAdapter } = await import("./CloudinaryAdapter.js");
+    _adapter = new CloudinaryAdapter();
+  } else if (config.STORAGE_PROVIDER === "replit") {
     const { ReplitStorageAdapter } = await import("./ReplitStorageAdapter.js");
     _adapter = new ReplitStorageAdapter();
   } else {

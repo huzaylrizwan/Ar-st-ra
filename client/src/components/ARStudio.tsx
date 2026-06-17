@@ -35,10 +35,6 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
     staleTime: 1000 * 60 * 5,
   });
 
-  const tab1Label = studioSettings?.arStudioTab1Label ?? "Model";
-  const tab1Icon  = studioSettings?.arStudioTab1Icon ?? "";
-  const tab2Label = studioSettings?.arStudioTab2Label ?? "Materials";
-  const tab2Icon  = studioSettings?.arStudioTab2Icon ?? "";
 
   // Studio appearance — from DB (fall back to 0.65 / #000000)
   const dbSidebarOpacity   = studioSettings?.studioSidebarOpacity   ?? 0.65;
@@ -152,8 +148,6 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
   const [activeMaterialId, setActiveMaterialId] = useState<number | null>(null);
   const [isApplyingTexture, setIsApplyingTexture] = useState(false);
   const [isSwappingModel, setIsSwappingModel] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<"models" | "variants">("models");
   const [modelLoaded, setModelLoaded] = useState(false);
   const [loadProgress, setLoadProgress] = useState(0);
   const [measurementsOpen, setMeasurementsOpen] = useState(false);
@@ -164,15 +158,6 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
     g: parseInt(hex.slice(3, 5), 16),
     b: parseInt(hex.slice(5, 7), 16),
   });
-
-  const dynamicSidebarStyle = (() => {
-    const { r, g, b } = parseRgb(sidebarColor);
-    return {
-      background: `rgba(${r},${g},${b},${sidebarOpacity})`,
-      backdropFilter: "blur(16px)",
-      WebkitBackdropFilter: "blur(16px)",
-    } as const;
-  })();
 
   const dynamicBottomBarStyle = (() => {
     const { r, g, b } = parseRgb(bottomBarColor);
@@ -465,34 +450,7 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
     if (mv && modelLoaded) mv.activateAR();
   };
 
-  const hasMaterials = materials && materials.length > 0;
-  const hasModelConfigs = productModels && productModels.length > 0;
   const hasMeasurements = measurements && measurements.length > 0;
-  const showSidebar = hasModelConfigs;
-
-  const showModelTab    = !!hasModelConfigs;
-  // Materials tab is always visible when there are model configs (shows prompt if no model selected)
-  const showVariantsTab = !!hasModelConfigs;
-
-  const handleTabClick = (tab: "models" | "variants") => {
-    if (!sidebarOpen) {
-      setSidebarOpen(true);
-      setActiveTab(tab);
-    } else if (activeTab === tab) {
-      setSidebarOpen(false);
-    } else {
-      setActiveTab(tab);
-    }
-  };
-
-  const SIDEBAR_W = "min(184px, 42vw)";
-  const TAB_W     = "36px";
-
-  const cardStyle = (active: boolean) => ({
-    borderRadius: "14px",
-    border: active ? "1px solid rgba(202,138,4,0.6)" : "1px solid transparent",
-    boxShadow: active ? "0 0 10px rgba(202,138,4,0.2), 0 0 0 1px rgba(202,138,4,0.15)" : undefined,
-  });
 
   const currencySymbol = studioSettings?.currencySymbol ?? "$";
 
@@ -649,181 +607,6 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
           </div>
         )}
 
-        {/* ─── Two-tab sidebar ─── */}
-        {showSidebar && (
-          <>
-            {/* Tab buttons — stacked vertically on sidebar edge */}
-            <div
-              className="absolute top-1/2 -translate-y-1/2 z-10 flex flex-col transition-all duration-300"
-              style={{ right: sidebarOpen ? SIDEBAR_W : 0 }}
-              data-testid="sidebar-tab-buttons"
-            >
-              {showModelTab && (
-                <button
-                  onClick={() => handleTabClick("models")}
-                  data-testid="button-tab-models"
-                  aria-label={tab1Label}
-                  className="flex flex-col items-center justify-center gap-1 transition-all duration-150 focus:outline-none"
-                  style={{
-                    width: TAB_W,
-                    height: showVariantsTab ? "72px" : "88px",
-                    ...dynamicSidebarStyle,
-                    border: "1px solid rgba(255,255,255,0.12)",
-                    borderRight: "none",
-                    borderBottom: showVariantsTab ? "1px solid rgba(255,255,255,0.06)" : undefined,
-                    borderRadius: showVariantsTab ? "12px 0 0 0" : "12px 0 0 12px",
-                    opacity: sidebarOpen && activeTab === "models" ? 1 : 0.6,
-                    paddingTop: "10px",
-                    paddingBottom: "10px",
-                  }}
-                >
-                  {tab1Icon && <span className="text-base leading-none select-none">{tab1Icon}</span>}
-                  <span
-                    className="text-white font-semibold leading-none select-none"
-                    style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", fontSize: "9px", letterSpacing: "0.12em" }}
-                  >
-                    {tab1Label}
-                  </span>
-                </button>
-              )}
-
-              {showVariantsTab && (
-                <button
-                  onClick={() => handleTabClick("variants")}
-                  data-testid="button-tab-variants"
-                  aria-label={tab2Label}
-                  className="flex flex-col items-center justify-center gap-1 transition-all duration-150 focus:outline-none"
-                  style={{
-                    width: TAB_W,
-                    height: showModelTab ? "72px" : "88px",
-                    ...dynamicSidebarStyle,
-                    border: "1px solid rgba(255,255,255,0.12)",
-                    borderRight: "none",
-                    borderTop: showModelTab ? "none" : undefined,
-                    borderRadius: showModelTab ? "0 0 0 12px" : "12px 0 0 12px",
-                    opacity: sidebarOpen && activeTab === "variants" ? 1 : 0.6,
-                    paddingTop: "10px",
-                    paddingBottom: "10px",
-                  }}
-                >
-                  {tab2Icon && <span className="text-base leading-none select-none">{tab2Icon}</span>}
-                  <span
-                    className="text-white font-semibold leading-none select-none"
-                    style={{ writingMode: "vertical-rl", transform: "rotate(180deg)", fontSize: "9px", letterSpacing: "0.12em" }}
-                  >
-                    {tab2Label}
-                  </span>
-                </button>
-              )}
-            </div>
-
-            {/* Sidebar panel */}
-            <div
-              className="absolute top-0 bottom-0 right-0 z-10 flex flex-col transition-transform duration-300"
-              style={{
-                width: SIDEBAR_W,
-                transform: sidebarOpen ? "translateX(0)" : `translateX(${SIDEBAR_W})`,
-                ...dynamicSidebarStyle,
-                borderLeft: "1px solid rgba(255,255,255,0.1)",
-              }}
-              data-testid="panel-material-sidebar"
-            >
-              <div className="flex-1 overflow-y-auto pb-4">
-
-                {/* ── MODELS TAB ── */}
-                {activeTab === "models" && hasModelConfigs && (
-                  <>
-                    <div className="px-3 pt-4 pb-2 shrink-0">
-                      <p className="text-[8px] uppercase tracking-widest text-white/50 font-semibold">
-                        {tab1Icon} {tab1Label}
-                      </p>
-                    </div>
-                    <div className="px-2 space-y-2">
-                      {productModels!.map((modelConfig) => (
-                        <button
-                          key={modelConfig.id}
-                          onClick={() => applyModelConfig(modelConfig)}
-                          data-testid={`button-model-card-${modelConfig.id}`}
-                          disabled={isSwappingModel}
-                          className={cn(
-                            "w-full p-2 flex flex-col items-center gap-1.5 transition-all duration-150",
-                            "disabled:opacity-60 disabled:cursor-not-allowed",
-                            activeModelId === modelConfig.id ? "bg-white/10" : "bg-white/5 hover:bg-white/10"
-                          )}
-                          style={cardStyle(activeModelId === modelConfig.id)}
-                        >
-                          {modelConfig.thumbnailUrl ? (
-                            <img src={toAbsoluteUrl(modelConfig.thumbnailUrl)} alt={modelConfig.name}
-                              className="w-12 h-12 object-cover border border-white/20" style={{ borderRadius: "10px" }} />
-                          ) : (
-                            <div className="w-12 h-12 bg-gradient-to-br from-white/20 to-white/5 border border-white/20 flex items-center justify-center" style={{ borderRadius: "10px" }}>
-                              <Box className="w-5 h-5 text-white/70" />
-                            </div>
-                          )}
-                          <span className="text-[11px] text-white/80 font-medium leading-tight text-center line-clamp-2">
-                            {modelConfig.name}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
-
-                {/* ── MATERIALS TAB ── */}
-                {activeTab === "variants" && (
-                  <>
-                    {activeModelId === null ? (
-                      <div className="px-3 pt-8 flex flex-col items-center gap-2 text-center">
-                        <Box className="w-8 h-8 text-white/30" />
-                        <p className="text-[11px] text-white/40">Select a model first to see its materials</p>
-                      </div>
-                    ) : (
-                      <>
-                        <div className="px-3 pt-4 pb-2 shrink-0">
-                          <p className="text-[8px] uppercase tracking-widest text-white/50 font-semibold">
-                            {tab2Icon} {tab2Label}
-                          </p>
-                        </div>
-                        <div className="px-2 space-y-2">
-                          {/* Default reset card */}
-                          <button
-                            onClick={resetToDefault}
-                            data-testid="button-material-default"
-                            className={cn("w-full p-2 flex flex-col items-center gap-1.5 transition-all duration-150",
-                              activeMaterialId === null ? "bg-white/10" : "bg-white/5 hover:bg-white/10")}
-                            style={cardStyle(activeMaterialId === null)}
-                          >
-                            <div className="w-12 h-12 bg-gradient-to-br from-white/20 to-white/5 border border-white/20 flex items-center justify-center" style={{ borderRadius: "10px" }}>
-                              <span className="text-white/80 text-xs font-medium">GLB</span>
-                            </div>
-                            <span className="text-[11px] text-white/80 font-medium leading-tight text-center">Default</span>
-                          </button>
-
-                          {hasMaterials ? (
-                            materials!.map(mat => (
-                              <MaterialCard
-                                key={mat.id}
-                                mat={mat}
-                                activeMaterialId={activeMaterialId}
-                                onApply={applyMaterialById}
-                                isApplyingTexture={isApplyingTexture}
-                                isSwappingModel={isSwappingModel}
-                                cardStyle={cardStyle}
-                                toAbsoluteUrl={toAbsoluteUrl}
-                              />
-                            ))
-                          ) : (
-                            <p className="text-[10px] text-white/30 text-center py-2">No materials for this model</p>
-                          )}
-                        </div>
-                      </>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-          </>
-        )}
       </div>
 
       {/* Frosted glass bottom bar */}
