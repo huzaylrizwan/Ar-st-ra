@@ -190,9 +190,9 @@ export default function ProductDetails() {
                               className="flex-shrink-0 px-4 py-1.5 text-xs uppercase tracking-widest transition-all duration-200"
                               style={{
                                 borderRadius: "var(--radius-pill)",
-                                background: isActive ? "var(--accent)" : "var(--surface-1)",
-                                color: isActive ? "#000" : "var(--text-secondary)",
-                                border: `1px solid ${isActive ? "var(--accent)" : "var(--glass-border)"}`,
+                                background: isActive ? "var(--accent)" : "rgba(128,128,128,0.15)",
+                                color: isActive ? "#000" : "var(--text-primary)",
+                                border: `1px solid ${isActive ? "var(--accent)" : "rgba(128,128,128,0.45)"}`,
                               }}
                             >
                               {model.name || `Style ${idx + 1}`}
