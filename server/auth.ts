@@ -8,6 +8,7 @@ import { db } from "./db";
 import { supervisors } from "@shared/schema";
 import { eq } from "drizzle-orm";
 import { authLimiter } from "./middleware/rateLimiter.js";
+import { validateCsrf } from "./middleware/csrf.js";
 import { config } from "./config.js";
 import { registerLocalAuthRoutes } from "./localAuth.js";
 
@@ -28,6 +29,7 @@ export function getSession() {
     cookie: {
       httpOnly: true,
       secure: config.NODE_ENV === "production",
+      sameSite: "lax",
       maxAge: sessionTtl,
     },
   });
@@ -88,8 +90,9 @@ export async function setupAuth(app: Express) {
     })(req, res, next);
   });
 
-  app.get("/api/logout", (req, res) => {
-    req.logout(() => res.redirect("/"));
+  // POST so it can't be triggered by a malicious <img src="/api/logout"> tag
+  app.post("/api/logout", validateCsrf, (req, res) => {
+    req.logout(() => res.json({ ok: true }));
   });
 }
 

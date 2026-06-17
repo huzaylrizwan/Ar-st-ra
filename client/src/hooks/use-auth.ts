@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { fetchWithCsrf } from "@/lib/queryClient";
 
 interface AuthUser {
   email: string;
@@ -26,7 +27,7 @@ export function useAuth() {
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      await fetch("/api/logout", { credentials: "include" });
+      await fetchWithCsrf("/api/logout", { method: "POST" });
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/auth/user"], null);

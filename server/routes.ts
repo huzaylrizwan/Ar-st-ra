@@ -4,8 +4,8 @@ import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import bcrypt from "bcryptjs";
-import Tokens from "csrf";
 import { config } from "./config.js";
+import { validateCsrf, generateCsrfToken } from "./middleware/csrf.js";
 import { setupAuth, registerAuthRoutes } from "./auth";
 import { registerObjectStorageRoutes } from "./replit_integrations/object_storage/routes";
 import { insertProductMaterialSchema, insertProductModelSchema, insertProductMeasurementSchema, insertSupervisorSchema, insertInquirySchema, type InsertInquiry } from "@shared/schema";
@@ -14,15 +14,6 @@ import { validateArLink } from "./arLinkValidator.js";
 import { pageViewLimiter, authLimiter, arLinkLimiter, inquiryLimiter } from "./middleware/rateLimiter.js";
 import { logger } from "./logger.js";
 
-const csrfTokens = new Tokens();
-
-function validateCsrf(req: Request, res: Response, next: NextFunction) {
-  const token = req.headers["x-csrf-token"] as string;
-  if (!token || !csrfTokens.verify(config.SESSION_SECRET, token)) {
-    return res.status(403).json({ message: "Invalid CSRF token" });
-  }
-  next();
-}
 
 // Seed function
 async function seedDatabase() {
@@ -169,8 +160,7 @@ export async function registerRoutes(
 
   // CSRF token endpoint (public — client fetches this to get a valid token)
   app.get("/api/csrf-token", (req, res) => {
-    const token = csrfTokens.create(config.SESSION_SECRET);
-    res.json({ token });
+    res.json({ token: generateCsrfToken() });
   });
 
   // Settings
@@ -532,7 +522,13 @@ export async function registerRoutes(
       instagramUrl: z.string().optional().nullable(),
       facebookUrl: z.string().optional().nullable(),
       address: z.string().optional().nullable(),
-      mapEmbedUrl: z.string().optional().nullable(),
+      mapEmbedUrl: z.string()
+        .nullable()
+        .optional()
+        .refine(
+          (v) => !v || v.startsWith("https://www.google.com/maps/"),
+          { message: "mapEmbedUrl must be a Google Maps embed URL" }
+        ),
     });
     const input = contactSchema.parse(req.body);
     const settings = await storage.updateThemeSettings(input);

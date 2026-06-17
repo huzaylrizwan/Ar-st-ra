@@ -10,3 +10,9 @@ vite.config.ts.*
 .config
 attached_assets
 .claude/worktrees/
+
+# Secrets — never commit these
+.env
+.env.local
+.env.*.local
+cookies.txt
