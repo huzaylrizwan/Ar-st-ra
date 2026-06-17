@@ -23,8 +23,17 @@ export function InlineModelViewer({
 }: InlineModelViewerProps) {
   const viewerRef = useRef<any>(null);
   const [isLoaded, setIsLoaded] = useState(false);
-
   const [loadError, setLoadError] = useState(false);
+
+  // Reset loading state whenever the model URL changes (model switcher)
+  const prevModelUrlRef = useRef(modelUrl);
+  useEffect(() => {
+    if (modelUrl !== prevModelUrlRef.current) {
+      prevModelUrlRef.current = modelUrl;
+      setIsLoaded(false);
+      setLoadError(false);
+    }
+  }, [modelUrl]);
 
   useEffect(() => {
     const viewer = viewerRef.current;

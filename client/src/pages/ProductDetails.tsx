@@ -57,7 +57,6 @@ export default function ProductDetails() {
   const { toast } = useToast();
 
   const defaultModel = productModels.find(m => m.isDefault) ?? productModels[0];
-  const defaultMaterial = productMaterials.find(m => m.isDefault && (!m.modelId || m.modelId === defaultModel?.id));
 
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true });
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -67,6 +66,22 @@ export default function ProductDetails() {
   const [arSupported, setArSupported] = useState<boolean | null>(null);
   const [activeMaterialId, setActiveMaterialId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<"3D Model" | "Photos">("3D Model");
+  const [selectedModelId, setSelectedModelId] = useState<number | null>(null);
+
+  const currentModel = (selectedModelId !== null
+    ? productModels.find(m => m.id === selectedModelId)
+    : undefined) ?? defaultModel;
+  const defaultMaterial = productMaterials.find(
+    m => m.isDefault && (!m.modelId || m.modelId === currentModel?.id)
+  );
+
+  // Initialise selected model once models load
+  useEffect(() => {
+    if (defaultModel && selectedModelId === null) setSelectedModelId(defaultModel.id);
+  }, [defaultModel, selectedModelId]);
+
+  // Reset material when model changes so the new model's default kicks in
+  useEffect(() => { setActiveMaterialId(null); }, [selectedModelId]);
 
   useEffect(() => {
     if (defaultMaterial && activeMaterialId === null) {
@@ -162,17 +177,42 @@ export default function ProductDetails() {
 
                 {activeTab === "3D Model" ? (
                   <>
+                    {/* Model switcher — visible when product has more than one 3D model */}
+                    {productModels.length > 1 && (
+                      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                        {productModels.map((model, idx) => {
+                          const isActive = (currentModel?.id ?? defaultModel?.id) === model.id;
+                          return (
+                            <button
+                              key={model.id}
+                              type="button"
+                              onClick={() => setSelectedModelId(model.id)}
+                              className="flex-shrink-0 px-4 py-1.5 text-xs uppercase tracking-widest transition-all duration-200"
+                              style={{
+                                borderRadius: "var(--radius-pill)",
+                                background: isActive ? "var(--accent)" : "var(--surface-1)",
+                                color: isActive ? "#000" : "var(--text-secondary)",
+                                border: `1px solid ${isActive ? "var(--accent)" : "var(--glass-border)"}`,
+                              }}
+                            >
+                              {model.name || `Style ${idx + 1}`}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
                     <div style={{ aspectRatio: "4/5", minHeight: 320 }}>
                       <InlineModelViewer
-                        modelUrl={defaultModel.modelUrl}
-                        materials={productMaterials.filter(m => !m.modelId || m.modelId === defaultModel.id)}
+                        modelUrl={currentModel?.modelUrl ?? ""}
+                        materials={productMaterials.filter(m => !m.modelId || m.modelId === currentModel?.id)}
                         activeMaterialId={activeMaterialId}
                         className="w-full h-full"
                       />
                     </div>
 
                     {/* Luxury material swatches — directly under 3D viewer */}
-                    {productMaterials.filter(m => !m.modelId || m.modelId === defaultModel?.id).length > 0 && (
+                    {productMaterials.filter(m => !m.modelId || m.modelId === currentModel?.id).length > 0 && (
                       <div className="space-y-2 pt-1">
                         <div className="flex items-center gap-3">
                           <p className="text-[10px] uppercase tracking-[0.15em]" style={{ color: "var(--text-secondary)" }}>Material</p>
@@ -183,7 +223,7 @@ export default function ProductDetails() {
                         </div>
                         <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
                           {productMaterials
-                            .filter(m => !m.modelId || m.modelId === defaultModel?.id)
+                            .filter(m => !m.modelId || m.modelId === currentModel?.id)
                             .map(material => {
                               const isActive = activeMaterialId === material.id;
                               return (
