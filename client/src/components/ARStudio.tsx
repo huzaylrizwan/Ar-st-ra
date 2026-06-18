@@ -12,6 +12,8 @@ import "@google/model-viewer";
 interface ARStudioProps {
   product: Product;
   onClose: () => void;
+  initialModelId?: number | null;
+  initialMaterialId?: number | null;
 }
 
 function toAbsoluteUrl(path: string): string {
@@ -20,7 +22,7 @@ function toAbsoluteUrl(path: string): string {
   return `${window.location.origin}${path.startsWith("/") ? "" : "/"}${path}`;
 }
 
-export function ARStudio({ product, onClose }: ARStudioProps) {
+export function ARStudio({ product, onClose, initialModelId, initialMaterialId }: ARStudioProps) {
   const modelViewerRef = useRef<ModelViewerElement>(null);
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
@@ -145,7 +147,7 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
     return toAbsoluteUrl(product.arLink);
   }, [product.arLink]);
 
-  const [activeMaterialId, setActiveMaterialId] = useState<number | null>(null);
+  const [activeMaterialId, setActiveMaterialId] = useState<number | null>(initialMaterialId ?? null);
   const [isApplyingTexture, setIsApplyingTexture] = useState(false);
   const [isSwappingModel, setIsSwappingModel] = useState(false);
   const [modelLoaded, setModelLoaded] = useState(false);
@@ -195,9 +197,11 @@ export function ARStudio({ product, onClose }: ARStudioProps) {
     modelsInitializedRef.current = true;
 
     if (productModels.length > 0) {
-      const defaultModel = productModels.find(m => m.isDefault) ?? productModels[0];
-      const newSrc = toAbsoluteUrl(defaultModel.modelUrl);
-      setActiveModelId(defaultModel.id);
+      const preferred = (initialModelId != null
+        ? productModels.find(m => m.id === initialModelId)
+        : undefined) ?? productModels.find(m => m.isDefault) ?? productModels[0];
+      const newSrc = toAbsoluteUrl(preferred.modelUrl);
+      setActiveModelId(preferred.id);
       if (newSrc !== currentModelSrcRef.current) {
         setIsSwappingModel(true);
         setModelLoaded(false);

@@ -584,7 +584,12 @@ export default function ProductDetails() {
       {/* Full-screen 3D Studio Overlay */}
       {arViewerOpen && product.arLink && (
         <ARStudioErrorBoundary>
-          <ARStudio product={product} onClose={() => setArViewerOpen(false)} />
+          <ARStudio
+            product={product}
+            onClose={() => setArViewerOpen(false)}
+            initialModelId={selectedModelId}
+            initialMaterialId={activeMaterialId}
+          />
         </ARStudioErrorBoundary>
       )}
     </Layout>
