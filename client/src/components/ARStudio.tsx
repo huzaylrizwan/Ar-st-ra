@@ -579,7 +579,7 @@ export function ARStudio({ product, onClose, initialModelId, initialMaterialId }
           alt={`3D model of ${product.name}`}
           camera-controls
           ar
-          ar-modes="scene-viewer quick-look webxr"
+          ar-modes="webxr scene-viewer quick-look"
           ar-scale="fixed"
           xr-environment
           auto-rotate
