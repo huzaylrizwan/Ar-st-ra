@@ -154,6 +154,7 @@ export function ARStudio({ product, onClose, initialModelId, initialMaterialId }
   const [loadProgress, setLoadProgress] = useState(0);
   const [measurementsOpen, setMeasurementsOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [arErrorMsg, setArErrorMsg] = useState<string | null>(null);
 
   const parseRgb = (hex: string) => ({
     r: parseInt(hex.slice(1, 3), 16),
@@ -423,13 +424,30 @@ export function ARStudio({ product, onClose, initialModelId, initialMaterialId }
       }
     };
 
+    const handleArStatus = (e: Event) => {
+      const status = (e as CustomEvent).detail?.status as string | undefined;
+      if (status === "failed") {
+        const src = currentModelSrcRef.current ?? "";
+        const isLocal = src.startsWith("http://localhost") || src.startsWith("http://127.");
+        setArErrorMsg(
+          isLocal
+            ? "AR requires a public HTTPS URL — deploy to Render first, then try again."
+            : "AR failed to start. Check that the model is not too large/small, and that your device supports AR."
+        );
+      } else if (status === "session-started") {
+        setArErrorMsg(null);
+      }
+    };
+
     mv.addEventListener("load", handleLoad);
     mv.addEventListener("progress", handleProgress);
     mv.addEventListener("error", handleModelError);
+    mv.addEventListener("ar-status", handleArStatus);
     return () => {
       mv.removeEventListener("load", handleLoad);
       mv.removeEventListener("progress", handleProgress);
       mv.removeEventListener("error", handleModelError);
+      mv.removeEventListener("ar-status", handleArStatus);
     };
   }, [captureOriginalMaterial, applyTextureOrColor, updateModelSrc]);
 
@@ -562,7 +580,7 @@ export function ARStudio({ product, onClose, initialModelId, initialMaterialId }
           camera-controls
           ar
           ar-modes="scene-viewer quick-look webxr"
-          ar-scale="fixed"
+          ar-scale="auto"
           xr-environment
           auto-rotate
           shadow-intensity="1"
@@ -619,6 +637,16 @@ export function ARStudio({ product, onClose, initialModelId, initialMaterialId }
         )}
 
       </div>
+
+      {/* AR error banner */}
+      {arErrorMsg && (
+        <div
+          className="shrink-0 px-5 py-2.5 text-xs text-center"
+          style={{ background: "rgba(220,38,38,0.85)", color: "#fff", backdropFilter: "blur(8px)" }}
+        >
+          {arErrorMsg}
+        </div>
+      )}
 
       {/* Frosted glass bottom bar */}
       <div
