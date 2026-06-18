@@ -580,7 +580,7 @@ export function ARStudio({ product, onClose, initialModelId, initialMaterialId }
           camera-controls
           ar
           ar-modes="scene-viewer quick-look webxr"
-          ar-scale="auto"
+          ar-scale="fixed"
           xr-environment
           auto-rotate
           shadow-intensity="1"
