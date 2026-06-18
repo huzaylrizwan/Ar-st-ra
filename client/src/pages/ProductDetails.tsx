@@ -155,19 +155,26 @@ export default function ProductDetails() {
           <div className="space-y-3 sm:space-y-4">
             {defaultModel ? (
               <>
-                {/* 3D / Photos tab switcher */}
-                <div className="flex gap-2">
+                {/* 3D / Photos tab switcher — segmented control */}
+                <div
+                  className="inline-flex p-1 gap-1"
+                  style={{
+                    borderRadius: "var(--radius-pill)",
+                    background: "rgba(128,128,128,0.14)",
+                    border: "1px solid rgba(128,128,128,0.22)",
+                  }}
+                >
                   {(["3D Model", "Photos"] as const).map(tab => (
                     <button
                       key={tab}
                       type="button"
                       onClick={() => setActiveTab(tab)}
-                      className="px-4 py-1.5 text-xs uppercase tracking-widest transition-all duration-200"
+                      className="px-4 py-1 text-xs uppercase tracking-widest transition-all duration-200"
                       style={{
                         borderRadius: "var(--radius-pill)",
-                        background: activeTab === tab ? "var(--accent)" : "var(--surface-1)",
-                        color: activeTab === tab ? "#000" : "var(--text-secondary)",
-                        border: `1px solid ${activeTab === tab ? "var(--accent)" : "var(--glass-border)"}`,
+                        background: activeTab === tab ? "var(--accent)" : "transparent",
+                        color: activeTab === tab ? "#000" : "var(--text-primary)",
+                        fontWeight: activeTab === tab ? 600 : 400,
                       }}
                     >
                       {tab}
@@ -177,9 +184,16 @@ export default function ProductDetails() {
 
                 {activeTab === "3D Model" ? (
                   <>
-                    {/* Model switcher — visible when product has more than one 3D model */}
+                    {/* Model switcher — segmented control, only when 2+ models */}
                     {productModels.length > 1 && (
-                      <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                      <div
+                        className="inline-flex flex-wrap gap-1 p-1"
+                        style={{
+                          borderRadius: "var(--radius-pill)",
+                          background: "rgba(128,128,128,0.14)",
+                          border: "1px solid rgba(128,128,128,0.22)",
+                        }}
+                      >
                         {productModels.map((model, idx) => {
                           const isActive = (currentModel?.id ?? defaultModel?.id) === model.id;
                           return (
@@ -187,12 +201,12 @@ export default function ProductDetails() {
                               key={model.id}
                               type="button"
                               onClick={() => setSelectedModelId(model.id)}
-                              className="flex-shrink-0 px-4 py-1.5 text-xs uppercase tracking-widest transition-all duration-200"
+                              className="flex-shrink-0 px-4 py-1 text-xs uppercase tracking-widest transition-all duration-200"
                               style={{
                                 borderRadius: "var(--radius-pill)",
-                                background: isActive ? "var(--accent)" : "rgba(128,128,128,0.15)",
+                                background: isActive ? "var(--accent)" : "transparent",
                                 color: isActive ? "#000" : "var(--text-primary)",
-                                border: `1px solid ${isActive ? "var(--accent)" : "rgba(128,128,128,0.45)"}`,
+                                fontWeight: isActive ? 600 : 400,
                               }}
                             >
                               {model.name || `Style ${idx + 1}`}
