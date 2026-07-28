@@ -18,6 +18,7 @@ import type { ProductModel, ProductMaterial, Product } from "@shared/schema";
 import { InlineModelViewer } from "@/components/InlineModelViewer";
 import { ProductCard } from "@/components/ProductCard";
 import { useToast } from "@/hooks/use-toast";
+import { detectARCapability } from "@/lib/ar-capability";
 
 export default function ProductDetails() {
   const [match, params] = useRoute("/products/:id");
@@ -64,6 +65,7 @@ export default function ProductDetails() {
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [arSupported, setArSupported] = useState<boolean | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
   const [activeMaterialId, setActiveMaterialId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<"3D Model" | "Photos">("3D Model");
   const [selectedModelId, setSelectedModelId] = useState<number | null>(null);
@@ -101,7 +103,13 @@ export default function ProductDetails() {
       const webxrAR = await (navigator as any).xr
         ?.isSessionSupported?.("immersive-ar")
         .catch(() => false);
-      setArSupported(!!(iosAR || webxrAR));
+      const { isMobile: mobile, arSupported: supported } = detectARCapability(
+        navigator.userAgent,
+        iosAR,
+        !!webxrAR
+      );
+      setIsMobile(mobile);
+      setArSupported(supported);
     };
     check();
   }, []);
@@ -449,12 +457,16 @@ export default function ProductDetails() {
               {product.stockStatus !== "out_of_stock" ? (
                 <>
                   {product.arLink ? (
-                    arSupported === false ? (
+                    arSupported === false && !isMobile ? (
                       <div className="flex flex-col items-center gap-3 p-4 border border-border rounded-xl sm:rounded-sm bg-muted/30">
                         <QRCodeSVG value={typeof window !== "undefined" ? window.location.href : ""} size={120} data-testid="qrcode" />
                         <p className="text-xs text-center text-muted-foreground">
                           Scan on your phone to view in your space
                         </p>
+                      </div>
+                    ) : arSupported === false && isMobile ? (
+                      <div className="p-3 sm:p-4 bg-muted/50 text-xs sm:text-sm text-center text-muted-foreground rounded-xl sm:rounded-sm">
+                        AR isn't available in this browser — try opening this page in Chrome or Safari
                       </div>
                     ) : (
                       <Button
