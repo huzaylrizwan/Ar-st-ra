@@ -11,6 +11,12 @@ const IOS_WHATSAPP =
   "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 [FBAN/WhatsApp;FBAV/2.24]";
 const DESKTOP_CHROME =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
+const ANDROID_LINKEDIN =
+  "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/126.0.0.0 Mobile Safari/537.36 LinkedInApp/9.28.7401";
+const IOS_LINKEDIN =
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 LinkedInApp/9.28.7401";
+const ANDROID_INSTAGRAM =
+  "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Mobile Safari/537.36 Instagram 302.0.0.23.114";
 
 describe("detectARCapability", () => {
   it("treats Android Chrome as AR-capable even when the flaky webxr probe says no", () => {
@@ -49,5 +55,26 @@ describe("detectARCapability", () => {
   it("treats desktop Chrome as non-mobile regardless of AR support", () => {
     const result = detectARCapability(DESKTOP_CHROME, false, false);
     expect(result.isMobile).toBe(false);
+    expect(result.isInAppBrowser).toBe(false);
+  });
+
+  it("flags LinkedIn's in-app browser on Android and forces arSupported false even though it looks like plain Android Chrome", () => {
+    const result = detectARCapability(ANDROID_LINKEDIN, false, true);
+    expect(result.isMobile).toBe(true);
+    expect(result.isInAppBrowser).toBe(true);
+    expect(result.arSupported).toBe(false);
+  });
+
+  it("flags LinkedIn's in-app browser on iOS even with Quick Look anchor support", () => {
+    const result = detectARCapability(IOS_LINKEDIN, true, false);
+    expect(result.isMobile).toBe(true);
+    expect(result.isInAppBrowser).toBe(true);
+    expect(result.arSupported).toBe(false);
+  });
+
+  it("flags Instagram's in-app browser on Android", () => {
+    const result = detectARCapability(ANDROID_INSTAGRAM, false, true);
+    expect(result.isInAppBrowser).toBe(true);
+    expect(result.arSupported).toBe(false);
   });
 });

@@ -66,6 +66,7 @@ export default function ProductDetails() {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [arSupported, setArSupported] = useState<boolean | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const [inAppBrowserName, setInAppBrowserName] = useState<string | null>(null);
   const [activeMaterialId, setActiveMaterialId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<"3D Model" | "Photos">("3D Model");
   const [selectedModelId, setSelectedModelId] = useState<number | null>(null);
@@ -103,13 +104,14 @@ export default function ProductDetails() {
       const webxrAR = await (navigator as any).xr
         ?.isSessionSupported?.("immersive-ar")
         .catch(() => false);
-      const { isMobile: mobile, arSupported: supported } = detectARCapability(
+      const { isMobile: mobile, arSupported: supported, inAppBrowserName: inAppName } = detectARCapability(
         navigator.userAgent,
         iosAR,
         !!webxrAR
       );
       setIsMobile(mobile);
       setArSupported(supported);
+      setInAppBrowserName(inAppName);
     };
     check();
   }, []);
@@ -457,7 +459,29 @@ export default function ProductDetails() {
               {product.stockStatus !== "out_of_stock" ? (
                 <>
                   {product.arLink ? (
-                    arSupported === false && !isMobile ? (
+                    inAppBrowserName ? (
+                      <div className="flex flex-col items-center gap-3 p-4 border border-border rounded-xl sm:rounded-sm bg-muted/30" data-testid="inapp-browser-banner">
+                        <p className="text-xs sm:text-sm text-center text-foreground">
+                          You're viewing this inside the {inAppBrowserName} app, which blocks AR.
+                          Tap the <strong>⋯</strong> menu above and choose <strong>"Open in Safari/Chrome"</strong> to view in your space.
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              await navigator.clipboard.writeText(window.location.href);
+                              toast({ title: "Link copied", description: "Paste it into Safari or Chrome to view in AR" });
+                            } catch {
+                              toast({ title: "Copy this link", description: window.location.href });
+                            }
+                          }}
+                        >
+                          Copy Link
+                        </Button>
+                      </div>
+                    ) : arSupported === false && !isMobile ? (
                       <div className="flex flex-col items-center gap-3 p-4 border border-border rounded-xl sm:rounded-sm bg-muted/30">
                         <QRCodeSVG value={typeof window !== "undefined" ? window.location.href : ""} size={120} data-testid="qrcode" />
                         <p className="text-xs text-center text-muted-foreground">
