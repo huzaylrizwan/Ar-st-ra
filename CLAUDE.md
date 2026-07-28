@@ -195,16 +195,16 @@ A full 4-phase overhaul was designed and planned. See:
 
 ### Phase 5 — Supervisor Portal Expansion ⬜ DEFERRED (doing after Luxury Redesign)
 
-### Phase 6 — Luxury Redesign ✅ Plan 1 COMPLETE (Plans 2 & 3 pending)
+### Phase 6 — Luxury Redesign ✅ COMPLETE (Plans 1, 2 & 3 all merged to main)
 
 **Goal:** International-grade luxury UX competing with Minotti, B&B Italia, Poliform. 3-way theme engine (Dark Obsidian / White Marble / Warm Dusk). Glass morphism. Cormorant Garamond. Inline 3D model viewer. Flexible product specs + sections.
 
-**Branch:** `worktree-luxury-plan1` (merge when Plans 2 & 3 complete)
+**Branch:** merged to `main` (no separate worktree branch remains)
 
 **Design Spec:** `docs/superpowers/specs/2026-06-15-luxury-redesign-design.md`
-**Plans:** `docs/superpowers/plans/2026-06-15-luxury-plan1-foundation.md` (done), `plan2-public-pages.md` (next), `plan3-product-and-admin.md` (next)
+**Plans:** `docs/superpowers/plans/2026-06-15-luxury-plan1-foundation.md`, `plan2-public-pages.md`, `plan3-product-and-admin.md` — all done
 
-#### Plan 1 — Design Foundation ✅ COMPLETE (branch: worktree-luxury-plan1)
+#### Plan 1 — Design Foundation ✅ COMPLETE
 - [x] Task 1: Schema — specs + sections JSON columns on products
 - [x] Task 2: CSS — 3-theme variable system (dark-obsidian / white-marble / warm-dusk) + glass utilities
 - [x] Task 3: ThemeProvider — reads DB theme, sets data-theme on html
@@ -215,11 +215,32 @@ A full 4-phase overhaul was designed and planned. See:
 - [x] Task 8: Settings — 3-theme picker with live preview + DB persistence
 - [x] Task 9: Page transitions — AnimatePresence fade (in Layout.tsx)
 
-#### Plan 2 — Public Pages ⬜ NOT STARTED
-- Wishlist, ProductCard luxury rewrite, Homepage hero, Category grid, Collections masonry, Skeleton shimmer
+#### Plan 2 — Public Pages ✅ COMPLETE
+- [x] Task 1: WishlistButton hook + component + navbar badge count
+- [x] Task 2: ProductCard luxury upgrade — glass info strip, hover lift+glow, wishlist button, AR badge
+- [x] Task 3: Homepage — full-bleed hero with slideshow, Cormorant headline
+- [x] Task 4: Homepage — magazine category grid
+- [x] Task 5: Homepage — new arrivals strip, philosophy section, WhatsApp CTA
+- [x] Task 6: Collections page — masonry grid + glass sticky filter bar + animated transitions
+- [x] Task 7: Skeleton shimmer loading states
 
-#### Plan 3 — Product Page & Admin ⬜ NOT STARTED
-- InlineModelViewer, Product 3D-first layout, Material swatches, Specs/Sections display, Admin editor 6-section accordion
+#### Plan 3 — Product Page & Admin ✅ COMPLETE
+- [x] Task 1: InlineModelViewer component (embedded 3D, no popup)
+- [x] Task 2: Product page — 3D viewer as hero, photo thumbnail strip, 3D/Photos tab
+- [x] Task 3: Product page — material swatch selector (real-time 3D update)
+- [x] Task 4: Product page — flexible specs table + rich sections accordions
+- [x] Task 5: Product page — related products strip, share button, WhatsApp pre-filled inquiry
+- [x] Task 6: Admin editor — 6-section accordion layout
+- [x] Task 7: Admin editor — dynamic specs key-value UI
+- [x] Task 8: Admin editor — rich sections UI (Story/Care/Delivery/Custom)
+
+#### Post-Plan-3 work (not part of original plan docs, done directly on main)
+- [x] Photo-less product display — stage background + manual thumbnail upload (auto-poster generation attempted then reverted)
+- [x] Security hardening pass across 7 vulnerability areas
+- [x] Cloudinary uploads + simplified AR Studio + luxury material swatches
+- [x] Model switcher on product page (segmented-control redesign, theme-visible pills, viewer reset on model change)
+- [x] ARStudio opens with model+material pre-selected from product page
+- [x] AR launch reliability fixes — auto-scale attempt reverted back to `ar-scale=fixed`, WebXR preferred over Scene Viewer so JS-applied materials show correctly in AR, error feedback on launch failure
 
 **CSS variable rule:** Always use `var(--text-accent)` NOT `var(--accent)` for gold/brand color in custom CSS/inline styles. `--accent` resolves to a shadcn HSL string.
 
